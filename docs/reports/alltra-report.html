@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alltra Tokens, Funds &amp; Liquidity Report</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: #1a1f2b;
+      background: #fff;
+      line-height: 1.65;
+    }
+    .wrap { max-width: 52rem; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+    h1, h2, h3 { font-family: "Segoe UI", Arial, sans-serif; line-height: 1.25; }
+    h1 { font-size: 2rem; margin: 0 0 1rem; }
+    h2 { font-size: 1.35rem; margin: 2.5rem 0 0.75rem; color: #6b5424; border-bottom: 1px solid #ddd; padding-bottom: 0.35rem; }
+    h3 { font-size: 1.1rem; margin: 1.75rem 0 0.5rem; }
+    p, li { font-size: 1rem; }
+    a { color: #6b5424; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.92rem; }
+    th, td { border: 1px solid #ddd; padding: 0.55rem 0.65rem; text-align: left; vertical-align: top; }
+    th { background: #f6f1e8; }
+    code { font-family: Consolas, monospace; background: #f4f4f4; padding: 0.1rem 0.35rem; font-size: 0.9em; }
+    pre { background: #f4f4f4; padding: 1rem; overflow-x: auto; border: 1px solid #ddd; }
+    hr { border: 0; border-top: 1px solid #ddd; margin: 2rem 0; }
+    .banner {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f6f1e8;
+      border: 1px solid #d9c9a5;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+    @media print {
+      .banner { background: #f6f1e8; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .wrap { padding: 0.5in; }
+      a { color: #000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="banner">
+      <strong>Alltra Tokens, Funds &amp; Liquidity Report</strong><br />
+      Art City AI Studio · Research document · 16 July 2026
+    </div>
+    <h1>Alltra Tokens, Funds &amp; Liquidity Report</h1>
+<p><strong>Report date:</strong> 16 July 2026<br><strong>Scope:</strong> External Alltra blockchain ecosystem (Alltra SmartChain / ALLTRAVERSE)<br><strong>Note:</strong> Art City AI Studio contains no Alltra/blockchain integration. This is independent research.</p>
+<h2>Live links</h2>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>URL (local dev)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Live page</strong></td>
+<td><a href="http://localhost:3000/reports/alltra">http://localhost:3000/reports/alltra</a></td>
+</tr>
+<tr>
+<td><strong>PDF</strong></td>
+<td><a href="http://localhost:3000/reports/alltra-report.pdf">http://localhost:3000/reports/alltra-report.pdf</a></td>
+</tr>
+<tr>
+<td><strong>HTML</strong></td>
+<td><a href="http://localhost:3000/reports/alltra-report.html">http://localhost:3000/reports/alltra-report.html</a></td>
+</tr>
+<tr>
+<td><strong>Markdown</strong></td>
+<td><a href="http://localhost:3000/reports/alltra-report.md">http://localhost:3000/reports/alltra-report.md</a></td>
+</tr>
+</tbody></table>
+<p>Start the frontend with <code>npm run dev</code> in <code>frontend/</code>, then open the live page link above.</p>
+<hr>
+<h2>Executive Summary</h2>
+<p>The Alltra ecosystem is an EVM-compatible DPoS blockchain (chain ID <code>651940</code>) built around gold-backed <strong>11::11</strong>, issuance token <strong>HYBX</strong>, native <strong>ALL</strong>, DEX governance <strong>HYDX</strong>, and USD stablecoin <strong>aUSDT</strong>. Funds flow through gold vaults, dual USD reserves, validator staking, fiat PayPal rails, and several bridge/LP contracts.</p>
+<p><strong>Key findings (live data, 16 Jul 2026):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ALL price (explorer)</td>
+<td><strong>$0.01116</strong></td>
+<td><a href="https://alltra.global/api/v2/stats">alltra.global/api/v2/stats</a></td>
+</tr>
+<tr>
+<td>ALL market cap (explorer)</td>
+<td><strong>~$1.84B</strong></td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Network addresses</td>
+<td><strong>18,898</strong></td>
+<td>Same</td>
+</tr>
+<tr>
+<td>aUSDT on-chain supply (primary contract)</td>
+<td><strong>~6.16B</strong></td>
+<td><a href="https://alltra.global/api/v2/tokens">alltra.global/api/v2/tokens</a></td>
+</tr>
+<tr>
+<td>aUSDT NSB reserve backing (API)</td>
+<td><strong>~25.16B</strong></td>
+<td><a href="https://alltra.azurewebsites.net/api/nsb-ausdt-reserve">nsb-ausdt-reserve API</a></td>
+</tr>
+<tr>
+<td>USD cash reserve (API)</td>
+<td><strong>$625.7B</strong></td>
+<td>Same</td>
+</tr>
+<tr>
+<td>HYBX/ALL bridge LP (native ALL)</td>
+<td><strong>~164.4M ALL</strong></td>
+<td>Alltra RPC</td>
+</tr>
+<tr>
+<td>Temp LP EOA (native ALL)</td>
+<td><strong>~12.2M ALL</strong></td>
+<td>Alltra RPC</td>
+</tr>
+<tr>
+<td>External CEX liquidity (ALL)</td>
+<td><strong>Very thin</strong> (~$166–$223/day on Dex-Trade)</td>
+<td>Coinranking</td>
+</tr>
+</tbody></table>
+<p><strong>Top risks:</strong> Price data disagrees sharply across sources; liquidity is concentrated in a few EOAs; fiat rails remain in test mode ($50/day); multiple aUSDT contract addresses exist on-chain; aUSDT reserve claims require independent audit.</p>
+<hr>
+<h2>1. Network Foundation</h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Chain</td>
+<td>Alltra Mainnet (EVM-compatible DPoS)</td>
+</tr>
+<tr>
+<td>Chain ID</td>
+<td><code>651940</code></td>
+</tr>
+<tr>
+<td>Native token</td>
+<td><strong>ALL</strong></td>
+</tr>
+<tr>
+<td>Block time</td>
+<td>~9 seconds (docs); ~3s average per explorer stats</td>
+</tr>
+<tr>
+<td>Gas price</td>
+<td>0 gwei</td>
+</tr>
+<tr>
+<td>RPC</td>
+<td><code>https://mainnet-rpc.alltra.global/</code></td>
+</tr>
+<tr>
+<td>Explorer</td>
+<td><a href="https://alltra.global">alltra.global</a></td>
+</tr>
+<tr>
+<td>Block height (live)</td>
+<td><strong>35,375,576</strong></td>
+</tr>
+<tr>
+<td>Total blocks</td>
+<td><strong>35,375,418</strong></td>
+</tr>
+<tr>
+<td>Transactions today</td>
+<td><strong>1,526</strong></td>
+</tr>
+</tbody></table>
+<h3>Staking / validator fund pool</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Max validators</td>
+<td>60 (docs also cite 100 in one section)</td>
+</tr>
+<tr>
+<td>Min stake</td>
+<td>100,000 ALL</td>
+</tr>
+<tr>
+<td>Max stake</td>
+<td>5,000,000 ALL</td>
+</tr>
+<tr>
+<td>Validator fee</td>
+<td>15%</td>
+</tr>
+<tr>
+<td>Inflation APY</td>
+<td>~5%</td>
+</tr>
+<tr>
+<td>Active validators (public)</td>
+<td>28</td>
+</tr>
+<tr>
+<td>Delegators (public)</td>
+<td>1,565</td>
+</tr>
+<tr>
+<td>Memberships (public)</td>
+<td>17,825</td>
+</tr>
+</tbody></table>
+<p>Annual emission cited in tokenomics: <strong>~50B ALL/year</strong> distributed via validators. Rewards-admin contracts are documented as <strong>not live</strong>.</p>
+<hr>
+<h2>2. Token Registry</h2>
+<h3>2.1 Core ecosystem tokens</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Symbol</th>
+<th>Role</th>
+<th>Decimals</th>
+<th>Contract (Alltra mainnet)</th>
+<th>Holders (live)</th>
+<th>Total supply (live)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>ALL</strong></td>
+<td>ALL</td>
+<td>Native gas, staking, marketplace</td>
+<td>18</td>
+<td>Native (<code>651940</code>)</td>
+<td>—</td>
+<td>Inflationary (10T max cited on CEX trackers)</td>
+</tr>
+<tr>
+<td><strong>11::11</strong></td>
+<td>11::11</td>
+<td>Gold-backed stable (1/1000 oz gold)</td>
+<td>18</td>
+<td><code>0xB6a67342C40326E41BE964D0DF4D042D1fBfdf49</code></td>
+<td>551</td>
+<td><strong>100.00055</strong></td>
+</tr>
+<tr>
+<td><strong>HYBX</strong></td>
+<td>HYBX</td>
+<td>Issuance / barter / marketplace</td>
+<td>8</td>
+<td><code>0x1839f77eBed7F388c7035f7061B4B8Ef0E72317a</code></td>
+<td>531</td>
+<td><strong>~401.18B</strong></td>
+</tr>
+<tr>
+<td><strong>HYDX</strong></td>
+<td>HYDX</td>
+<td>Hyper-DEX governance</td>
+<td>18</td>
+<td><code>0x0d9793861AEB9244AD1B34375a83A6730F6AdD38</code></td>
+<td>167</td>
+<td><strong>~43.91M</strong></td>
+</tr>
+<tr>
+<td><strong>aUSDT</strong> (primary)</td>
+<td>USDT</td>
+<td>USD stablecoin (NSB/Monza)</td>
+<td>18</td>
+<td><code>0x66D8Efa0AF63B0e84eb1Dd72bf00f00cd1e2234e</code></td>
+<td>10,991</td>
+<td><strong>~6.16B</strong></td>
+</tr>
+<tr>
+<td><strong>WALL</strong></td>
+<td>WALL</td>
+<td>Wrapped Alltra</td>
+<td>18</td>
+<td><code>0x2da2b8f961F161ab6320acB3377e2e844a3C3ce4</code></td>
+<td>207</td>
+<td><strong>~29.67B</strong></td>
+</tr>
+<tr>
+<td><strong>Alltra Dollar</strong></td>
+<td>—</td>
+<td>Ecosystem dollar unit</td>
+<td>—</td>
+<td>Not fully enumerated</td>
+<td>—</td>
+<td>Referenced in docs only</td>
+</tr>
+</tbody></table>
+<h3>2.2 Cross-chain deployments</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Ethereum</th>
+<th>BSC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HYBX</td>
+<td><code>0x32b29705BB44C57f6A3DcCa047Fd55b460977c25</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>ALL (wrapped/bridged)</td>
+<td><code>0x2da2b8f961F161ab6320acB3377e2e844a3C3ce4</code></td>
+<td><code>0x20d145fA3C7c62393fcf34E5A9c9c7B53468e18E</code></td>
+</tr>
+</tbody></table>
+<h3>2.3 Related stablecoin stack</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Manager / issuer</th>
+<th>Backing claim</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>aUSDT</strong></td>
+<td>Monza Capital LLC + Niisitapi Sovereign Bank</td>
+<td>1 USD reserve + 1 USD insurance per token</td>
+<td>Primary on-chain: <code>0x66D8...</code></td>
+</tr>
+<tr>
+<td><strong>aUSDT</strong> (alt contract)</td>
+<td>—</td>
+<td>—</td>
+<td><code>0x015B1897Ed5279930bC2Be46F661894d219292A6</code> — <strong>~535.56B supply</strong>, 374 holders</td>
+</tr>
+<tr>
+<td><strong>mzUSDT</strong></td>
+<td>Monza Capital</td>
+<td>1:1 backed by aUSDT in Texas attorney escrow</td>
+<td>Solana; 1B minted</td>
+</tr>
+<tr>
+<td><strong>AUSDC</strong></td>
+<td>—</td>
+<td>—</td>
+<td><code>0xa95EeD79f84E6A0151eaEb9d441F9Ffd50e8e881</code></td>
+</tr>
+<tr>
+<td><strong>AUDA (MOOLA)</strong></td>
+<td>—</td>
+<td>—</td>
+<td><code>0x690740f055A41FA7669f5a379Bf71B0cDF353073</code></td>
+</tr>
+</tbody></table>
+<h3>2.4 Liquidity pool tokens (on-chain)</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Symbol</th>
+<th>Contract</th>
+<th>Holders</th>
+<th>Supply</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HYDX LPs</td>
+<td>HYDX-LP</td>
+<td><code>0x119751597FE282615ac8dd5323577cc9b2728102</code></td>
+<td>5</td>
+<td>~5.29M</td>
+</tr>
+<tr>
+<td>HYDX LPs</td>
+<td>HYDX-LP</td>
+<td><code>0xae9B16C50E5e11c0c7388e8289459f1Af1ae47a8</code></td>
+<td>3</td>
+<td>~3.16M</td>
+</tr>
+<tr>
+<td>HYDX LPs</td>
+<td>HYDX-LP</td>
+<td><code>0xC33F12b74D62205AF13b4908e4b8d2e684dA89a3</code></td>
+<td>3</td>
+<td>~35.4K</td>
+</tr>
+</tbody></table>
+<h3>2.5 Token relationships</h3>
+<pre><code>11::11 (gold vault) ──1:1 airdrop──&gt; HYBX (issuance)
+ALL (native) ──staking──&gt; Validator pool ──rewards──&gt; Delegators
+aUSDT ──dual reserve──&gt; USD cash + USD insurance (NSB API)
+HYBX / ALL ──bridges──&gt; ETH cross-chain liquidity
+HYDX ──governance──&gt; ALLTRASONICSWAP Hyper-DEX (BSC)
+</code></pre>
+<hr>
+<h2>3. Funds &amp; Treasury Flows</h2>
+<h3>3.1 Gold-backed reserves (11::11)</h3>
+<ul>
+<li><strong>Backing:</strong> 1 token = 1/1000 troy oz fine gold (Bougainville community gold project)</li>
+<li><strong>On-chain supply:</strong> 100.00055 tokens (~0.1 oz gold equivalent at face value)</li>
+<li><strong>Issuance trigger:</strong> Purchasing 11::11 mints HYBX 1:1 via airdrop protocol</li>
+<li><strong>Physical redemption:</strong> Offered after 25 Dec 2025 per official FAQ</li>
+<li><strong>Custody:</strong> Claimed vaulted and insured by Alltra (independent attestation recommended)</li>
+</ul>
+<h3>3.2 aUSDT reserve funds (live API — 16 Jul 2026)</h3>
+<p>Source: <code>https://alltra.azurewebsites.net/api/nsb-ausdt-reserve</code></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>aUSDT contract</td>
+<td><code>0x66D8Efa0AF63B0e84eb1Dd72bf00f00cd1e2234e</code></td>
+</tr>
+<tr>
+<td>NSB aUSDT reserve (on-chain raw)</td>
+<td>25,159,130,095.31 aUSDT</td>
+</tr>
+<tr>
+<td>Pegging</td>
+<td>1 aUSDT = 1 USD</td>
+</tr>
+<tr>
+<td>Primary cash reserve balance</td>
+<td><strong>$625,735,000,000</strong></td>
+</tr>
+<tr>
+<td>Primary backing allocated</td>
+<td>$25,159,130,095.31</td>
+</tr>
+<tr>
+<td>Primary surplus</td>
+<td><strong>$600,575,869,904.69</strong></td>
+</tr>
+<tr>
+<td>Insurance reserve balance</td>
+<td><strong>$625,735,000,000</strong></td>
+</tr>
+<tr>
+<td>Insurance backing allocated</td>
+<td>$25,159,130,095.31</td>
+</tr>
+<tr>
+<td>Insurance surplus</td>
+<td><strong>$600,575,869,904.69</strong></td>
+</tr>
+</tbody></table>
+<p><strong>Discrepancy note:</strong> Explorer shows only <strong>~6.16B</strong> aUSDT on the primary contract, while the NSB API reports <strong>~25.16B</strong> in reserve backing. A second aUSDT contract (<code>0x015B...</code>) holds <strong>~535.56B</strong> supply. This requires reconciliation before relying on reserve figures.</p>
+<h3>3.3 Staking fund pool (ALL)</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Validator stake range</td>
+<td>100,000 – 5,000,000 ALL</td>
+</tr>
+<tr>
+<td>Rent-to-own program</td>
+<td>Investors advanced 5M ALL to stake</td>
+</tr>
+<tr>
+<td>Annual emission</td>
+<td>~50B ALL/year (5% inflation model)</td>
+</tr>
+<tr>
+<td>Rewards-admin</td>
+<td>Documented as <strong>not live</strong></td>
+</tr>
+</tbody></table>
+<h3>3.4 Fiat on/off-ramp funds (ALL + 11::11)</h3>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Mechanism</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Auth0 KYC login</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tokens escrowed to smart contract with encrypted payload</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Backend listener decrypts, applies slippage + exchange rate</td>
+</tr>
+<tr>
+<td>4</td>
+<td>PayPal payout to verified email</td>
+</tr>
+</tbody></table>
+<p><strong>Current limits (test mode):</strong> $50/day per whitelisted wallet, 1 transaction/day.</p>
+<table>
+<thead>
+<tr>
+<th>Contract / EOA</th>
+<th>Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fiat onboarding (ALL)</td>
+<td><code>0x967009c2124304B82585080bdC6c47cB7f9eE205</code></td>
+<td>On-chain fiat entry</td>
+</tr>
+<tr>
+<td>PayPal webhook</td>
+<td><code>0xbF576101e52d08Bed0134FB0B64a1537e88dcC54</code></td>
+<td>Payment events</td>
+</tr>
+<tr>
+<td>Checkout UI</td>
+<td><a href="https://checkout.alltra.global">checkout.alltra.global</a></td>
+<td>Card/PayPal purchase</td>
+</tr>
+<tr>
+<td>Temp LP EOA</td>
+<td><code>0x3022BCB959153982A477209CAFaEdD5186359882</code></td>
+<td>Referenced LP across rails</td>
+</tr>
+</tbody></table>
+<h3>3.5 OTC / wholesale entry points</h3>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>Minimum investment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>General 11::11 + HYBX airdrop</td>
+<td>$125,000 AUD</td>
+</tr>
+<tr>
+<td>Gold/precious metals supplier</td>
+<td>10 kg (gold/silver/platinum/copper)</td>
+</tr>
+<tr>
+<td>Marketplace merchant</td>
+<td>$89 AUD setup</td>
+</tr>
+<tr>
+<td>Validator business</td>
+<td>$225,000 AUD</td>
+</tr>
+<tr>
+<td>Growth Business Package</td>
+<td>$220/month</td>
+</tr>
+<tr>
+<td>Premium Business Membership</td>
+<td>$789/month</td>
+</tr>
+<tr>
+<td>Validator-as-a-Business Package</td>
+<td>$6,500/month</td>
+</tr>
+</tbody></table>
+<h3>3.6 Entity map</h3>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Ozz Metals Co. Pty Ltd</strong></td>
+<td>Parent / gold project operator</td>
+</tr>
+<tr>
+<td><strong>Monza Capital LLC</strong></td>
+<td>aUSDT fund manager</td>
+</tr>
+<tr>
+<td><strong>Niisitapi Sovereign Bank (NSB)</strong></td>
+<td>aUSDT issuer / sovereign backing</td>
+</tr>
+<tr>
+<td><strong>Go Gold Management</strong></td>
+<td>11::11 fractional gold distribution</td>
+</tr>
+<tr>
+<td><strong>Validators (28 active)</strong></td>
+<td>DPoS block production + staking rewards</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>4. Liquidity Infrastructure</h2>
+<h3>4.1 Hyper-DEX (ALLTRASONICSWAP)</h3>
+<ul>
+<li><strong>URL:</strong> <a href="https://alltrasonicswap.trade">alltrasonicswap.trade</a></li>
+<li><strong>Chain:</strong> Binance Smart Chain</li>
+<li><strong>Governance:</strong> HYDX token</li>
+<li><strong>Features:</strong> Swaps, yield farming, community liquidity</li>
+<li><strong>Status:</strong> Staking farms listed as &quot;coming soon&quot; on tokenomics page</li>
+</ul>
+<h3>4.2 Cross-chain bridges</h3>
+<table>
+<thead>
+<tr>
+<th>Bridge</th>
+<th>Mechanism</th>
+<th>Liquidity pools?</th>
+<th>ETH address</th>
+<th>ALL address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HYBX bridge</td>
+<td>Mint/burn</td>
+<td><strong>No</strong></td>
+<td><code>0xdb181ba33031471bc366c29f113eaf9cd705eaee</code></td>
+<td><code>0xDD94051679B1668566862738AB33A0f4956BbB19</code></td>
+</tr>
+<tr>
+<td>HYBX/ALL bridge</td>
+<td>Pool-based</td>
+<td><strong>Yes</strong></td>
+<td><code>0x96aac183AD10218055e0DEfB0596dFbB35407976</code></td>
+<td><code>0x96aac183AD10218055e0DEfB0596dFbB35407976</code></td>
+</tr>
+<tr>
+<td>Exchange bridge</td>
+<td>Cross-chain swap</td>
+<td>LP via EOA</td>
+<td><code>0xeAc6A8eD48Ca8AE511AfB77181A8a8CbEB27bd49</code></td>
+<td><code>0xeAc6A8eD48Ca8AE511AfB77181A8a8CbEB27bd49</code></td>
+</tr>
+</tbody></table>
+<h3>4.3 Live LP balances (16 Jul 2026)</h3>
+<h4>Native ALL balances (RPC)</h4>
+<table>
+<thead>
+<tr>
+<th>Address</th>
+<th>Role</th>
+<th>Native ALL balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0x96aac183AD10218055e0DEfB0596dFbB35407976</code></td>
+<td>HYBX/ALL bridge LP</td>
+<td><strong>164,398,059.15 ALL</strong></td>
+</tr>
+<tr>
+<td><code>0x3022BCB959153982A477209CAFaEdD5186359882</code></td>
+<td>Temp LP EOA</td>
+<td><strong>12,246,479.04 ALL</strong></td>
+</tr>
+</tbody></table>
+<h4>Temp LP EOA token holdings (explorer API)</h4>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>11::11</td>
+<td><strong>5,248,595.12</strong></td>
+</tr>
+<tr>
+<td>AUSDT (alt <code>0x015B...</code>)</td>
+<td><strong>2,147,903.43</strong></td>
+</tr>
+<tr>
+<td>HYBX</td>
+<td><strong>418,491,052.77</strong></td>
+</tr>
+<tr>
+<td>HYDX</td>
+<td><strong>98,150.97</strong></td>
+</tr>
+<tr>
+<td>AUSDC</td>
+<td><strong>96,576.28</strong></td>
+</tr>
+<tr>
+<td>AUDA (MOOLA)</td>
+<td><strong>98,898.00</strong></td>
+</tr>
+<tr>
+<td>ChatCoin (CHT)</td>
+<td><strong>29,999,885.76</strong></td>
+</tr>
+</tbody></table>
+<h3>4.4 Airdrop / dispensing contracts</h3>
+<table>
+<thead>
+<tr>
+<th>Contract</th>
+<th>Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Airdrop minter</td>
+<td><code>0xa198A7ac5680AD72522C17430bE9c44b11140859</code></td>
+<td>Mints into global LP + user accounts</td>
+</tr>
+<tr>
+<td>11::11 transfer relay</td>
+<td><code>0x28cb43502C54565989632Cf9344f83273Da5A40A</code></td>
+<td>Airdrop dispensation logic</td>
+</tr>
+<tr>
+<td>Validator allocation</td>
+<td><code>0xDb8e6E94Ec01ec43aD10a6008fB67092076eaE8B</code></td>
+<td>Validator airdrops</td>
+</tr>
+</tbody></table>
+<h3>4.5 External market liquidity (ALL)</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Price</th>
+<th>24h volume</th>
+<th>Liquidity</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Alltra explorer</td>
+<td><strong>$0.01116</strong></td>
+<td>—</td>
+<td>—</td>
+<td>Mcap ~$1.84B</td>
+</tr>
+<tr>
+<td>Coinranking</td>
+<td>$0.000057</td>
+<td>~$166–223</td>
+<td>—</td>
+<td>Mcap ~$370K; Dex-Trade</td>
+</tr>
+<tr>
+<td>LiveCoinWatch</td>
+<td>$0.01004</td>
+<td>~$29.4K</td>
+<td><strong>~$18K (±2%)</strong></td>
+<td>Extremely thin DEX depth</td>
+</tr>
+</tbody></table>
+<p><strong>Wrapped ALL contracts for external trading:</strong></p>
+<ul>
+<li>ETH: <code>0x2da2b8f961F161ab6320acB3377e2e844a3C3ce4</code></li>
+<li>BSC: <code>0x20d145fA3C7c62393fcf34E5A9c9c7B53468e18E</code></li>
+</ul>
+<h3>4.6 HYBX market liquidity</h3>
+<ul>
+<li>Official tokenomics cites ~$0.000161 USD (DEXTools reference)</li>
+<li>ETH contract: <code>0x32b29705BB44C57f6A3DcCa047Fd55b460977c25</code></li>
+<li>No significant aggregated DEX liquidity found on major trackers</li>
+<li>Primary liquidity appears internal (bridge LPs, temp LP EOA, marketplace utility)</li>
+</ul>
+<hr>
+<h2>5. Architecture Diagram</h2>
+<pre><code class="language-mermaid">flowchart TB
+    subgraph tokens [TokenLayer]
+        ALL[ALL native coin]
+        Coin1111[&quot;11:11 gold-backed stable&quot;]
+        HYBX[HYBX issuance token]
+        HYDX[HYDX governance DEX token]
+        aUSDT[aUSDT USD stablecoin]
+        AlltraDollar[Alltra Dollar]
+    end
+    subgraph funds [FundBacking]
+        GoldVault[Gold vault 1/1000 oz per 11:11]
+        USDReserve[aUSDT USD reserve]
+        InsuranceReserve[aUSDT insurance reserve]
+        StakingPool[Validator staking pool]
+    end
+    subgraph liquidity [LiquidityRails]
+        HyperDex[ALLTRASONICSWAP Hyper-DEX BSC]
+        Bridges[ETH-ALL bridges mint/burn and LP]
+        FiatRails[PayPal checkout fiat on/off-ramp]
+        OTC[OTC wholesale packages]
+    end
+    Coin1111 --&gt; GoldVault
+    Coin1111 --&gt;|1:1 airdrop| HYBX
+    aUSDT --&gt; USDReserve
+    aUSDT --&gt; InsuranceReserve
+    ALL --&gt; StakingPool
+    HYBX --&gt; Bridges
+    ALL --&gt; Bridges
+    HYBX --&gt; HyperDex
+    Coin1111 --&gt; FiatRails
+    ALL --&gt; FiatRails
+</code></pre>
+<hr>
+<h2>6. Risks &amp; Data Gaps</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Finding</th>
+<th>Severity</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Price inconsistency</td>
+<td>Explorer ($0.011), Coinranking ($0.000057), LiveCoinWatch ($0.010) disagree by 100–200x</td>
+<td>High</td>
+</tr>
+<tr>
+<td>aUSDT supply mismatch</td>
+<td>Primary contract ~6.16B vs NSB API ~25.16B vs alt contract ~535.56B</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Liquidity concentration</td>
+<td>Temp LP EOA holds 7+ token types + 12.2M native ALL</td>
+<td>High</td>
+</tr>
+<tr>
+<td>Thin external markets</td>
+<td>ALL DEX liquidity ~$18K; CEX volume ~$166/day</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Fiat rails</td>
+<td>Test mode only ($50/day); rewards-admin not live</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Multiple aUSDT contracts</td>
+<td>Two major aUSDT addresses with different supplies</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>dapps portal</td>
+<td><a href="https://dapps.alltra.global">dapps.alltra.global</a> returned 503 during research</td>
+<td>Low</td>
+</tr>
+<tr>
+<td>Regulatory complexity</td>
+<td>Ozz Metals, Monza Capital, NSB across multiple jurisdictions</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Gold backing</td>
+<td>11::11 supply on-chain is only 100 tokens; vault attestation not verified</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Art City repo</td>
+<td>Zero Alltra integration</td>
+<td>N/A</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>7. Verification Checklist</h2>
+<p>Before acting on any Alltra liquidity or funds data:</p>
+<ul>
+<li><input disabled="" type="checkbox"> Verify each contract on <a href="https://alltra.global">alltra.global</a> (source code, holders, recent transactions)</li>
+<li><input disabled="" type="checkbox"> Reconcile aUSDT supplies across <code>0x66D8...</code>, <code>0x015B...</code>, and NSB reserve API</li>
+<li><input disabled="" type="checkbox"> Pull live aUSDT reserves from <code>https://alltra.azurewebsites.net/api/nsb-ausdt-reserve</code></li>
+<li><input disabled="" type="checkbox"> Compare ALL price across explorer, DEX, and CEX listings</li>
+<li><input disabled="" type="checkbox"> Confirm bridge LP balances on both ETH and ALL sides at <code>0x96aac...</code></li>
+<li><input disabled="" type="checkbox"> Audit temp LP EOA <code>0x3022...</code> token movements and authority</li>
+<li><input disabled="" type="checkbox"> Review KYC/fiat escrow contract events for actual payout volume</li>
+<li><input disabled="" type="checkbox"> Independently validate 11::11 gold-backing (audit docs, vault attestations)</li>
+<li><input disabled="" type="checkbox"> Verify mzUSDT escrow balance on Solana (Monza Dollar collateral)</li>
+<li><input disabled="" type="checkbox"> Confirm validator count and staking APR against on-chain data</li>
+</ul>
+<hr>
+<h2>8. Contract Address Appendix</h2>
+<h3>Core tokens (Alltra mainnet)</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>11::11</td>
+<td><code>0xB6a67342C40326E41BE964D0DF4D042D1fBfdf49</code></td>
+</tr>
+<tr>
+<td>HYBX</td>
+<td><code>0x1839f77eBed7F388c7035f7061B4B8Ef0E72317a</code></td>
+</tr>
+<tr>
+<td>HYDX</td>
+<td><code>0x0d9793861AEB9244AD1B34375a83A6730F6AdD38</code></td>
+</tr>
+<tr>
+<td>aUSDT (primary)</td>
+<td><code>0x66D8Efa0AF63B0e84eb1Dd72bf00f00cd1e2234e</code></td>
+</tr>
+<tr>
+<td>aUSDT (alt)</td>
+<td><code>0x015B1897Ed5279930bC2Be46F661894d219292A6</code></td>
+</tr>
+<tr>
+<td>WALL (Wrapped Alltra)</td>
+<td><code>0x2da2b8f961F161ab6320acB3377e2e844a3C3ce4</code></td>
+</tr>
+<tr>
+<td>AUSDC</td>
+<td><code>0xa95EeD79f84E6A0151eaEb9d441F9Ffd50e8e881</code></td>
+</tr>
+<tr>
+<td>AUDA (MOOLA)</td>
+<td><code>0x690740f055A41FA7669f5a379Bf71B0cDF353073</code></td>
+</tr>
+</tbody></table>
+<h3>Cross-chain</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Chain</th>
+<th>Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HYBX</td>
+<td>Ethereum</td>
+<td><code>0x32b29705BB44C57f6A3DcCa047Fd55b460977c25</code></td>
+</tr>
+<tr>
+<td>ALL/WALL</td>
+<td>BSC</td>
+<td><code>0x20d145fA3C7c62393fcf34E5A9c9c7B53468e18E</code></td>
+</tr>
+</tbody></table>
+<h3>Bridges</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>ETH</th>
+<th>ALL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HYBX bridge</td>
+<td><code>0xdb181ba33031471bc366c29f113eaf9cd705eaee</code></td>
+<td><code>0xDD94051679B1668566862738AB33A0f4956BbB19</code></td>
+</tr>
+<tr>
+<td>HYBX/ALL bridge (LP)</td>
+<td><code>0x96aac183AD10218055e0DEfB0596dFbB35407976</code></td>
+<td><code>0x96aac183AD10218055e0DEfB0596dFbB35407976</code></td>
+</tr>
+<tr>
+<td>Exchange bridge</td>
+<td><code>0xeAc6A8eD48Ca8AE511AfB77181A8a8CbEB27bd49</code></td>
+<td><code>0xeAc6A8eD48Ca8AE511AfB77181A8a8CbEB27bd49</code></td>
+</tr>
+</tbody></table>
+<h3>Fiat / operations</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fiat onboarding</td>
+<td><code>0x967009c2124304B82585080bdC6c47cB7f9eE205</code></td>
+</tr>
+<tr>
+<td>PayPal webhook</td>
+<td><code>0xbF576101e52d08Bed0134FB0B64a1537e88dcC54</code></td>
+</tr>
+<tr>
+<td>Temp LP EOA</td>
+<td><code>0x3022BCB959153982A477209CAFaEdD5186359882</code></td>
+</tr>
+<tr>
+<td>Airdrop minter</td>
+<td><code>0xa198A7ac5680AD72522C17430bE9c44b11140859</code></td>
+</tr>
+<tr>
+<td>11::11 relay</td>
+<td><code>0x28cb43502C54565989632Cf9344f83273Da5A40A</code></td>
+</tr>
+<tr>
+<td>ETH onboarding relay EOA</td>
+<td><code>0x3b1b25cA01Fb2E04607881a5e85A7004e5Bb258C</code></td>
+</tr>
+<tr>
+<td>Fiat relay + ALL LP EOA</td>
+<td><code>0x1B924F2909129E6c34b8706E8BB170D732E25Ab4</code></td>
+</tr>
+</tbody></table>
+<h3>Operational EOAs (from tokenomics docs)</h3>
+<table>
+<thead>
+<tr>
+<th>EOA</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0x461510a59B9810139eb24170a85507798839d9F0</code></td>
+<td>HYBX-HYBX and HYBX-ALL operations</td>
+</tr>
+<tr>
+<td><code>0x7f745445C9f4D98CE48280390c8ba9B9370ec19a</code></td>
+<td>Exchange bridge ETH→ALL relay</td>
+</tr>
+<tr>
+<td><code>0x3D30E0170985a779B85afC69d57d36eb351554aA</code></td>
+<td>setExchangeRate on 11::11</td>
+</tr>
+<tr>
+<td><code>0xDb8e6E94Ec01ec43aD10a6008fB67092076eaE8B</code></td>
+<td>Validator allocation airdrops</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>9. Sources</h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Alltra tokenomics</td>
+<td><a href="https://alltra.world/p/hyper-barter-exchange-tokenomics">https://alltra.world/p/hyper-barter-exchange-tokenomics</a>.</td>
+</tr>
+<tr>
+<td>11::11 coin</td>
+<td><a href="https://alltra.world/11::11coin">https://alltra.world/11::11coin</a></td>
+</tr>
+<tr>
+<td>Network docs</td>
+<td><a href="https://docs.alltra.global/general-1/network-details/fuse-network-mainnet">https://docs.alltra.global/general-1/network-details/fuse-network-mainnet</a></td>
+</tr>
+<tr>
+<td>Explorer stats API</td>
+<td><a href="https://alltra.global/api/v2/stats">https://alltra.global/api/v2/stats</a></td>
+</tr>
+<tr>
+<td>Explorer tokens API</td>
+<td><a href="https://alltra.global/api/v2/tokens">https://alltra.global/api/v2/tokens</a></td>
+</tr>
+<tr>
+<td>NSB aUSDT reserve API</td>
+<td><a href="https://alltra.azurewebsites.net/api/nsb-ausdt-reserve">https://alltra.azurewebsites.net/api/nsb-ausdt-reserve</a></td>
+</tr>
+<tr>
+<td>Monza Capital aUSDT</td>
+<td><a href="https://www.monza.capital/ausdt">https://www.monza.capital/ausdt</a></td>
+</tr>
+<tr>
+<td>Monza Dollar (mzUSDT)</td>
+<td><a href="https://monzausdt.com/about/">https://monzausdt.com/about/</a></td>
+</tr>
+<tr>
+<td>NSB press release (PDF)</td>
+<td><a href="https://www.niisitapicb.com/_files/ugd/a6d7cc_c8fec480275947929f4e46a725c48fa0.pdf">https://www.niisitapicb.com/_files/ugd/a6d7cc_c8fec480275947929f4e46a725c48fa0.pdf</a></td>
+</tr>
+<tr>
+<td>Coinranking (ALL)</td>
+<td><a href="https://coinranking.com/coin/xUaXbcubt+alltracoin-all">https://coinranking.com/coin/xUaXbcubt+alltracoin-all</a></td>
+</tr>
+<tr>
+<td>LiveCoinWatch (ALL)</td>
+<td><a href="https://www.livecoinwatch.com/price/AlltraCoin-___ALL">https://www.livecoinwatch.com/price/AlltraCoin-___ALL</a></td>
+</tr>
+<tr>
+<td>Hyper-DEX</td>
+<td><a href="https://alltrasonicswap.trade">https://alltrasonicswap.trade</a></td>
+</tr>
+<tr>
+<td>Checkout</td>
+<td><a href="https://checkout.alltra.global">https://checkout.alltra.global</a></td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>This report is for informational purposes only. It does not constitute financial, legal, or investment advice. All on-chain and API figures should be independently verified before any financial decision.</em></p>
+
+  </div>
+</body>
+</html>
