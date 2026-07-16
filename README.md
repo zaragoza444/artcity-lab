@@ -1,6 +1,8 @@
 # Art City AI Studio
 
-Local MVP for Art City’s proprietary AI content-generation platform (video, image, audio, voice, music).
+**Private Art City project.** Standalone local MVP for Art City’s proprietary AI content-generation platform (video, image, audio, voice, music).
+
+Not part of Nova. Not part of Alltra. No shared stack with either.
 
 ## Prerequisites
 

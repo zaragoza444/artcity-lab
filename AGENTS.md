@@ -1,5 +1,10 @@
-# Art City AI Studio
+# Art City AI Studio (private)
 
-Standalone Art City project. **Never integrate with Nova** (any Nova product, repo, API, SDK, or config).
+Private Art City project. Standalone ownership.
 
-Work only inside this repository.
+**Never integrate with:**
+
+- Nova (any Nova product, repo, API, SDK, wallet, or `.nova` config)
+- Alltra (chain, tokens, reports, DEX, checkout, or related repos)
+
+Work only inside this repository: `C:\Users\novac\Documents\art-city-ai-studio`
