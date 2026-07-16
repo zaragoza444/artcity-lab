@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: art-city-postgres
+    environment:
+      POSTGRES_USER: artcity
+      POSTGRES_PASSWORD: artcity_local
+      POSTGRES_DB: artcity
+    ports:
+      - "5432:5432"
+    volumes:
+      - artcity_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U artcity -d artcity"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: art-city-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: art-city-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: artcity_minio
+      MINIO_ROOT_PASSWORD: artcity_minio_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - artcity_minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: art-city-minio-init
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3;
+      mc alias set local http://minio:9000 artcity_minio artcity_minio_secret;
+      mc mb --ignore-existing local/art-city-assets;
+      exit 0;
+      "
+
+volumes:
+  artcity_postgres_data:
+  artcity_minio_data:
