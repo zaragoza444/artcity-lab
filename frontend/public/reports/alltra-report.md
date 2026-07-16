@@ -6,14 +6,14 @@
 
 ## Live links
 
-| Format | URL (local dev) |
-|--------|-----------------|
-| **Live page** | http://localhost:3000/reports/alltra |
-| **PDF** | http://localhost:3000/reports/alltra-report.pdf |
-| **HTML** | http://localhost:3000/reports/alltra-report.html |
-| **Markdown** | http://localhost:3000/reports/alltra-report.md |
-
-Start the frontend with `npm run dev` in `frontend/`, then open the live page link above.
+| Format | URL |
+|--------|-----|
+| **Live HTML** | https://zaragoza444.github.io/art-city-ai-studio/reports/alltra-report.html |
+| **PDF** | https://zaragoza444.github.io/art-city-ai-studio/reports/alltra-report.pdf |
+| **Markdown** | https://zaragoza444.github.io/art-city-ai-studio/reports/alltra-report.md |
+| **Report hub** | https://zaragoza444.github.io/art-city-ai-studio/ |
+| **Local Next.js page** | http://localhost:3000/reports/alltra |
+| **GitHub repo** | https://github.com/zaragoza444/art-city-ai-studio |
 
 ---
 
