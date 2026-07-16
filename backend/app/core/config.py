@@ -1,6 +1,15 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _normalize_database_url(url: str) -> str:
+    if url.startswith("postgres://"):
+        return "postgresql+psycopg://" + url[len("postgres://") :]
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url[len("postgresql://") :]
+    return url
 
 
 class Settings(BaseSettings):
@@ -25,6 +34,13 @@ class Settings(BaseSettings):
     fal_api_key: str = ""
     openai_api_key: str = ""
     elevenlabs_api_key: str = ""
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: object) -> object:
+        if isinstance(value, str):
+            return _normalize_database_url(value)
+        return value
 
     @property
     def cors_origin_list(self) -> list[str]:

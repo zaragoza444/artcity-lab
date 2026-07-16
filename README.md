@@ -88,6 +88,21 @@ python scripts\demo_art_city_campaign.py
 
 ZIP + manifest land in `backend/demo_output/`.
 
+## Cloud deploy (Railway)
+
+Private stack: **Postgres + Redis + S3 bucket + FastAPI + Next.js**.
+
+1. `railway login` (if needed)
+2. From repo root: `railway init -n art-city-ai-studio -y`
+3. Add data: `railway add --database postgres` and `railway add --database redis`
+4. Create bucket: `railway bucket create art-city-assets`
+5. Deploy API: `railway up backend --path-as-root -s backend -y`
+6. Generate API domain: `railway domain -s backend`
+7. Set frontend `NEXT_PUBLIC_API_URL` to the API domain, deploy: `railway up frontend --path-as-root -s frontend -y`
+8. Generate frontend domain and set backend `CORS_ORIGINS` to that URL
+
+GitHub autodeploy (optional): connect each service to `zaragoza444/art-city-ai-studio` on `main`.
+
 ## Project layout
 
 - `frontend/` — Next.js, React, TypeScript, Tailwind CSS

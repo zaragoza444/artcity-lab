@@ -1,0 +1,6 @@
+# Art City AI Studio — Railway monorepo services
+# Deploy: railway up backend --path-as-root -s backend
+#         railway up frontend --path-as-root -s frontend
+
+[build]
+builder = "DOCKERFILE"
