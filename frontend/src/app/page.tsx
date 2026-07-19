@@ -2,7 +2,8 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 
 const API_DOCS =
-  process.env.NEXT_PUBLIC_API_DOCS_URL ?? "http://localhost:8000/docs";
+  process.env.NEXT_PUBLIC_API_DOCS_URL ??
+  "https://backend-production-9533.up.railway.app/docs";
 
 export default function HomePage() {
   return (

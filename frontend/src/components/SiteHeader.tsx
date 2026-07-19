@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ApiDocsLink } from "@/components/ApiDocsLink";
 import { ApiStatus } from "@/components/ApiStatus";
 import { BrandMark } from "@/components/BrandMark";
 import { useAuth } from "@/components/AuthProvider";
@@ -78,6 +79,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
                 {user.full_name.split(" ")[0]} · Sign out
               </button>
             ) : null}
+            <ApiDocsLink />
             <ApiStatus />
           </div>
         </div>
