@@ -30,3 +30,7 @@ Thumbs.db
 # Media / uploads
 .tmp/
 uploads/
+
+backend/smoke_200_report.json
+backend/scripts/_gitea_push_helper.py
+
