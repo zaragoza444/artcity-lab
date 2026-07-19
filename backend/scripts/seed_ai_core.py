@@ -28,12 +28,18 @@ def main() -> None:
                 full_name="Art City Admin",
                 password_hash=hash_password(settings.default_admin_password),
                 role="super_admin",
+                is_active=True,
             )
             db.add(admin)
             db.flush()
             print(f"Created admin {admin.email}")
         else:
-            print(f"Admin exists {admin.email}")
+            if not admin.is_active:
+                admin.is_active = True
+                db.add(admin)
+                print(f"Reactivated admin {admin.email}")
+            else:
+                print(f"Admin exists {admin.email}")
 
         def ensure_dataset(name: str, character: str) -> Dataset:
             ds = db.query(Dataset).filter(Dataset.name == name).first()

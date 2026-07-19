@@ -22,7 +22,7 @@ settings = get_settings()
 API_DESCRIPTION = """
 Art City AI Studio — private production OS + AI Core.
 
-**Auth:** `POST /api/auth/login` then `Authorization: Bearer <access_token>`.
+**Auth:** Click **Authorize** in Swagger (email + password), or `POST /api/auth/login` then Bearer token.
 
 **Docs:** Full human-readable reference in repository `docs/API.md`.
 
@@ -101,25 +101,43 @@ def custom_openapi():
     )
     schema["components"] = schema.get("components") or {}
     schema["components"]["securitySchemes"] = {
+        "OAuth2Password": {
+            "type": "oauth2",
+            "description": "Swagger Authorize: username = email, password = account password",
+            "flows": {
+                "password": {
+                    "tokenUrl": "/api/auth/token",
+                    "scopes": {},
+                }
+            },
+        },
         "BearerAuth": {
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT",
-            "description": "1) POST /api/auth/login  2) Authorize with access_token  3) Fill required body fields before Execute",
-        }
+            "description": "Paste access_token from POST /api/auth/login",
+        },
     }
-    # Do not force Bearer globally — login/health/root stay open in Swagger.
-    # Protected routes already declare HTTPBearer via dependencies.
+    # Do not force auth globally — login/health/root stay open in Swagger.
     schema["security"] = []
-    public_prefixes = ("/", "/health", "/docs", "/redoc", "/openapi.json", "/api/auth/login", "/api/auth/refresh")
+    public_paths = {
+        "/",
+        "/health",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        "/api/auth/login",
+        "/api/auth/refresh",
+        "/api/auth/token",
+    }
     for path, methods in schema.get("paths", {}).items():
-        is_public = path in public_prefixes or path.startswith("/health")
+        is_public = path in public_paths or path.startswith("/health")
         for method, op in methods.items():
             if method in ("get", "post", "put", "patch", "delete"):
-                if is_public or path == "/api/auth/login" or path == "/api/auth/refresh":
+                if is_public:
                     op["security"] = []
                 else:
-                    op["security"] = [{"BearerAuth": []}]
+                    op["security"] = [{"OAuth2Password": []}, {"BearerAuth": []}]
     app.openapi_schema = schema
     return app.openapi_schema
 
