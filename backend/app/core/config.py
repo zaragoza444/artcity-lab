@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     elevenlabs_api_key: str = ""
 
+    asr_engine: str = "pilot"
+    asr_model_name: str = "AC-KURDISH-ASR-v1"
+
     @field_validator("database_url", mode="before")
     @classmethod
     def normalize_database_url(cls, value: object) -> object:

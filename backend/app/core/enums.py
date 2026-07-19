@@ -47,6 +47,7 @@ class MediaModality(str, Enum):
     VOICE = "voice"
     AUDIO = "audio"
     MUSIC = "music"
+    SPEECH = "speech"
 
 
 class PublicationStatus(str, Enum):

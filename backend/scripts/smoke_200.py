@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import io
 import json
 import os
+import struct
 import sys
+import wave
 from typing import Any
 
 import httpx
@@ -13,6 +16,18 @@ BASE = os.environ.get("ARTCITY_API_URL", "https://backend-production-9533.up.rai
 EMAIL = os.environ.get("ARTCITY_ADMIN_EMAIL", "admin@artcity.ai")
 PASSWORD = os.environ.get("ARTCITY_ADMIN_PASSWORD", "ArtCityAdmin!2026")
 TARGET = 200
+
+
+def _minimal_wav(seconds: float = 1.0, rate: int = 16000) -> bytes:
+    frames = int(rate * seconds)
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(rate)
+        silence = struct.pack("<h", 0) * frames
+        wf.writeframes(silence)
+    return buf.getvalue()
 
 
 def main() -> int:
@@ -38,6 +53,26 @@ def main() -> int:
             )
         except Exception as exc:  # noqa: BLE001
             results.append({"method": method, "path": path, "code": 0, "pass": False, "err": str(exc)[:160]})
+
+    def check_upload(path: str, *, files: dict[str, Any], data: dict[str, str] | None = None, ok: set[int] | None = None) -> httpx.Response | None:
+        ok = ok or {200, 201}
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        try:
+            r = client.post(path, files=files, data=data or {}, headers=headers)
+            pass_ = r.status_code in ok
+            results.append(
+                {
+                    "method": "POST",
+                    "path": path,
+                    "code": r.status_code,
+                    "pass": pass_,
+                    "err": "" if pass_ else r.text[:160],
+                }
+            )
+            return r if pass_ else None
+        except Exception as exc:  # noqa: BLE001
+            results.append({"method": "POST", "path": path, "code": 0, "pass": False, "err": str(exc)[:160]})
+            return None
 
     # Public
     token = ""
@@ -132,7 +167,7 @@ def main() -> int:
     for m in models[:5]:
         check("GET", f"/api/v1/ai/models/{m['id']}")
 
-    # Speech ASR + Kurdish international layer
+    # Speech ASR production path: upload → ASR → job → subtitles
     check("GET", "/api/v1/ai/speech/dialects")
     check(
         "POST",
@@ -140,19 +175,124 @@ def main() -> int:
         json_body={"text": "Silav Newroz Zagros Kardokh"},
         ok={200},
     )
+    wav_bytes = _minimal_wav(1.0)
+    asr_job_id = None
+    audio_key = None
+    for dialect in ("sorani", "badini", "kurmanji"):
+        up = check_upload(
+            "/api/v1/ai/speech/upload",
+            files={"file": (f"smoke-{dialect}.wav", wav_bytes, "audio/wav")},
+            data={"project_id": project_id},
+        )
+        if not up:
+            continue
+        audio_key = up.json().get("audio_storage_key")
+        asr = client.post(
+            "/api/v1/ai/speech/asr",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "audio_storage_key": audio_key,
+                "dialect": dialect,
+                "project_id": project_id,
+                "create_annotation": True,
+            },
+        )
+        pass_ = asr.status_code in {200, 201}
+        results.append(
+            {
+                "method": "POST",
+                "path": f"/api/v1/ai/speech/asr?dialect={dialect}",
+                "code": asr.status_code,
+                "pass": pass_,
+                "err": "" if pass_ else asr.text[:160],
+            }
+        )
+        if pass_:
+            asr_job_id = asr.json().get("job_id") or asr_job_id
+    if asr_job_id:
+        check("GET", f"/api/v1/ai/speech/jobs/{asr_job_id}")
+        check("GET", f"/api/v1/ai/speech/jobs/{asr_job_id}/transcript")
+        check("GET", f"/api/v1/ai/speech/jobs/{asr_job_id}/subtitles?format=vtt")
+        check("GET", f"/api/v1/ai/speech/jobs/{asr_job_id}/subtitles?format=srt")
+    # Missing key must fail (real MinIO required)
     check(
         "POST",
         "/api/v1/ai/speech/asr",
-        json_body={"audio_storage_key": "smoke/test.wav", "dialect": "sorani"},
-        ok={200},
+        json_body={"audio_storage_key": "smoke/missing-does-not-exist.wav", "dialect": "sorani"},
+        ok={404},
     )
-    for dialect in ("sorani", "badini", "kurmanji"):
-        check(
-            "POST",
-            "/api/v1/ai/speech/asr",
-            json_body={"audio_storage_key": f"smoke/{dialect}.wav", "dialect": dialect},
-            ok={200},
+
+    # Studio voice + ASR transcript hook (Cinema VO path uses the same run_asr_job)
+    voice = client.post(
+        f"/api/projects/{project_id}/studio/generate",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "modality": "voice",
+            "prompt": "Art City smoke voiceover for ASR",
+            "dialect": "sorani",
+            "run_asr": True,
+            "duration_seconds": 3.0,
+            "character_name": "Art City",
+        },
+    )
+    voice_ok = voice.status_code in {200, 201}
+    results.append(
+        {
+            "method": "POST",
+            "path": f"/api/projects/{project_id}/studio/generate?voice+asr",
+            "code": voice.status_code,
+            "pass": voice_ok,
+            "err": "" if voice_ok else voice.text[:160],
+        }
+    )
+    if voice_ok:
+        vj = voice.json()
+        has_asr = bool(vj.get("transcript_job_id") or vj.get("asr_summary") or vj.get("transcript_url"))
+        results.append(
+            {
+                "method": "ASSERT",
+                "path": "studio.voice.transcript_attached",
+                "code": 200 if has_asr else 0,
+                "pass": has_asr,
+                "err": "" if has_asr else "missing transcript_job_id/asr_summary on voice job",
+            }
         )
+        if vj.get("transcript_job_id"):
+            check("GET", f"/api/v1/ai/speech/jobs/{vj['transcript_job_id']}")
+
+    # Cinema packages: record VO transcript coverage when a post-ASR package exists
+    pkgs = client.get(
+        f"/api/projects/{project_id}/cinema/packages",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    if pkgs.status_code == 200:
+        for pkg in pkgs.json()[:5]:
+            vos = [
+                d
+                for d in (pkg.get("deliverables") or [])
+                if d.get("role") == "voiceover" or d.get("type") == "voiceover"
+            ]
+            if not vos:
+                continue
+            vo = vos[0]
+            manifest = pkg.get("campaign_manifest") or {}
+            has_tx = bool(
+                vo.get("transcript")
+                or vo.get("transcript_job_id")
+                or manifest.get("voiceover_transcript")
+            )
+            if has_tx:
+                results.append(
+                    {
+                        "method": "ASSERT",
+                        "path": f"cinema.package.{pkg.get('package_id', '?')}.voiceover_transcript",
+                        "code": 200,
+                        "pass": True,
+                        "err": "",
+                    }
+                )
+                break
+
     check("GET", "/api/knowledge/cultural-pack")
     check("GET", "/api/knowledge/cultural-pack?dialect=sorani")
     check("GET", "/api/knowledge/query?terms=Kardokh,Kurdiya,Newroz")

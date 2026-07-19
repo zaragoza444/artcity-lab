@@ -73,6 +73,7 @@ def _generate(modality: str, payload: GenerateRequest, user: CurrentUser, reques
     merged_params = dict(payload.params or {})
     if payload.dialect:
         merged_params["dialect"] = payload.dialect
+    run_asr = bool(merged_params.pop("run_asr", modality == "voice"))
     job = enqueue_generation(
         db,
         project_id=project_id,
@@ -97,6 +98,32 @@ def _generate(modality: str, payload: GenerateRequest, user: CurrentUser, reques
         ip_address=client_ip(request),
     )
     db.commit()
+    if run_asr and modality == "voice" and job.status == "succeeded" and job.result_uri:
+        try:
+            from app.services.speech import run_asr_job
+
+            asr = run_asr_job(
+                db,
+                audio_storage_key=job.result_uri,
+                dialect=payload.dialect or merged_params.get("dialect") or "sorani",
+                project_id=project_id,
+                requested_by=user.id,
+                create_annotation=True,
+            )
+            job = db.get(GenerationJob, job.id) or job
+            params_json = dict(job.params_json or {})
+            params_json["asr"] = {
+                "job_id": asr.get("job_id"),
+                "summary": " ".join(s.get("text", "") for s in (asr.get("segments") or [])[:2]),
+                "dialect": asr.get("dialect"),
+                "average_confidence": asr.get("average_confidence"),
+            }
+            job.params_json = params_json
+            db.add(job)
+            db.commit()
+            db.refresh(job)
+        except Exception:
+            pass
     return _enrich_job(job)
 
 

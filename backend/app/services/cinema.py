@@ -271,12 +271,33 @@ def build_cinematic_package(
     )
     if vo_job.status != "succeeded":
         raise ValueError(f"Cinema voice failed: {vo_job.error_message or vo_job.status}")
+    vo_transcript: dict[str, Any] | None = None
+    if vo_job.result_uri:
+        try:
+            from app.services.speech import run_asr_job
+
+            vo_transcript = run_asr_job(
+                db,
+                audio_storage_key=vo_job.result_uri,
+                dialect=dialect or "sorani",
+                project_id=project_id,
+                requested_by=requested_by,
+                create_annotation=True,
+            )
+        except Exception:
+            vo_transcript = None
     _from_job(
         vo_job,
         role="voiceover",
         modality="voice",
         name=f"{campaign} · Voiceover",
-        extra={"script": vo_text},
+        extra={
+            "script": vo_text,
+            "transcript": vo_transcript,
+            "transcript_job_id": (vo_transcript or {}).get("job_id"),
+            "subtitle_vtt": (vo_transcript or {}).get("media_urls", {}).get("vtt"),
+            "subtitle_srt": (vo_transcript or {}).get("media_urls", {}).get("srt"),
+        },
     )
 
     # End card
@@ -359,6 +380,7 @@ def build_cinematic_package(
         "brief": brief,
         "cta": cta,
         "voiceover_script": vo_text,
+        "voiceover_transcript": vo_transcript,
         "music_style": music_style,
         "dialect": dialect,
         "character_key": character_key,
@@ -434,6 +456,7 @@ def build_cinematic_package(
             "channels": selected,
             "duration_seconds": duration_seconds,
             "voiceover_script": vo_text,
+            "voiceover_transcript": vo_transcript,
             "formats": [CHANNEL_PRESETS[c]["aspect"] for c in selected if c in CHANNEL_PRESETS],
             "deliverables": public_deliverables,
             "total_cost": total_cost,

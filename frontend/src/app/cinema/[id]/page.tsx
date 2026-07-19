@@ -45,6 +45,25 @@ function DeliverableCard({ item }: { item: CinemaDeliverable }) {
           Audio preview
         </audio>
       )}
+      {item.role === "voiceover" && item.transcript?.segments?.length ? (
+        <div className="mt-4 border-t border-[var(--line)] pt-3">
+          <p className="text-[0.65rem] uppercase tracking-[0.14em] text-[var(--mist)]">
+            VO transcript · {item.transcript.dialect} · conf {item.transcript.average_confidence}
+          </p>
+          <p className="mt-2 text-sm text-[var(--paper-dim)]">
+            {item.transcript.segments
+              .slice(0, 3)
+              .map((s) => s.text)
+              .join(" ")}
+            {item.transcript.segments.length > 3 ? "…" : ""}
+          </p>
+          {item.transcript_job_id ? (
+            <p className="mt-1 font-mono text-[0.65rem] text-[var(--mist-soft)]">
+              ASR {item.transcript_job_id.slice(0, 8)}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }

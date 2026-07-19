@@ -1,6 +1,6 @@
 # Art City AI Studio — Complete API Documentation
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Base URLs**
 
 | Environment | Base URL |
@@ -217,9 +217,28 @@ Routing uses Model Registry + route rules. Character keys prefer Art City adapte
 | GET | `/api/v1/ai/models/{model_id}` | One model |
 | GET | `/api/v1/ai/providers` | `{ name, healthy }` list |
 
-**Providers:** `stub`, `artcity-image`, `artcity-video`, `external-fallback`
+**Providers:** `stub`, `artcity-image`, `artcity-video`, `artcity-asr`, `external-fallback`
 
-### Speech (ASR pilot)
+### Speech (production ASR)
+
+Kurdish ASR pipeline: MinIO audio required, pluggable engine (`ASR_ENGINE=pilot` default), persisted `GenerationJob` (`modality=speech`, provider `artcity-asr`, model `AC-KURDISH-ASR-v1`), transcript JSON + VTT/SRT assets, optional Data Lab annotation.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/ai/speech/dialects` | Supported dialects + model/engine |
+| POST | `/api/v1/ai/speech/detect` | Text dialect/script detect |
+| POST | `/api/v1/ai/speech/upload` | Multipart `file` → MinIO key |
+| POST | `/api/v1/ai/speech/asr` | Transcribe existing MinIO key; persist job |
+| GET | `/api/v1/ai/speech/jobs/{job_id}` | Job + manifest |
+| GET | `/api/v1/ai/speech/jobs/{job_id}/transcript` | Transcript JSON |
+| GET | `/api/v1/ai/speech/jobs/{job_id}/subtitles?format=vtt\|srt` | Subtitles |
+| POST | `/api/v1/ai/speech/subtitles` | Ephemeral VTT/SRT from key (no new job) |
+
+### `POST /api/v1/ai/speech/upload`
+
+Multipart form: `file` (required), `project_id` (optional).
+
+**Response:** `{ audio_storage_key, project_id, asset_id, checksum, bytes, duration_seconds }`
 
 ### `POST /api/v1/ai/speech/asr`
 
@@ -228,11 +247,15 @@ Routing uses Model Registry + route rules. Character keys prefer Art City adapte
 ```json
 {
   "audio_storage_key": "projects/.../voice.wav",
-  "dialect": "sorani"
+  "dialect": "sorani",
+  "project_id": null,
+  "create_annotation": true
 }
 ```
 
-**Response:** transcript manifest scaffold (`engine: artcity-asr-pilot`).
+Missing or empty MinIO keys return **404** / **422**. Response includes `job_id`, `media_urls` (`transcript`, `vtt`, `srt`), segments, and engine metadata.
+
+Cinema advertising packages auto-run ASR on VO audio and attach `transcript` / subtitle URLs to the voiceover deliverable. Studio voice generate accepts `run_asr` (default `true`) and returns `transcript_job_id` / `asr_summary`.
 
 ---
 
@@ -695,3 +718,4 @@ Absolute media URL = `{BASE}{media_url}`
 | Version | Notes |
 |---------|-------|
 | 1.0.0 | AI Core: auth, Gateway, Data Lab, Rights, Models, Training, Knowledge, Evaluations, speech ASR scaffold |
+| 1.1.0 | Production Kurdish ASR: MinIO upload, persisted speech jobs, Cinema/Studio VO transcripts, VTT/SRT |

@@ -306,6 +306,41 @@ class ArtCityAudioProvider(ProviderAdapter):
         return 0.03
 
 
+class ArtCityAsrProvider(ProviderAdapter):
+    """Speech recognition provider registered for Model Gateway health/routing."""
+
+    name = "artcity-asr"
+
+    def submit(self, prompt: str, modality: str, model: Optional[str] = None, **kwargs) -> ProviderResult:
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        return ProviderResult(
+            provider_job_id=f"ac-asr-{uuid4()}",
+            status=GenerationStatus.SUCCEEDED,
+            result_uri="speech://gateway",
+            actual_cost=self.estimate_cost(prompt, modality),
+            filename="transcript.json",
+            content_type="application/json",
+            output_bytes=b"{}",
+        )
+
+    def status(self, provider_job_id: str) -> ProviderResult:
+        return ProviderResult(provider_job_id=provider_job_id, status=GenerationStatus.SUCCEEDED)
+
+    def result(self, provider_job_id: str) -> ProviderResult:
+        return self.status(provider_job_id)
+
+    def cancel(self, provider_job_id: str) -> ProviderResult:
+        return ProviderResult(provider_job_id=provider_job_id, status=GenerationStatus.CANCELLED)
+
+    def estimate_cost(self, prompt: str, modality: str) -> float:
+        return 0.02
+
+    def health_check(self) -> bool:
+        return True
+
+
 class ExternalFallbackProvider(ProviderAdapter):
     """Approved external fallback — disabled when EXTERNAL_PROVIDERS_ENABLED=false."""
 
@@ -345,6 +380,7 @@ PROVIDERS: dict[str, type[ProviderAdapter]] = {
     "artcity-voice": ArtCityVoiceProvider,
     "artcity-music": ArtCityMusicProvider,
     "artcity-audio": ArtCityAudioProvider,
+    "artcity-asr": ArtCityAsrProvider,
     "external-fallback": ExternalFallbackProvider,
 }
 

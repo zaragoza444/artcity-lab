@@ -112,6 +112,7 @@ def resolve_route(
         "voice": ("artcity-voice", "artcity-voice-v1"),
         "music": ("artcity-music", "artcity-music-v1"),
         "audio": ("artcity-audio", "artcity-audio-v1"),
+        "speech": ("artcity-asr", "AC-KURDISH-ASR-v1"),
     }
     if modality in defaults:
         provider, default_model = defaults[modality]

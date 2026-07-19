@@ -82,6 +82,7 @@ class GenerationSubmit(BaseModel):
     model: Optional[str] = "artcity-local-v1"
     provider: str = "stub"
     dialect: Optional[str] = None
+    run_asr: bool = True
     duration_seconds: float = Field(default=4.0, ge=0.5, le=60.0)
     dialogue_lines: Optional[list[str]] = None
     character_name: Optional[str] = None
@@ -138,6 +139,9 @@ class GenerationJobOut(BaseModel):
     updated_at: datetime
     media_url: Optional[str] = None
     audio_url: Optional[str] = None
+    transcript_url: Optional[str] = None
+    transcript_job_id: Optional[str] = None
+    asr_summary: Optional[str] = None
 
 
 class ReviewCreate(BaseModel):

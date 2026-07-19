@@ -56,6 +56,9 @@ export type GenerationJob = {
   updated_at: string;
   media_url?: string | null;
   audio_url?: string | null;
+  transcript_url?: string | null;
+  transcript_job_id?: string | null;
+  asr_summary?: string | null;
 };
 
 export type Asset = {
@@ -238,11 +241,19 @@ export type SpeechDialect = {
 
 export type AsrManifest = {
   engine: string;
+  model?: string;
   status: string;
   language: string;
   dialect: string;
   average_confidence: number;
   segment_count: number;
+  job_id?: string;
+  audio_storage_key?: string;
+  media_urls?: {
+    transcript?: string;
+    vtt?: string;
+    srt?: string;
+  };
   segments: {
     start: number;
     end: number;
@@ -251,6 +262,16 @@ export type AsrManifest = {
     dialect?: string;
     confidence: number;
   }[];
+};
+
+export type SpeechUploadResult = {
+  audio_storage_key: string;
+  project_id: string;
+  asset_id: string;
+  checksum: string;
+  bytes: number;
+  duration_seconds: number | null;
+  content_type: string;
 };
 
 export type AnnotationTask = {
@@ -321,7 +342,7 @@ export const api = {
       categories: Record<string, KnowledgeEntry[]>;
     }>(`/api/knowledge/cultural-pack${dialect ? `?dialect=${encodeURIComponent(dialect)}` : ""}`),
   listSpeechDialects: () =>
-    request<{ language: string; dialects: SpeechDialect[]; model: string }>(
+    request<{ language: string; dialects: SpeechDialect[]; model: string; engine?: string }>(
       "/api/v1/ai/speech/dialects"
     ),
   detectLanguage: (text: string) =>
@@ -329,11 +350,66 @@ export const api = {
       "/api/v1/ai/speech/detect",
       { method: "POST", body: JSON.stringify({ text }) }
     ),
-  runAsr: (body: { audio_storage_key: string; dialect?: string; duration_hint?: number }) =>
+  uploadSpeechAudio: async (file: File, projectId?: string) => {
+    const token = getAccessToken();
+    const form = new FormData();
+    form.append("file", file);
+    if (projectId) form.append("project_id", projectId);
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${API_URL}/api/v1/ai/speech/upload`, {
+      method: "POST",
+      headers,
+      body: form,
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(formatApiError(res.status, text));
+    }
+    return res.json() as Promise<SpeechUploadResult>;
+  },
+  runAsr: (body: {
+    audio_storage_key: string;
+    dialect?: string;
+    duration_hint?: number;
+    project_id?: string;
+    create_annotation?: boolean;
+  }) =>
     request<AsrManifest>("/api/v1/ai/speech/asr", {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  getSpeechJob: (jobId: string) =>
+    request<AsrManifest & { job?: GenerationJob }>(`/api/v1/ai/speech/jobs/${jobId}`),
+  downloadSpeechSubtitle: async (jobId: string, format: "vtt" | "srt" = "vtt") => {
+    const token = getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(
+      `${API_URL}/api/v1/ai/speech/jobs/${jobId}/subtitles?format=${format}`,
+      { headers, cache: "no-store" }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(formatApiError(res.status, text));
+    }
+    return res.blob();
+  },
+  downloadSpeechTranscript: async (jobId: string) => {
+    const token = getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${API_URL}/api/v1/ai/speech/jobs/${jobId}/transcript`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(formatApiError(res.status, text));
+    }
+    return res.blob();
+  },
   listAnnotations: () => request<AnnotationTask[]>("/api/data-lab/annotations"),
   createAnnotation: (body: {
     dataset_id: string;
@@ -495,6 +571,11 @@ export type CinemaDeliverable = {
   audio_file?: string | null;
   file?: string | null;
   mood?: string | null;
+  script?: string | null;
+  transcript?: AsrManifest | null;
+  transcript_job_id?: string | null;
+  subtitle_vtt?: string | null;
+  subtitle_srt?: string | null;
 };
 
 export type ValidationCheck = {

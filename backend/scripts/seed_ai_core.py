@@ -245,7 +245,8 @@ def main() -> None:
             db.add(asr_model)
             db.flush()
 
-        if not db.query(RouteRule).filter(RouteRule.name == "Kurdish ASR").first():
+        asr_route = db.query(RouteRule).filter(RouteRule.name == "Kurdish ASR").first()
+        if not asr_route:
             db.add(
                 RouteRule(
                     id=str(uuid4()),
@@ -253,11 +254,16 @@ def main() -> None:
                     modality="speech",
                     character_key=None,
                     model_id=asr_model.id,
-                    provider="stub",
+                    provider="artcity-asr",
                     priority=10,
                     is_active=True,
                 )
             )
+        elif asr_route.provider != "artcity-asr":
+            asr_route.provider = "artcity-asr"
+            asr_route.model_id = asr_model.id
+            asr_route.is_active = True
+            db.add(asr_route)
 
         db.commit()
         print("AI Core seed complete")

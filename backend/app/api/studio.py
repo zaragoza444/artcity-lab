@@ -29,6 +29,12 @@ def _enrich_job(job: GenerationJob) -> GenerationJobOut:
     # Audio bed for video proxies uses convention in storage path sibling assets
     if job.modality == "video":
         out.audio_url = f"/api/media/{job.project_id}/{job.id}/audio"
+    params = job.params_json or {}
+    asr = params.get("asr") or {}
+    if asr.get("job_id"):
+        out.transcript_job_id = asr.get("job_id")
+        out.transcript_url = f"/api/v1/ai/speech/jobs/{asr['job_id']}/transcript"
+        out.asr_summary = asr.get("summary")
     return out
 
 
@@ -93,6 +99,10 @@ def studio_generate(
             character_key = "kardokh"
         elif "kurdiya" in key:
             character_key = "kurdiya"
+    params: dict = {}
+    if payload.dialect:
+        params["dialect"] = payload.dialect
+    params["run_asr"] = payload.run_asr
     job = enqueue_generation(
         db,
         project_id=project.id,
@@ -105,8 +115,41 @@ def studio_generate(
         dialogue_lines=payload.dialogue_lines,
         prefer_external=payload.provider == "external-fallback",
         requested_by=user.id,
-        params={"dialect": payload.dialect} if payload.dialect else None,
+        params=params or None,
     )
+    if (
+        payload.run_asr
+        and payload.modality == "voice"
+        and job.status == "succeeded"
+        and job.result_uri
+    ):
+        try:
+            from app.services.speech import run_asr_job
+
+            asr = run_asr_job(
+                db,
+                audio_storage_key=job.result_uri,
+                dialect=payload.dialect or "sorani",
+                project_id=project.id,
+                requested_by=user.id,
+                create_annotation=True,
+            )
+            job = db.get(GenerationJob, job.id) or job
+            params_json = dict(job.params_json or {})
+            params_json["asr"] = {
+                "job_id": asr.get("job_id"),
+                "summary": " ".join(
+                    s.get("text", "") for s in (asr.get("segments") or [])[:2]
+                ),
+                "dialect": asr.get("dialect"),
+                "average_confidence": asr.get("average_confidence"),
+            }
+            job.params_json = params_json
+            db.add(job)
+            db.commit()
+            db.refresh(job)
+        except Exception:
+            pass
     return _enrich_job(job)
 
 
