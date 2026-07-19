@@ -115,6 +115,12 @@ GitHub autodeploy (optional): connect each service to `zaragoza444/art-city-ai-s
 
 Production deploys only from `main` after approval. Never commit `.env`, datasets, or model weights.
 
+## API documentation
+
+- **Complete reference:** [docs/API.md](docs/API.md)
+- **Swagger UI:** http://localhost:8000/docs · https://backend-production-9533.up.railway.app/docs
+- **ReDoc:** http://localhost:8000/redoc
+
 ## AI Core
 
 Art City AI Core adds Model Gateway, Data Lab, Rights, Model Registry, Training, Evaluations, and async inference workers under Cinema / Studio / Publish. See [docs/ART_CITY_AI_CORE_DIRECTIVE.md](docs/ART_CITY_AI_CORE_DIRECTIVE.md).

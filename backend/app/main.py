@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
 from app.api.auth import router as auth_router
 from app.api.cinema import router as cinema_router
@@ -17,10 +18,36 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+API_DESCRIPTION = """
+Art City AI Studio — private production OS + AI Core.
+
+**Auth:** `POST /api/auth/login` then `Authorization: Bearer <access_token>`.
+
+**Docs:** Full human-readable reference in repository `docs/API.md`.
+
+**Live:** https://backend-production-9533.up.railway.app
+"""
+
+tags_metadata = [
+    {"name": "auth", "description": "Login, refresh, users, RBAC"},
+    {"name": "model-gateway", "description": "Art City Model Gateway — sole AI generation entry"},
+    {"name": "speech", "description": "Kurdish ASR pilot"},
+    {"name": "projects", "description": "Projects, characters, scripts, generations"},
+    {"name": "studio", "description": "Studio generate, assets, reviews, media"},
+    {"name": "cinema", "description": "Full advertising campaign packages + QC + ZIP"},
+    {"name": "publishing", "description": "Masters packaging and channel release"},
+    {"name": "data-lab", "description": "Dataset ingest and annotation workspace"},
+    {"name": "registries", "description": "Datasets, rights, model registry, training"},
+    {"name": "knowledge", "description": "Kurdish knowledge base"},
+    {"name": "evaluations", "description": "Model evaluation and human approval"},
+]
+
 app = FastAPI(
     title="Art City AI Studio",
-    description="Art City production OS + AI Core (Model Gateway, Data Lab, registries)",
+    description=API_DESCRIPTION,
     version="1.0.0",
+    openapi_tags=tags_metadata,
+    contact={"name": "Art City Group", "email": "admin@artcity.ai"},
 )
 
 app.add_middleware(
@@ -51,6 +78,36 @@ def root() -> dict[str, str]:
         "name": "Art City AI Studio",
         "version": "1.0.0",
         "docs": "/docs",
+        "redoc": "/redoc",
+        "openapi": "/openapi.json",
         "health": "/health",
         "gateway": "/api/v1/ai",
+        "api_guide": "docs/API.md",
     }
+
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        tags=tags_metadata,
+    )
+    schema["components"] = schema.get("components") or {}
+    schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Paste access_token from POST /api/auth/login",
+        }
+    }
+    schema["security"] = [{"BearerAuth": []}]
+    app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi  # type: ignore[method-assign]

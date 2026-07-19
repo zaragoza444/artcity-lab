@@ -1,0 +1,697 @@
+# Art City AI Studio — Complete API Documentation
+
+**Version:** 1.0.0  
+**Base URLs**
+
+| Environment | Base URL |
+|-------------|----------|
+| Production | `https://backend-production-9533.up.railway.app` |
+| Local | `http://localhost:8000` |
+
+**Interactive docs (OpenAPI)**
+
+| Surface | URL |
+|---------|-----|
+| Swagger UI | `{BASE}/docs` |
+| ReDoc | `{BASE}/redoc` |
+| OpenAPI JSON | `{BASE}/openapi.json` |
+
+Live Swagger: https://backend-production-9533.up.railway.app/docs
+
+---
+
+## Authentication
+
+Most endpoints require a Bearer JWT.
+
+1. `POST /api/auth/login` with email + password  
+2. Send header: `Authorization: Bearer {access_token}`
+
+**Public (no auth):** `GET /`, `GET /health`, `POST /api/auth/login`, `POST /api/auth/refresh`  
+**Media file GETs** (`/api/media/...`, `/api/assets/file/...`, cinema zip/manifest binary GETs under protected routers) — cinema/publishing routes require auth; studio media file routes are currently open for preview embedding.
+
+Default seeded admin (change immediately):
+
+- Email: `admin@artcity.ai`
+- Password: `ArtCityAdmin!2026`
+
+### Roles
+
+| Role | Notes |
+|------|--------|
+| `super_admin` | Full access |
+| `administrator` | Admin + user management |
+| `producer` | Privileged production / training / rights |
+| `project_manager` | Dataset upload (with AI ops) |
+| `ai_operator` | Datasets, training, model register |
+| `creative_director` / `writer` / `animator` / `editor` / `reviewer` / `viewer` | Standard production roles |
+
+Privileged actions (datasets upload, rights approve, training, model promote) require elevated roles — see endpoint notes below.
+
+---
+
+## Quick start
+
+```bash
+# Login
+curl -s -X POST "$BASE/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@artcity.ai","password":"ArtCityAdmin!2026"}'
+
+# Use token
+export TOKEN=...
+
+# List projects
+curl -s "$BASE/api/projects" -H "Authorization: Bearer $TOKEN"
+
+# Generate Kardokh image via Model Gateway
+curl -s -X POST "$BASE/api/v1/ai/images/generate" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id":"PROJECT_UUID",
+    "prompt":"Kardokh on a Zagros ridge at golden hour",
+    "character_key":"kardokh",
+    "character_name":"Kardokh"
+  }'
+```
+
+---
+
+## 1. System
+
+### `GET /`
+
+Service metadata.
+
+**Response**
+
+```json
+{
+  "name": "Art City AI Studio",
+  "version": "1.0.0",
+  "docs": "/docs",
+  "health": "/health",
+  "gateway": "/api/v1/ai"
+}
+```
+
+### `GET /health`
+
+Dependency health check. **Public.**
+
+**Response**
+
+```json
+{
+  "status": "ok",
+  "database": "ok",
+  "redis": "ok",
+  "minio": "ok"
+}
+```
+
+`status` is `ok` when all three are ok; otherwise `degraded`.
+
+---
+
+## 2. Auth — `/api/auth`
+
+### `POST /api/auth/login` — Public
+
+**Body**
+
+| Field | Type | Required |
+|-------|------|----------|
+| email | string | yes |
+| password | string | yes |
+
+**Response `200` — TokenResponse**
+
+| Field | Type |
+|-------|------|
+| access_token | string |
+| refresh_token | string |
+| token_type | `"bearer"` |
+| role | string |
+| email | string |
+| full_name | string |
+| user_id | string |
+
+**Errors:** `401` invalid credentials
+
+### `POST /api/auth/refresh` — Public
+
+**Body:** `{ "refresh_token": "..." }`  
+**Response:** same as login
+
+### `GET /api/auth/me`
+
+Current user profile.
+
+### `GET /api/auth/users`
+
+List users. **Admin / super_admin only.**
+
+### `POST /api/auth/users`
+
+Create user. **Admin / super_admin only.**
+
+**Body**
+
+| Field | Type | Required | Default |
+|-------|------|----------|---------|
+| email | string | yes | |
+| full_name | string | yes | |
+| password | string | yes (min 8) | |
+| role | string | no | `viewer` |
+
+---
+
+## 3. Model Gateway — `/api/v1/ai`
+
+Single entry point for Art City–controlled generation. Cinema/Studio should call Gateway (Studio also wraps Gateway internally).
+
+### Generate
+
+| Method | Path | Modality |
+|--------|------|----------|
+| POST | `/api/v1/ai/images/generate` | image |
+| POST | `/api/v1/ai/videos/generate` | video |
+| POST | `/api/v1/ai/voices/generate` | voice |
+| POST | `/api/v1/ai/audio/generate` | audio |
+| POST | `/api/v1/ai/music/generate` | music |
+
+**Status:** `201`  
+**Body (GenerateRequest)**
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| project_id | UUID string | yes | | Must exist |
+| prompt | string | yes | | |
+| model | string | no | routed | Optional override |
+| character_key | string | no | | e.g. `kardokh`, `kurdiya` |
+| character_name | string | no | | Display / VO brand |
+| duration_seconds | float | no | `4.0` | 0.5–60 |
+| dialogue_lines | string[] | no | | Voice conversations |
+| prefer_external | bool | no | `false` | Force external fallback |
+| params | object | no | | Extra metadata |
+
+**Response:** `GenerationJobOut` (see Shared models)
+
+Routing uses Model Registry + route rules. Character keys prefer Art City adapters (`AC-KARDOKH-IMAGE-v1`, `AC-KURDIYA-IMAGE-v1`).
+
+### Jobs
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/ai/jobs/{job_id}` | Job status + media URLs |
+| POST | `/api/v1/ai/jobs/{job_id}/cancel` | Cancel queued/running |
+| POST | `/api/v1/ai/jobs/{job_id}/retry` | New job from prior params (`201`) |
+
+### Models & providers
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/ai/models` | Registered models (gateway view) |
+| GET | `/api/v1/ai/models/{model_id}` | One model |
+| GET | `/api/v1/ai/providers` | `{ name, healthy }` list |
+
+**Providers:** `stub`, `artcity-image`, `artcity-video`, `external-fallback`
+
+### Speech (ASR pilot)
+
+### `POST /api/v1/ai/speech/asr`
+
+**Body**
+
+```json
+{
+  "audio_storage_key": "projects/.../voice.wav",
+  "dialect": "sorani"
+}
+```
+
+**Response:** transcript manifest scaffold (`engine: artcity-asr-pilot`).
+
+---
+
+## 4. Projects — `/api/projects`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/projects` | List projects |
+| POST | `/api/projects` | Create project |
+| GET | `/api/projects/{project_id}` | Get project |
+| PATCH | `/api/projects/{project_id}` | Update project |
+| GET | `/api/projects/{project_id}/characters` | List characters |
+| POST | `/api/projects/{project_id}/characters` | Create character |
+| GET | `/api/projects/{project_id}/scripts` | List scripts |
+| POST | `/api/projects/{project_id}/scripts` | Create script |
+| GET | `/api/projects/{project_id}/generations` | List generation jobs |
+| POST | `/api/projects/{project_id}/generations` | Submit generation (via Gateway) |
+
+### Create project body
+
+| Field | Type | Required |
+|-------|------|----------|
+| name | string | yes |
+| description | string | no |
+| budget_limit | number | no |
+
+### Create character body
+
+| Field | Type | Required |
+|-------|------|----------|
+| name | string | yes |
+| description | string | no |
+| identity_rules | object | no |
+| costume_notes | string | no |
+| voice_profile | object | no |
+| reference_paths | string[] | no |
+
+### Create script body
+
+| Field | Type | Required | Default |
+|-------|------|----------|---------|
+| title | string | yes | |
+| body | string | yes | |
+| language | string | no | `ku` |
+
+### Submit generation body (`GenerationSubmit`)
+
+| Field | Type | Default |
+|-------|------|---------|
+| modality | `image\|video\|voice\|audio\|music` | `image` |
+| prompt | string | required |
+| model | string | `artcity-local-v1` |
+| provider | string | `stub` (use `external-fallback` to force fallback) |
+| duration_seconds | float | `4.0` |
+| dialogue_lines | string[] | |
+| character_name | string | maps to `kardokh` / `kurdiya` keys when named |
+
+---
+
+## 5. Studio
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/projects/{project_id}/studio/summary` | Totals, approvals, spend |
+| POST | `/api/projects/{project_id}/studio/generate` | Generate (Gateway) |
+| GET | `/api/projects/{project_id}/assets` | List assets |
+| POST | `/api/projects/{project_id}/generations/{job_id}/reviews` | Add review |
+| GET | `/api/projects/{project_id}/generations/{job_id}/reviews` | List reviews |
+| GET | `/api/media/{project_id}/{job_id}/{kind}` | Media bytes (`primary` \| `audio`) |
+| GET | `/api/assets/file/{asset_id}` | Asset file bytes |
+
+### Review body
+
+| Field | Type | Required |
+|-------|------|----------|
+| decision | `approve\|reject\|request_changes` | yes |
+| notes | string | no |
+| quality_score | number 0–10 | no |
+
+### Studio summary response
+
+```json
+{
+  "project_id": "...",
+  "totals": { "image": 2, "video": 1 },
+  "approved": 1,
+  "pending_review": 1,
+  "spent": 0.045
+}
+```
+
+---
+
+## 6. Cinema — `/api/projects/{project_id}/cinema`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `.../cinema/packages` | Build campaign package (`201`) |
+| GET | `.../cinema/packages` | List packages |
+| GET | `.../cinema/packages/{package_id}` | Get package |
+| POST | `.../cinema/packages/{package_id}/validate` | Re-run technical QC |
+| GET | `.../cinema/packages/{package_id}/manifest` | Campaign manifest JSON file |
+| GET | `.../cinema/packages/{package_id}/validation` | Validation report JSON file |
+| GET | `.../cinema/packages/{package_id}/zip` | Download master ZIP |
+
+### Create cinema package body
+
+| Field | Type | Default |
+|-------|------|---------|
+| campaign | string | required |
+| brief | string | required |
+| cta | string | `Discover more` |
+| brand | string | `Art City` |
+| voiceover_script | string | optional |
+| music_style | `epic\|warm\|pulse\|soft` | `epic` |
+| duration_seconds | float 5–60 | `15` |
+| initiated_by | string | `art-city-producer` |
+
+Outputs include hero 16:9, social 9:16 / 1:1, music, VO, end card, QC, manifest.
+
+---
+
+## 7. Publishing
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/projects/{project_id}/publications` | Create publication from cinema package |
+| GET | `/api/projects/{project_id}/publications` | List |
+| GET | `/api/projects/{project_id}/publications/{publication_id}` | Get |
+| POST | `/api/projects/{project_id}/publications/{publication_id}/publish` | Finalize release |
+| GET | `/api/publications/{project_id}/{publication_id}/manifest` | Master manifest |
+| GET | `/api/publications/{project_id}/{publication_id}/report` | Delivery report |
+| GET | `/api/publications/{project_id}/{publication_id}/masters/{filename}` | Master file |
+
+### Create publication body
+
+| Field | Type | Default |
+|-------|------|---------|
+| cinema_package_id | string | required |
+| channel | string | optional |
+| auto_approve_missing | bool | optional |
+| publisher_note | string | optional |
+
+---
+
+## 8. Data Lab
+
+| Method | Path | Auth notes | Description |
+|--------|------|------------|-------------|
+| POST | `/api/data-lab/ingest` | upload roles | Multipart file ingest |
+| GET | `/api/data-lab/ingestions` | auth | List ingest runs |
+| GET | `/api/data-lab/annotations` | auth | List annotation tasks |
+| POST | `/api/data-lab/annotations` | auth | Create task |
+| PATCH | `/api/data-lab/annotations/{task_id}` | auth | Update labels/status/comment |
+
+### Ingest (`multipart/form-data`)
+
+| Field | Type | Required |
+|-------|------|----------|
+| files | file[] | yes |
+| dataset_id | string | no |
+| dataset_name | string | no (creates dataset if no id) |
+
+**Response report fields:** `imported`, `duplicates`, `failed`, `unknown_rights`, `needs_review`, `total_bytes`, `duration_seconds`, `operator`
+
+### Annotation create body
+
+```json
+{
+  "dataset_id": "UUID",
+  "media_type": "text",
+  "payload": { "text": "..." },
+  "labels": {}
+}
+```
+
+### Annotation patch body
+
+```json
+{
+  "labels": {},
+  "status": "approved",
+  "comment": "ok"
+}
+```
+
+Statuses include: `pending`, `in_review`, `approved`, `rejected`, `conflict`
+
+---
+
+## 9. Datasets — `/api/datasets`
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/api/datasets` | List |
+| POST | `/api/datasets` | Create (upload roles) |
+| PATCH | `/api/datasets/{dataset_id}/status` | Status change |
+
+### Create body (selected fields)
+
+| Field | Type | Default |
+|-------|------|---------|
+| name | string | required |
+| description | string | |
+| category | string | `images` |
+| media_type | string | `image` |
+| language / dialect | string | |
+| owner | string | `Art City` |
+| licence | string | |
+| commercial_use | bool | false |
+| ai_training_permission | bool | false |
+| voice_cloning_permission | bool | false |
+| version | string | `v1` |
+| intended_model_use | string | |
+
+### Dataset statuses
+
+`raw` → `ingesting` → `processing` → `needs_review` → `verified` → `training_ready`  
+Also: `evaluation_only`, `reference_only`, `blocked`, `archived`
+
+Only `training_ready` + approved AI-training rights may attach to training jobs.
+
+---
+
+## 10. Rights — `/api/rights`
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/api/rights` | List |
+| POST | `/api/rights` | Create (approve roles) |
+
+### Create body
+
+| Field | Type | Default |
+|-------|------|---------|
+| dataset_id | UUID | optional |
+| asset_id | UUID | optional |
+| copyright_owner | string | required |
+| performer | string | |
+| source_organisation | string | |
+| contract_reference | string | |
+| commercial_use | bool | false |
+| ai_training | bool | false |
+| fine_tuning | bool | false |
+| voice_cloning | bool | false |
+| image_generation | bool | false |
+| legal_status | string | `unknown` |
+| legal_notes | string | |
+
+### Rights legal statuses
+
+`approved_for_training`, `approved_for_reference`, `approved_for_commercial_use`, `approved_for_voice_cloning`, `restricted`, `expired`, `unknown`, `blocked`
+
+---
+
+## 11. Model Registry — `/api/models/registry`
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/api/models/registry` | List |
+| POST | `/api/models/registry` | Register |
+| PATCH | `/api/models/registry/{model_id}/status` | Promote / change status |
+
+### Create body
+
+| Field | Type | Default |
+|-------|------|---------|
+| name | string | required (unique) |
+| version | string | required |
+| model_type | string | `lora` |
+| base_model | string | |
+| licence | string | |
+| commercial_use | bool | false |
+| training_dataset_id | UUID | |
+| character_key | string | e.g. `kardokh` |
+| modality | string | `image` |
+| checkpoint_path | string | |
+| checksum | string | required for `production` |
+
+### Model statuses
+
+`draft`, `registered`, `training`, `evaluating`, `approved`, `staging`, `production`, `deprecated`, `blocked`, `archived`
+
+---
+
+## 12. Training — `/api/training`
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/api/training` | List jobs |
+| POST | `/api/training` | Create (rights-gated) |
+| POST | `/api/training/{job_id}/approve` | Approve + simulated train → register model |
+
+### Create body
+
+| Field | Type | Default |
+|-------|------|---------|
+| base_model | string | required |
+| dataset_id | UUID | required (`training_ready` + rights) |
+| evaluation_dataset_id | UUID | |
+| method | string | `lora` |
+| epochs | int | `1` |
+| learning_rate | float | `1e-4` |
+| batch_size | int | `1` |
+| seed | int | `42` |
+| gpu_type | string | `cloud-a10` |
+| estimated_cost | float | |
+| model_name | string | resulting registry name |
+| character_key | string | |
+
+**Hard rule:** backend rejects training if dataset is not `training_ready` or lacks approved AI-training rights.
+
+---
+
+## 13. Knowledge — `/api/knowledge`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/knowledge?q=&dialect=` | Search / list |
+| POST | `/api/knowledge` | Create entry |
+| GET | `/api/knowledge/query?terms=a,b` | Prompt helper (approved only) |
+| PATCH | `/api/knowledge/{entry_id}/approve` | Approve entry |
+
+### Create body
+
+| Field | Type | Default |
+|-------|------|---------|
+| term | string | required |
+| language | string | `ku` |
+| dialect | string | |
+| definition | string | required |
+| child_friendly_definition | string | |
+| translation | string | |
+| example_sentence | string | |
+| category | string | `terminology` |
+| source / licence / cultural_notes | string | |
+
+---
+
+## 14. Evaluations — `/api/evaluations`
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/api/evaluations` | List |
+| POST | `/api/evaluations` | Start candidate vs production eval |
+| POST | `/api/evaluations/{run_id}/decision` | Human approve/reject (promote roles) |
+
+### Create body
+
+```json
+{
+  "candidate_model_id": "UUID",
+  "production_model_id": "UUID",
+  "modality": "image"
+}
+```
+
+### Decision body
+
+```json
+{
+  "decision": "approve",
+  "notes": "Passes cultural QC"
+}
+```
+
+`decision`: `approve` | `reject`
+
+---
+
+## Shared models
+
+### GenerationJobOut
+
+| Field | Type |
+|-------|------|
+| id | UUID |
+| project_id | UUID |
+| modality | string |
+| provider | string |
+| model | string \| null |
+| model_version | string \| null |
+| registered_model_id | string \| null |
+| character_key | string \| null |
+| prompt | string \| null |
+| status | `pending\|queued\|running\|succeeded\|failed\|cancelled` |
+| result_uri | storage key \| null |
+| error_message | string \| null |
+| estimated_cost / actual_cost | number \| null |
+| provider_job_id | string \| null |
+| created_at / updated_at | ISO datetime |
+| media_url | relative API path \| null |
+| audio_url | relative API path \| null |
+
+Absolute media URL = `{BASE}{media_url}`
+
+### Common HTTP errors
+
+| Code | Meaning |
+|------|---------|
+| 400 | Validation / rights / business rule |
+| 401 | Missing or invalid token |
+| 403 | Insufficient role |
+| 404 | Resource not found |
+| 422 | Request body schema error |
+
+---
+
+## End-to-end flows
+
+### A. Studio image (Gateway)
+
+1. Login → token  
+2. `POST /api/projects`  
+3. `POST /api/v1/ai/images/generate` with `character_key`  
+4. `GET /api/v1/ai/jobs/{id}` until `succeeded`  
+5. Fetch `{BASE}{media_url}`  
+6. `POST .../reviews` with `approve`
+
+### B. Cinema campaign → Publish
+
+1. `POST .../cinema/packages`  
+2. `POST .../validate` (optional)  
+3. Download ZIP / manifest  
+4. `POST .../publications` with `cinema_package_id`  
+5. `POST .../publish`
+
+### C. Train character adapter
+
+1. Ingest / create dataset  
+2. `POST /api/rights` with `ai_training=true`, `legal_status=approved_for_training`  
+3. `PATCH` dataset status → `training_ready`  
+4. `POST /api/training`  
+5. `POST /api/training/{id}/approve`  
+6. `POST /api/evaluations` → decision `approve`  
+7. `PATCH` model status → `staging` / `production`
+
+---
+
+## OpenAPI tags (Swagger groups)
+
+| Tag | Area |
+|-----|------|
+| auth | Login, users |
+| model-gateway | `/api/v1/ai` |
+| speech | ASR pilot |
+| projects | Projects, characters, scripts |
+| studio | Studio generate / assets / reviews |
+| cinema | Campaign packages |
+| publishing | Delivery pipeline |
+| data-lab | Ingest + annotations |
+| registries | Datasets, rights, models, training |
+| knowledge | Kurdish KB |
+| evaluations | Model eval lab |
+
+---
+
+## Changelog
+
+| Version | Notes |
+|---------|-------|
+| 1.0.0 | AI Core: auth, Gateway, Data Lab, Rights, Models, Training, Knowledge, Evaluations, speech ASR scaffold |
