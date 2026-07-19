@@ -76,7 +76,7 @@ def create_entry(payload: KnowledgeCreate, user: CurrentUser, db: Session = Depe
 @router.get("/query", response_model=list[KnowledgeOut])
 def query_for_prompts(
     user: CurrentUser,
-    terms: str = Query(..., description="Comma-separated terms"),
+    terms: str = Query("", description="Comma-separated terms"),
     db: Session = Depends(get_db),
 ):
     parts = [t.strip() for t in terms.split(",") if t.strip()]
