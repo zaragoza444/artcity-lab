@@ -21,6 +21,9 @@ class ProviderResult:
     output_bytes: Optional[bytes] = None
     content_type: Optional[str] = None
     filename: Optional[str] = None
+    sidecar_bytes: Optional[bytes] = None
+    sidecar_content_type: Optional[str] = None
+    sidecar_filename: Optional[str] = None
 
 
 class ProviderAdapter(ABC):
@@ -152,7 +155,18 @@ class ArtCityVideoProvider(ProviderAdapter):
 
         job_id = f"ac-vid-{uuid4()}"
         duration = float(kwargs.get("duration_seconds") or 4.0)
-        visual, _bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
+        title = kwargs.get("character_name") or kwargs.get("character_key") or "Art City"
+        if duration >= 8:
+            visual, bed = media_factory.make_cinematic_video(
+                prompt,
+                aspect="16:9",
+                duration_seconds=duration,
+                brand="Art City",
+                campaign=str(title),
+                cta="Art City Studios",
+            )
+        else:
+            visual, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
         return ProviderResult(
             provider_job_id=job_id,
             status=GenerationStatus.SUCCEEDED,
@@ -161,6 +175,9 @@ class ArtCityVideoProvider(ProviderAdapter):
             output_bytes=visual.data,
             content_type=visual.content_type,
             filename=visual.filename,
+            sidecar_bytes=bed.data,
+            sidecar_content_type=bed.content_type,
+            sidecar_filename=bed.filename,
         )
 
     def status(self, provider_job_id: str) -> ProviderResult:

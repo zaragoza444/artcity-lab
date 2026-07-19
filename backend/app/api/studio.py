@@ -180,9 +180,19 @@ def get_job_media(project_id: str, job_id: str, kind: str, db: Session = Depends
             (a for a in candidates if (a.metadata_json or {}).get("linked_job") == job_id),
             None,
         )
-        if not asset or not asset.storage_path:
-            raise HTTPException(status_code=404, detail="No audio bed")
-        key = asset.storage_path
+        if asset and asset.storage_path:
+            key = asset.storage_path
+        else:
+            # Fallback: audio_key stored on the primary video asset metadata
+            primary = (
+                db.query(Asset)
+                .filter(Asset.project_id == project.id, Asset.storage_path == job.result_uri)
+                .first()
+            )
+            audio_key = (primary.metadata_json or {}).get("audio_key") if primary else None
+            if not audio_key:
+                raise HTTPException(status_code=404, detail="No audio bed")
+            key = audio_key
     else:
         raise HTTPException(status_code=404, detail="Unknown media kind")
 

@@ -148,6 +148,70 @@ def _materialize_output(db: Session, job: GenerationJob, result, params: dict) -
     duration = float(params.get("duration_seconds") or 4.0)
     dialogue_lines = params.get("dialogue_lines") or []
 
+    # Video always needs a linked audio bed for /api/media/.../audio and Cinema packaging.
+    if modality == "video":
+        if duration >= 8:
+            visual, bed = media_factory.make_cinematic_video(
+                prompt,
+                aspect="16:9",
+                duration_seconds=duration,
+                brand="Art City",
+                campaign=str(title),
+                cta="Art City Studios",
+            )
+        else:
+            visual, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
+        # Prefer provider visual bytes when present (Art City video worker).
+        if result.output_bytes and result.filename:
+            visual_name = result.filename
+            visual_data = result.output_bytes
+            visual_ct = result.content_type or visual.content_type
+        else:
+            visual_name = visual.filename
+            visual_data = visual.data
+            visual_ct = visual.content_type
+        if getattr(result, "sidecar_bytes", None) and getattr(result, "sidecar_filename", None):
+            bed_name = result.sidecar_filename
+            bed_data = result.sidecar_bytes
+            bed_ct = result.sidecar_content_type or bed.content_type
+        else:
+            bed_name = bed.filename
+            bed_data = bed.data
+            bed_ct = bed.content_type
+        key = f"projects/{job.project_id}/jobs/{job.id}/{visual_name}"
+        audio_key = f"projects/{job.project_id}/jobs/{job.id}/{bed_name}"
+        storage.upload_bytes(key, visual_data, visual_ct)
+        storage.upload_bytes(audio_key, bed_data, bed_ct)
+        _add_asset(
+            db,
+            job,
+            key,
+            modality,
+            prompt,
+            title,
+            {
+                "preview_kind": "video_proxy",
+                "audio_key": audio_key,
+                "provider_job_id": result.provider_job_id,
+                "cinematic": duration >= 8,
+            },
+        )
+        db.add(
+            Asset(
+                project_id=job.project_id,
+                asset_type=AssetType.AUDIO.value,
+                name=f"video-bed · {title}",
+                storage_path=audio_key,
+                metadata_json={
+                    "linked_job": job.id,
+                    "role": "video_audio_bed",
+                    "job_id": job.id,
+                    "provider": job.provider,
+                },
+            )
+        )
+        return key
+
     if result.output_bytes and result.filename:
         key = f"projects/{job.project_id}/jobs/{job.id}/{result.filename}"
         storage.upload_bytes(key, result.output_bytes, result.content_type or "application/octet-stream")
@@ -160,22 +224,6 @@ def _materialize_output(db: Session, job: GenerationJob, result, params: dict) -
         key = f"projects/{job.project_id}/jobs/{job.id}/{media.filename}"
         storage.upload_bytes(key, media.data, media.content_type)
         _add_asset(db, job, key, modality, prompt, title, {"preview_kind": "image"})
-        return key
-    if modality == "video":
-        visual, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
-        key = f"projects/{job.project_id}/jobs/{job.id}/{visual.filename}"
-        audio_key = f"projects/{job.project_id}/jobs/{job.id}/{bed.filename}"
-        storage.upload_bytes(key, visual.data, visual.content_type)
-        storage.upload_bytes(audio_key, bed.data, bed.content_type)
-        _add_asset(
-            db,
-            job,
-            key,
-            modality,
-            prompt,
-            title,
-            {"preview_kind": "video_proxy", "audio_key": audio_key},
-        )
         return key
     if modality == "voice":
         if dialogue_lines:
