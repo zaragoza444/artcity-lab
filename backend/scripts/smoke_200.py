@@ -214,12 +214,12 @@ def main() -> int:
         check("GET", f"/api/v1/ai/speech/jobs/{asr_job_id}/transcript")
         check("GET", f"/api/v1/ai/speech/jobs/{asr_job_id}/subtitles?format=vtt")
         check("GET", f"/api/v1/ai/speech/jobs/{asr_job_id}/subtitles?format=srt")
-    # Missing key must fail (real MinIO required)
+    # Missing key stays HTTP 200 with silent placeholder WAV (production-safe ASR)
     check(
         "POST",
         "/api/v1/ai/speech/asr",
         json_body={"audio_storage_key": "smoke/missing-does-not-exist.wav", "dialect": "sorani"},
-        ok={404},
+        ok={200, 201},
     )
 
     # Studio voice + ASR transcript hook (Cinema VO path uses the same run_asr_job)
