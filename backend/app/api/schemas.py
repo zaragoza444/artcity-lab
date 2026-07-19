@@ -1,13 +1,20 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     budget_limit: Optional[float] = None
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def strip_name(cls, v: object) -> object:
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 
 class ProjectUpdate(BaseModel):
@@ -70,16 +77,42 @@ class ScriptOut(BaseModel):
 
 
 class GenerationSubmit(BaseModel):
-    modality: str = Field(
-        default="image",
-        pattern="^(image|video|voice|audio|music)$",
-    )
+    modality: str = Field(default="image")
     prompt: str = Field(..., min_length=1)
     model: Optional[str] = "artcity-local-v1"
     provider: str = "stub"
     duration_seconds: float = Field(default=4.0, ge=0.5, le=60.0)
     dialogue_lines: Optional[list[str]] = None
     character_name: Optional[str] = None
+
+    @field_validator("modality", mode="before")
+    @classmethod
+    def normalize_modality(cls, v: object) -> object:
+        if v is None or v == "":
+            return "image"
+        if isinstance(v, str):
+            m = v.strip().lower()
+            allowed = {"image", "video", "voice", "audio", "music"}
+            if m not in allowed:
+                raise ValueError(f"modality must be one of {sorted(allowed)}")
+            return m
+        return v
+
+    @field_validator("prompt", "character_name", "model", "provider", mode="before")
+    @classmethod
+    def strip_text(cls, v: object) -> object:
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+    @field_validator("duration_seconds", mode="before")
+    @classmethod
+    def coerce_duration(cls, v: object) -> object:
+        if v is None or v == "":
+            return 4.0
+        if isinstance(v, str):
+            return float(v)
+        return v
 
 
 class GenerationJobOut(BaseModel):
@@ -153,9 +186,36 @@ class CinemaPackageCreate(BaseModel):
     cta: str = Field(default="Discover more", max_length=80)
     brand: str = Field(default="Art City", max_length=80)
     voiceover_script: Optional[str] = Field(default=None, max_length=4000)
-    music_style: str = Field(default="epic", pattern="^(epic|warm|pulse|soft)$")
+    music_style: str = Field(default="epic")
     duration_seconds: float = Field(default=15.0, ge=5.0, le=60.0)
     initiated_by: str = Field(default="art-city-producer", max_length=120)
+
+    @field_validator("campaign", "brief", "cta", "brand", "voiceover_script", "initiated_by", mode="before")
+    @classmethod
+    def strip_cinema_text(cls, v: object) -> object:
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+    @field_validator("music_style", mode="before")
+    @classmethod
+    def normalize_music_style(cls, v: object) -> object:
+        allowed = {"epic", "warm", "pulse", "soft"}
+        if v is None or v == "":
+            return "epic"
+        if isinstance(v, str):
+            m = v.strip().lower()
+            return m if m in allowed else "epic"
+        return "epic"
+
+    @field_validator("duration_seconds", mode="before")
+    @classmethod
+    def coerce_cinema_duration(cls, v: object) -> object:
+        if v is None or v == "":
+            return 15.0
+        if isinstance(v, str):
+            return float(v)
+        return v
 
 
 class CinemaDeliverable(BaseModel):

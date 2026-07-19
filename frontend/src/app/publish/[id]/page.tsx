@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import {
   api,
   mediaAbsolute,
+  withAccessToken,
   type CinemaPackage,
   type Project,
   type Publication,
@@ -319,7 +320,7 @@ export default function PublishProjectPage() {
                             <div className="flex flex-wrap gap-2">
                               {active.manifest_url ? (
                                 <a
-                                  href={`${API_URL}${active.manifest_url}`}
+                                  href={withAccessToken(`${API_URL}${active.manifest_url}`)}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="ac-btn ac-btn-secondary"
@@ -329,7 +330,7 @@ export default function PublishProjectPage() {
                               ) : null}
                               {active.report_url ? (
                                 <a
-                                  href={`${API_URL}${active.report_url}`}
+                                  href={withAccessToken(`${API_URL}${active.report_url}`)}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="ac-btn ac-btn-ghost"

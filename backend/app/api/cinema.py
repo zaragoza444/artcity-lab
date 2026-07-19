@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-
-from app.core.deps import get_current_user
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.api.schemas import CinemaPackageCreate, CinemaPackageOut
 from app.core.db import get_db
-from app.models import Project
+from app.core.deps import get_current_user
+from app.core.ids import load_project, require_uuid
 from app.services.cinema import (
     build_cinematic_package,
     get_cinematic_package,
@@ -30,12 +29,10 @@ router = APIRouter(
 def create_cinema_package(
     project_id: str, payload: CinemaPackageCreate, db: Session = Depends(get_db)
 ) -> CinemaPackageOut:
-    project = db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = load_project(db, project_id)
     package = build_cinematic_package(
         db,
-        project_id=project_id,
+        project_id=project.id,
         campaign=payload.campaign,
         brief=payload.brief,
         cta=payload.cta,
@@ -50,16 +47,16 @@ def create_cinema_package(
 
 @router.get("/{project_id}/cinema/packages", response_model=list[CinemaPackageOut])
 def get_cinema_packages(project_id: str, db: Session = Depends(get_db)) -> list[CinemaPackageOut]:
-    project = db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return [CinemaPackageOut.model_validate(p) for p in list_cinematic_packages(db, project_id)]
+    project = load_project(db, project_id)
+    return [CinemaPackageOut.model_validate(p) for p in list_cinematic_packages(db, project.id)]
 
 
 @router.get("/{project_id}/cinema/packages/{package_id}", response_model=CinemaPackageOut)
 def get_package(project_id: str, package_id: str, db: Session = Depends(get_db)) -> CinemaPackageOut:
+    project = load_project(db, project_id)
+    require_uuid(package_id, "package_id")
     try:
-        return CinemaPackageOut.model_validate(get_cinematic_package(db, project_id, package_id))
+        return CinemaPackageOut.model_validate(get_cinematic_package(db, project.id, package_id))
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -71,16 +68,20 @@ def get_package(project_id: str, package_id: str, db: Session = Depends(get_db))
 def validate_package(
     project_id: str, package_id: str, db: Session = Depends(get_db)
 ) -> CinemaPackageOut:
+    project = load_project(db, project_id)
+    require_uuid(package_id, "package_id")
     try:
-        return CinemaPackageOut.model_validate(revalidate_package(db, project_id, package_id))
+        return CinemaPackageOut.model_validate(revalidate_package(db, project.id, package_id))
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/{project_id}/cinema/packages/{package_id}/manifest")
 def package_manifest(project_id: str, package_id: str, db: Session = Depends(get_db)) -> Response:
+    project = load_project(db, project_id)
+    require_uuid(package_id, "package_id")
     try:
-        pkg = get_cinematic_package(db, project_id, package_id)
+        pkg = get_cinematic_package(db, project.id, package_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     import json
@@ -91,8 +92,10 @@ def package_manifest(project_id: str, package_id: str, db: Session = Depends(get
 
 @router.get("/{project_id}/cinema/packages/{package_id}/validation")
 def package_validation(project_id: str, package_id: str, db: Session = Depends(get_db)) -> Response:
+    project = load_project(db, project_id)
+    require_uuid(package_id, "package_id")
     try:
-        pkg = get_cinematic_package(db, project_id, package_id)
+        pkg = get_cinematic_package(db, project.id, package_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     import json
@@ -103,8 +106,10 @@ def package_validation(project_id: str, package_id: str, db: Session = Depends(g
 
 @router.get("/{project_id}/cinema/packages/{package_id}/zip")
 def package_zip(project_id: str, package_id: str, db: Session = Depends(get_db)) -> Response:
+    project = load_project(db, project_id)
+    require_uuid(package_id, "package_id")
     try:
-        payload = build_campaign_zip(db, project_id, package_id)
+        payload = build_campaign_zip(db, project.id, package_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     filename = f"art-city-cinema-{package_id[:8]}.zip"

@@ -94,6 +94,48 @@ export function mediaAbsolute(path?: string | null): string | null {
   return `${API_URL}${path}`;
 }
 
+/** Append JWT for browser downloads (ZIP, manifest) that cannot send Authorization headers. */
+export function withAccessToken(url: string): string {
+  const token = getAccessToken();
+  if (!token) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}access_token=${encodeURIComponent(token)}`;
+}
+
+function formatApiError(status: number, text: string): string {
+  try {
+    const data = JSON.parse(text) as {
+      message?: string;
+      detail?: unknown;
+    };
+    if (typeof data.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+    if (Array.isArray(data.detail)) {
+      return data.detail
+        .map((item) => {
+          if (typeof item === "string") return item;
+          if (item && typeof item === "object") {
+            const row = item as { field?: string; message?: string; msg?: string; loc?: unknown[] };
+            const field =
+              row.field ||
+              (Array.isArray(row.loc)
+                ? row.loc.filter((x) => x !== "body").join(".")
+                : undefined);
+            const msg = row.message || row.msg || "Invalid value";
+            return field ? `${field}: ${msg}` : msg;
+          }
+          return String(item);
+        })
+        .join("; ");
+    }
+    if (typeof data.detail === "string") return data.detail;
+  } catch {
+    /* plain text */
+  }
+  return text || `Request failed: ${status}`;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getAccessToken();
   const headers: Record<string, string> = {
@@ -109,7 +151,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+    throw new Error(formatApiError(res.status, text));
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -297,11 +339,17 @@ export const api = {
       body: JSON.stringify({}),
     }),
   cinemaZipUrl: (projectId: string, packageId: string) =>
-    `${API_URL}/api/projects/${projectId}/cinema/packages/${packageId}/zip`,
+    withAccessToken(
+      `${API_URL}/api/projects/${projectId}/cinema/packages/${packageId}/zip`
+    ),
   cinemaManifestUrl: (projectId: string, packageId: string) =>
-    `${API_URL}/api/projects/${projectId}/cinema/packages/${packageId}/manifest`,
+    withAccessToken(
+      `${API_URL}/api/projects/${projectId}/cinema/packages/${packageId}/manifest`
+    ),
   cinemaValidationUrl: (projectId: string, packageId: string) =>
-    `${API_URL}/api/projects/${projectId}/cinema/packages/${packageId}/validation`,
+    withAccessToken(
+      `${API_URL}/api/projects/${projectId}/cinema/packages/${packageId}/validation`
+    ),
   listPublications: (projectId: string) =>
     request<Publication[]>(`/api/projects/${projectId}/publications`),
   createPublication: (

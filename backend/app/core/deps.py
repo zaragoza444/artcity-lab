@@ -18,12 +18,17 @@ bearer = HTTPBearer(auto_error=False)
 
 
 def get_current_user_optional(
+    request: Request,
     creds: Annotated[Optional[HTTPAuthorizationCredentials], Depends(bearer)],
     db: Annotated[Session, Depends(get_db)],
 ) -> Optional[User]:
-    if not creds:
+    # Bearer header preferred; query token supports browser ZIP/manifest downloads.
+    raw = creds.credentials if creds else (
+        request.query_params.get("access_token") or request.query_params.get("token")
+    )
+    if not raw:
         return None
-    payload = safe_decode(creds.credentials)
+    payload = safe_decode(raw)
     if not payload or payload.get("type") != "access":
         return None
     user = db.get(User, payload.get("sub"))

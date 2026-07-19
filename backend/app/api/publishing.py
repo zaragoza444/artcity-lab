@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.schemas import PublicationCreate, PublicationOut
 from app.core.db import get_db
-from app.models import Project
+from app.core.ids import load_project, require_uuid
 from app.services.publishing import (
     create_publication,
     find_publication_asset,
@@ -27,13 +27,11 @@ router = APIRouter(tags=["publishing"], dependencies=[Depends(get_current_user)]
 def create_project_publication(
     project_id: str, payload: PublicationCreate, db: Session = Depends(get_db)
 ) -> PublicationOut:
-    project = db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = load_project(db, project_id)
     try:
         pub = create_publication(
             db,
-            project_id=project_id,
+            project_id=project.id,
             cinema_package_id=payload.cinema_package_id,
             channel=payload.channel,
             auto_approve_missing=payload.auto_approve_missing,
@@ -46,10 +44,8 @@ def create_project_publication(
 
 @router.get("/api/projects/{project_id}/publications", response_model=list[PublicationOut])
 def list_project_publications(project_id: str, db: Session = Depends(get_db)) -> list[PublicationOut]:
-    project = db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return [PublicationOut.model_validate(p) for p in list_publications(db, project_id)]
+    project = load_project(db, project_id)
+    return [PublicationOut.model_validate(p) for p in list_publications(db, project.id)]
 
 
 @router.get(
@@ -59,8 +55,10 @@ def list_project_publications(project_id: str, db: Session = Depends(get_db)) ->
 def get_project_publication(
     project_id: str, publication_id: str, db: Session = Depends(get_db)
 ) -> PublicationOut:
+    project = load_project(db, project_id)
+    require_uuid(publication_id, "publication_id")
     try:
-        return PublicationOut.model_validate(get_publication(db, project_id, publication_id))
+        return PublicationOut.model_validate(get_publication(db, project.id, publication_id))
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -72,16 +70,20 @@ def get_project_publication(
 def finalize_publication(
     project_id: str, publication_id: str, db: Session = Depends(get_db)
 ) -> PublicationOut:
+    project = load_project(db, project_id)
+    require_uuid(publication_id, "publication_id")
     try:
-        return PublicationOut.model_validate(publish_publication(db, project_id, publication_id))
+        return PublicationOut.model_validate(publish_publication(db, project.id, publication_id))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/api/publications/{project_id}/{publication_id}/manifest")
 def get_manifest(project_id: str, publication_id: str, db: Session = Depends(get_db)) -> Response:
+    project = load_project(db, project_id)
+    require_uuid(publication_id, "publication_id")
     try:
-        asset = find_publication_asset(db, project_id, publication_id)
+        asset = find_publication_asset(db, project.id, publication_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     key = (asset.metadata_json or {}).get("manifest_key")
@@ -93,8 +95,10 @@ def get_manifest(project_id: str, publication_id: str, db: Session = Depends(get
 
 @router.get("/api/publications/{project_id}/{publication_id}/report")
 def get_report(project_id: str, publication_id: str, db: Session = Depends(get_db)) -> Response:
+    project = load_project(db, project_id)
+    require_uuid(publication_id, "publication_id")
     try:
-        asset = find_publication_asset(db, project_id, publication_id)
+        asset = find_publication_asset(db, project.id, publication_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     key = (asset.metadata_json or {}).get("report_key")
@@ -110,8 +114,10 @@ def get_master_file(
 ) -> Response:
     if "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
+    project = load_project(db, project_id)
+    require_uuid(publication_id, "publication_id")
     try:
-        asset = find_publication_asset(db, project_id, publication_id)
+        asset = find_publication_asset(db, project.id, publication_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     root = (asset.metadata_json or {}).get("delivery_root")

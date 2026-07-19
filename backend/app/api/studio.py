@@ -13,7 +13,8 @@ from app.api.schemas import (
 )
 from app.core.db import get_db
 from app.core.deps import CurrentUser
-from app.models import Asset, CostRecord, GenerationJob, Project, Review
+from app.core.ids import load_project, require_uuid
+from app.models import Asset, CostRecord, GenerationJob, Review
 from app.services.gateway import enqueue_generation
 from app.services.storage import get_storage
 from app.services.studio import add_review
@@ -40,11 +41,9 @@ def _enrich_asset(asset: Asset) -> AssetOut:
 
 @router.get("/api/projects/{project_id}/studio/summary", response_model=StudioSummary)
 def studio_summary(project_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> StudioSummary:
-    project = db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = load_project(db, project_id)
 
-    jobs = db.query(GenerationJob).filter(GenerationJob.project_id == project_id).all()
+    jobs = db.query(GenerationJob).filter(GenerationJob.project_id == project.id).all()
     totals: dict[str, int] = {}
     for j in jobs:
         totals[j.modality] = totals.get(j.modality, 0) + 1
@@ -53,24 +52,24 @@ def studio_summary(project_id: str, user: CurrentUser, db: Session = Depends(get
         r.generation_job_id
         for r in db.query(Review)
         .join(GenerationJob, Review.generation_job_id == GenerationJob.id)
-        .filter(GenerationJob.project_id == project_id)
+        .filter(GenerationJob.project_id == project.id)
         .all()
     }
     approved = (
         db.query(Review)
         .join(GenerationJob, Review.generation_job_id == GenerationJob.id)
-        .filter(GenerationJob.project_id == project_id, Review.decision == "approve")
+        .filter(GenerationJob.project_id == project.id, Review.decision == "approve")
         .count()
     )
     pending = len([j for j in jobs if j.id not in reviewed_ids and j.status == "succeeded"])
     spent = (
         db.query(func.coalesce(func.sum(CostRecord.amount), 0.0))
-        .filter(CostRecord.project_id == project_id)
+        .filter(CostRecord.project_id == project.id)
         .scalar()
     )
 
     return StudioSummary(
-        project_id=project_id,
+        project_id=project.id,
         totals=totals,
         approved=approved,
         pending_review=pending,
@@ -86,9 +85,7 @@ def studio_summary(project_id: str, user: CurrentUser, db: Session = Depends(get
 def studio_generate(
     project_id: str, payload: GenerationSubmit, user: CurrentUser, db: Session = Depends(get_db)
 ) -> GenerationJobOut:
-    project = db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = load_project(db, project_id)
     character_key = None
     if payload.character_name:
         key = payload.character_name.strip().lower()
@@ -98,7 +95,7 @@ def studio_generate(
             character_key = "kurdiya"
     job = enqueue_generation(
         db,
-        project_id=project_id,
+        project_id=project.id,
         modality=payload.modality,
         prompt=payload.prompt,
         model=payload.model,
@@ -114,12 +111,10 @@ def studio_generate(
 
 @router.get("/api/projects/{project_id}/assets", response_model=list[AssetOut])
 def list_assets(project_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> list[AssetOut]:
-    project = db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = load_project(db, project_id)
     assets = (
         db.query(Asset)
-        .filter(Asset.project_id == project_id, Asset.soft_deleted.is_(False))
+        .filter(Asset.project_id == project.id, Asset.soft_deleted.is_(False))
         .order_by(Asset.created_at.desc())
         .all()
     )
@@ -138,8 +133,10 @@ def create_review(
     user: CurrentUser,
     db: Session = Depends(get_db),
 ) -> Review:
+    project = load_project(db, project_id)
+    job_id = require_uuid(job_id, "job_id")
     job = db.get(GenerationJob, job_id)
-    if not job or job.project_id != project_id:
+    if not job or job.project_id != project.id:
         raise HTTPException(status_code=404, detail="Generation job not found")
     return add_review(
         db,
@@ -152,16 +149,20 @@ def create_review(
 
 @router.get("/api/projects/{project_id}/generations/{job_id}/reviews", response_model=list[ReviewOut])
 def list_reviews(project_id: str, job_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> list[Review]:
+    project = load_project(db, project_id)
+    job_id = require_uuid(job_id, "job_id")
     job = db.get(GenerationJob, job_id)
-    if not job or job.project_id != project_id:
+    if not job or job.project_id != project.id:
         raise HTTPException(status_code=404, detail="Generation job not found")
     return db.query(Review).filter(Review.generation_job_id == job_id).order_by(Review.created_at.desc()).all()
 
 
 @router.get("/api/media/{project_id}/{job_id}/{kind}")
 def get_job_media(project_id: str, job_id: str, kind: str, db: Session = Depends(get_db)) -> Response:
+    project = load_project(db, project_id)
+    job_id = require_uuid(job_id, "job_id")
     job = db.get(GenerationJob, job_id)
-    if not job or job.project_id != project_id:
+    if not job or job.project_id != project.id:
         raise HTTPException(status_code=404, detail="Job not found")
 
     if kind == "primary":
@@ -171,7 +172,7 @@ def get_job_media(project_id: str, job_id: str, kind: str, db: Session = Depends
     elif kind == "audio":
         candidates = (
             db.query(Asset)
-            .filter(Asset.project_id == project_id, Asset.asset_type == "audio")
+            .filter(Asset.project_id == project.id, Asset.asset_type == "audio")
             .order_by(Asset.created_at.desc())
             .all()
         )

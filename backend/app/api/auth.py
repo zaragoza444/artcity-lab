@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -23,6 +23,13 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 class LoginRequest(BaseModel):
     email: str = Field(..., min_length=3)
     password: str = Field(..., min_length=1)
+
+    @field_validator("email", "password", mode="before")
+    @classmethod
+    def strip_creds(cls, v: object) -> object:
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 
 class TokenResponse(BaseModel):

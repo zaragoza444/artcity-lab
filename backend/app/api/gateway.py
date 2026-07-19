@@ -3,14 +3,15 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.api.schemas import GenerationJobOut
 from app.api.studio import _enrich_job
 from app.core.db import get_db
 from app.core.deps import CurrentUser, client_ip
-from app.models import GenerationJob, Project, RegisteredModel
+from app.core.ids import load_project
+from app.models import GenerationJob, RegisteredModel
 from app.services.audit import write_audit
 from app.services.gateway import cancel_job, enqueue_generation, retry_job
 from app.services.providers import list_providers
@@ -28,6 +29,22 @@ class GenerateRequest(BaseModel):
     dialogue_lines: Optional[list[str]] = None
     prefer_external: bool = False
     params: Optional[dict[str, Any]] = None
+
+    @field_validator("project_id", "prompt", "model", "character_key", "character_name", mode="before")
+    @classmethod
+    def strip_fields(cls, v: object) -> object:
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+    @field_validator("duration_seconds", mode="before")
+    @classmethod
+    def coerce_duration(cls, v: object) -> object:
+        if v is None or v == "":
+            return 4.0
+        if isinstance(v, str):
+            return float(v)
+        return v
 
 
 class ProviderOut(BaseModel):
@@ -49,18 +66,12 @@ class ModelRegistryOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-def _require_project(db: Session, project_id: str) -> Project:
-    project = db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
-
-
 def _generate(modality: str, payload: GenerateRequest, user: CurrentUser, request: Request, db: Session) -> GenerationJobOut:
-    _require_project(db, payload.project_id)
+    project = load_project(db, payload.project_id)
+    project_id = project.id
     job = enqueue_generation(
         db,
-        project_id=payload.project_id,
+        project_id=project_id,
         modality=modality,
         prompt=payload.prompt,
         model=payload.model,

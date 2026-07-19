@@ -15,6 +15,7 @@ from app.api.registries import router as registries_router
 from app.api.speech import router as speech_router
 from app.api.studio import router as studio_router
 from app.core.config import get_settings
+from app.core.errors import register_exception_handlers
 
 settings = get_settings()
 
@@ -57,6 +58,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+register_exception_handlers(app)
 
 app.include_router(health_router)
 app.include_router(auth_router)
@@ -102,10 +105,21 @@ def custom_openapi():
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT",
-            "description": "Paste access_token from POST /api/auth/login",
+            "description": "1) POST /api/auth/login  2) Authorize with access_token  3) Fill required body fields before Execute",
         }
     }
-    schema["security"] = [{"BearerAuth": []}]
+    # Do not force Bearer globally — login/health/root stay open in Swagger.
+    # Protected routes already declare HTTPBearer via dependencies.
+    schema["security"] = []
+    public_prefixes = ("/", "/health", "/docs", "/redoc", "/openapi.json", "/api/auth/login", "/api/auth/refresh")
+    for path, methods in schema.get("paths", {}).items():
+        is_public = path in public_prefixes or path.startswith("/health")
+        for method, op in methods.items():
+            if method in ("get", "post", "put", "patch", "delete"):
+                if is_public or path == "/api/auth/login" or path == "/api/auth/refresh":
+                    op["security"] = []
+                else:
+                    op["security"] = [{"BearerAuth": []}]
     app.openapi_schema = schema
     return app.openapi_schema
 
