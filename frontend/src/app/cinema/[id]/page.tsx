@@ -66,6 +66,13 @@ export default function CinemaProjectPage() {
   const [vo, setVo] = useState("");
   const [musicStyle, setMusicStyle] = useState<"epic" | "warm" | "pulse" | "soft">("epic");
   const [duration, setDuration] = useState(15);
+  const [dialect, setDialect] = useState("sorani");
+  const [characterKey, setCharacterKey] = useState("");
+  const [channels, setChannels] = useState<string[]>([
+    "broadcast",
+    "social_vertical",
+    "social_square",
+  ]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,6 +118,16 @@ export default function CinemaProjectPage() {
         music_style: musicStyle,
         duration_seconds: duration,
         initiated_by: "art-city-producer",
+        dialect,
+        character_key: characterKey || undefined,
+        character_name: characterKey
+          ? characterKey === "kardokh"
+            ? "Kardokh"
+            : characterKey === "kurdiya"
+              ? "Kurdiya"
+              : undefined
+          : undefined,
+        channels,
       });
       setActiveId(pkg.package_id);
       setCampaign("");
@@ -268,9 +285,66 @@ export default function CinemaProjectPage() {
                       onChange={(e) => setDuration(Number(e.target.value))}
                     />
                   </div>
+                  <div>
+                    <label className="ac-label" htmlFor="dialect">
+                      Kurdish dialect
+                    </label>
+                    <select
+                      id="dialect"
+                      className="ac-field"
+                      value={dialect}
+                      onChange={(e) => setDialect(e.target.value)}
+                    >
+                      <option value="sorani">Sorani</option>
+                      <option value="badini">Badini</option>
+                      <option value="kurmanji">Kurmanji</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="ac-label" htmlFor="character">
+                      Character focus
+                    </label>
+                    <select
+                      id="character"
+                      className="ac-field"
+                      value={characterKey}
+                      onChange={(e) => setCharacterKey(e.target.value)}
+                    >
+                      <option value="">Brand general</option>
+                      <option value="kardokh">Kardokh</option>
+                      <option value="kurdiya">Kurdiya</option>
+                    </select>
+                  </div>
                 </div>
-                <button type="submit" disabled={busy} className="ac-btn ac-btn-primary">
-                  {busy ? "Rendering package…" : "Render full cinema package"}
+                <fieldset className="space-y-2">
+                  <legend className="ac-label">Advertising channels</legend>
+                  {[
+                    ["broadcast", "Broadcast 16:9"],
+                    ["social_vertical", "Social vertical 9:16"],
+                    ["social_square", "Social square 1:1"],
+                  ].map(([id, label]) => (
+                    <label key={id} className="flex items-center gap-2 text-sm text-[var(--mist)]">
+                      <input
+                        type="checkbox"
+                        checked={channels.includes(id)}
+                        onChange={(e) => {
+                          setChannels((prev) =>
+                            e.target.checked
+                              ? [...prev, id]
+                              : prev.filter((c) => c !== id)
+                          );
+                        }}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </fieldset>
+                <button
+                  type="submit"
+                  disabled={busy || channels.length === 0}
+                  className="ac-btn ac-btn-primary"
+                >
+                  {busy ? "Rendering package…" : "Render full advertising package"}
                 </button>
               </form>
 

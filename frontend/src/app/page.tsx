@@ -77,7 +77,10 @@ export default function HomePage() {
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/publish" className="ac-btn ac-btn-primary">
+          <Link href="/advertising" className="ac-btn ac-btn-primary">
+            AI Advertising
+          </Link>
+          <Link href="/publish" className="ac-btn ac-btn-secondary">
             Publish masters
           </Link>
           <a href={API_DOCS} target="_blank" rel="noreferrer" className="ac-btn ac-btn-ghost">

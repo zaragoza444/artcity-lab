@@ -120,7 +120,15 @@ class ArtCityImageProvider(ProviderAdapter):
 
         job_id = f"ac-img-{uuid4()}"
         title = kwargs.get("character_name") or kwargs.get("character_key") or "Art City"
-        media = media_factory.make_image(prompt, title=str(title))
+        if kwargs.get("end_card"):
+            media = media_factory.make_end_card(
+                str(kwargs.get("campaign") or title),
+                str(kwargs.get("cta") or "Discover more"),
+                brand=str(kwargs.get("brand") or "Art City"),
+                prompt=prompt,
+            )
+        else:
+            media = media_factory.make_image(prompt, title=str(title))
         return ProviderResult(
             provider_job_id=job_id,
             status=GenerationStatus.SUCCEEDED,
@@ -156,14 +164,18 @@ class ArtCityVideoProvider(ProviderAdapter):
         job_id = f"ac-vid-{uuid4()}"
         duration = float(kwargs.get("duration_seconds") or 4.0)
         title = kwargs.get("character_name") or kwargs.get("character_key") or "Art City"
-        if duration >= 8:
+        aspect = str(kwargs.get("aspect") or "16:9")
+        brand = str(kwargs.get("brand") or "Art City")
+        campaign = str(kwargs.get("campaign") or title)
+        cta = str(kwargs.get("cta") or "Art City Studios")
+        if duration >= 6 or kwargs.get("advertising"):
             visual, bed = media_factory.make_cinematic_video(
                 prompt,
-                aspect="16:9",
+                aspect=aspect,
                 duration_seconds=duration,
-                brand="Art City",
-                campaign=str(title),
-                cta="Art City Studios",
+                brand=brand,
+                campaign=campaign,
+                cta=cta,
             )
         else:
             visual, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
@@ -191,6 +203,107 @@ class ArtCityVideoProvider(ProviderAdapter):
 
     def estimate_cost(self, prompt: str, modality: str) -> float:
         return 0.12
+
+
+class ArtCityVoiceProvider(ProviderAdapter):
+    name = "artcity-voice"
+
+    def submit(self, prompt: str, modality: str, model: Optional[str] = None, **kwargs) -> ProviderResult:
+        from app.services import media_factory
+
+        job_id = f"ac-vo-{uuid4()}"
+        brand = str(kwargs.get("brand") or kwargs.get("character_name") or "Art City")
+        script = str(kwargs.get("script") or prompt)
+        dialogue = kwargs.get("dialogue_lines") or []
+        if dialogue:
+            media = media_factory.make_voice_conversation(prompt, list(dialogue))
+        else:
+            media = media_factory.make_ad_voiceover(script, brand=brand)
+        return ProviderResult(
+            provider_job_id=job_id,
+            status=GenerationStatus.SUCCEEDED,
+            result_uri=f"inline://{job_id}",
+            actual_cost=self.estimate_cost(prompt, modality),
+            output_bytes=media.data,
+            content_type=media.content_type,
+            filename=media.filename,
+        )
+
+    def status(self, provider_job_id: str) -> ProviderResult:
+        return ProviderResult(provider_job_id=provider_job_id, status=GenerationStatus.SUCCEEDED)
+
+    def result(self, provider_job_id: str) -> ProviderResult:
+        return self.status(provider_job_id)
+
+    def cancel(self, provider_job_id: str) -> ProviderResult:
+        return ProviderResult(provider_job_id=provider_job_id, status=GenerationStatus.CANCELLED)
+
+    def estimate_cost(self, prompt: str, modality: str) -> float:
+        return 0.05
+
+
+class ArtCityMusicProvider(ProviderAdapter):
+    name = "artcity-music"
+
+    def submit(self, prompt: str, modality: str, model: Optional[str] = None, **kwargs) -> ProviderResult:
+        from app.services import media_factory
+
+        job_id = f"ac-mus-{uuid4()}"
+        duration = float(kwargs.get("duration_seconds") or 8.0)
+        style = str(kwargs.get("music_style") or "epic")
+        media = media_factory.make_cinematic_music(prompt, duration_seconds=max(duration, 8.0), style=style)
+        return ProviderResult(
+            provider_job_id=job_id,
+            status=GenerationStatus.SUCCEEDED,
+            result_uri=f"inline://{job_id}",
+            actual_cost=self.estimate_cost(prompt, modality),
+            output_bytes=media.data,
+            content_type=media.content_type,
+            filename=media.filename,
+        )
+
+    def status(self, provider_job_id: str) -> ProviderResult:
+        return ProviderResult(provider_job_id=provider_job_id, status=GenerationStatus.SUCCEEDED)
+
+    def result(self, provider_job_id: str) -> ProviderResult:
+        return self.status(provider_job_id)
+
+    def cancel(self, provider_job_id: str) -> ProviderResult:
+        return ProviderResult(provider_job_id=provider_job_id, status=GenerationStatus.CANCELLED)
+
+    def estimate_cost(self, prompt: str, modality: str) -> float:
+        return 0.08
+
+
+class ArtCityAudioProvider(ProviderAdapter):
+    name = "artcity-audio"
+
+    def submit(self, prompt: str, modality: str, model: Optional[str] = None, **kwargs) -> ProviderResult:
+        from app.services import media_factory
+
+        job_id = f"ac-aud-{uuid4()}"
+        media = media_factory.make_sfx(prompt)
+        return ProviderResult(
+            provider_job_id=job_id,
+            status=GenerationStatus.SUCCEEDED,
+            result_uri=f"inline://{job_id}",
+            actual_cost=self.estimate_cost(prompt, modality),
+            output_bytes=media.data,
+            content_type=media.content_type,
+            filename=media.filename,
+        )
+
+    def status(self, provider_job_id: str) -> ProviderResult:
+        return ProviderResult(provider_job_id=provider_job_id, status=GenerationStatus.SUCCEEDED)
+
+    def result(self, provider_job_id: str) -> ProviderResult:
+        return self.status(provider_job_id)
+
+    def cancel(self, provider_job_id: str) -> ProviderResult:
+        return ProviderResult(provider_job_id=provider_job_id, status=GenerationStatus.CANCELLED)
+
+    def estimate_cost(self, prompt: str, modality: str) -> float:
+        return 0.03
 
 
 class ExternalFallbackProvider(ProviderAdapter):
@@ -229,6 +342,9 @@ PROVIDERS: dict[str, type[ProviderAdapter]] = {
     "stub": StubProvider,
     "artcity-image": ArtCityImageProvider,
     "artcity-video": ArtCityVideoProvider,
+    "artcity-voice": ArtCityVoiceProvider,
+    "artcity-music": ArtCityMusicProvider,
+    "artcity-audio": ArtCityAudioProvider,
     "external-fallback": ExternalFallbackProvider,
 }
 

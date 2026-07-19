@@ -35,7 +35,7 @@ tags_metadata = [
     {"name": "speech", "description": "Kurdish ASR — Sorani / Badini / Kurmanji + subtitles"},
     {"name": "projects", "description": "Projects, characters, scripts, generations"},
     {"name": "studio", "description": "Studio generate, assets, reviews, media"},
-    {"name": "cinema", "description": "Full advertising campaign packages + QC + ZIP"},
+    {"name": "cinema", "description": "AI advertising campaigns via Model Gateway — video/audio/voice + QC + ZIP"},
     {"name": "publishing", "description": "Masters packaging and channel release"},
     {"name": "data-lab", "description": "Dataset ingest and annotation workspace"},
     {"name": "registries", "description": "Datasets, rights, model registry, training"},

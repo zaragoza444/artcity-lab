@@ -125,6 +125,14 @@ def process_generation_job(db: Session, job_id: str) -> GenerationJob:
             character_key=job.character_key,
             dialogue_lines=params.get("dialogue_lines"),
             dialect=params.get("dialect"),
+            aspect=params.get("aspect"),
+            campaign=params.get("campaign"),
+            cta=params.get("cta"),
+            brand=params.get("brand"),
+            music_style=params.get("music_style"),
+            script=params.get("script"),
+            advertising=params.get("advertising"),
+            end_card=params.get("end_card"),
         )
         job.provider_job_id = result.provider_job_id
 
@@ -165,14 +173,18 @@ def _materialize_output(db: Session, job: GenerationJob, result, params: dict) -
 
     # Video always needs a linked audio bed for /api/media/.../audio and Cinema packaging.
     if modality == "video":
-        if duration >= 8:
+        aspect = str(params.get("aspect") or "16:9")
+        brand = str(params.get("brand") or "Art City")
+        campaign = str(params.get("campaign") or title)
+        cta = str(params.get("cta") or "Art City Studios")
+        if duration >= 6 or params.get("advertising"):
             visual, bed = media_factory.make_cinematic_video(
                 prompt,
-                aspect="16:9",
+                aspect=aspect,
                 duration_seconds=duration,
-                brand="Art City",
-                campaign=str(title),
-                cta="Art City Studios",
+                brand=brand,
+                campaign=campaign,
+                cta=cta,
             )
         else:
             visual, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
@@ -227,6 +239,18 @@ def _materialize_output(db: Session, job: GenerationJob, result, params: dict) -
         )
         return key
 
+    if modality == "image" and params.get("end_card") and not (result.output_bytes and result.filename):
+        media = media_factory.make_end_card(
+            str(params.get("campaign") or title),
+            str(params.get("cta") or "Discover more"),
+            brand=str(params.get("brand") or "Art City"),
+            prompt=prompt,
+        )
+        key = f"projects/{job.project_id}/jobs/{job.id}/{media.filename}"
+        storage.upload_bytes(key, media.data, media.content_type)
+        _add_asset(db, job, key, modality, prompt, title, {"preview_kind": "image", "end_card": True})
+        return key
+
     if result.output_bytes and result.filename:
         key = f"projects/{job.project_id}/jobs/{job.id}/{result.filename}"
         storage.upload_bytes(key, result.output_bytes, result.content_type or "application/octet-stream")
@@ -235,7 +259,15 @@ def _materialize_output(db: Session, job: GenerationJob, result, params: dict) -
 
     # Stub / legacy path — synthesize via media_factory
     if modality == "image":
-        media = media_factory.make_image(prompt, title=str(title))
+        if params.get("end_card"):
+            media = media_factory.make_end_card(
+                str(params.get("campaign") or title),
+                str(params.get("cta") or "Discover more"),
+                brand=str(params.get("brand") or "Art City"),
+                prompt=prompt,
+            )
+        else:
+            media = media_factory.make_image(prompt, title=str(title))
         key = f"projects/{job.project_id}/jobs/{job.id}/{media.filename}"
         storage.upload_bytes(key, media.data, media.content_type)
         _add_asset(db, job, key, modality, prompt, title, {"preview_kind": "image"})
@@ -244,13 +276,19 @@ def _materialize_output(db: Session, job: GenerationJob, result, params: dict) -
         if dialogue_lines:
             media = media_factory.make_voice_conversation(prompt, dialogue_lines)
         else:
-            media = media_factory.make_ad_voiceover(prompt, brand=str(title))
+            media = media_factory.make_ad_voiceover(
+                str(params.get("script") or prompt),
+                brand=str(params.get("brand") or title),
+            )
         key = f"projects/{job.project_id}/jobs/{job.id}/{media.filename}"
         storage.upload_bytes(key, media.data, media.content_type)
         _add_asset(db, job, key, modality, prompt, title, {"preview_kind": "audio"})
         return key
     if modality == "music":
-        media = media_factory.make_cinematic_music(prompt, duration_seconds=max(duration, 8.0), style="warm")
+        style = str(params.get("music_style") or "warm")
+        media = media_factory.make_cinematic_music(
+            prompt, duration_seconds=max(duration, 8.0), style=style
+        )
         key = f"projects/{job.project_id}/jobs/{job.id}/{media.filename}"
         storage.upload_bytes(key, media.data, media.content_type)
         _add_asset(db, job, key, modality, prompt, title, {"preview_kind": "audio"})

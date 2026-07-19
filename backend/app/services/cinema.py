@@ -1,4 +1,4 @@
-"""Art City Cinema — advertising campaign package builder with manifest + QC."""
+"""Art City Cinema — advertising campaign packages via Model Gateway."""
 
 from __future__ import annotations
 
@@ -10,12 +10,27 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
-from app.core.enums import AssetType, GenerationStatus
-from app.models import Asset, CostRecord, GenerationJob
+from app.core.enums import AssetType
+from app.models import Asset, GenerationJob
 from app.services import media_factory
-from app.services.providers import get_provider
+from app.services.gateway import enqueue_generation
 from app.services.storage import get_storage
 from app.services.validation import EXPORT_PRESETS, load_and_validate_package
+
+FILE_MAP = {
+    "broadcast_hero": "broadcast_hero.svg",
+    "social_vertical": "social_vertical.svg",
+    "social_square": "social_square.svg",
+    "music_master": "music_master.wav",
+    "voiceover": "voiceover.wav",
+    "end_card": "end_card.svg",
+}
+
+CHANNEL_PRESETS = {
+    "broadcast": {"aspect": "16:9", "role": "broadcast_hero", "label": "Broadcast hero"},
+    "social_vertical": {"aspect": "9:16", "role": "social_vertical", "label": "Social vertical"},
+    "social_square": {"aspect": "1:1", "role": "social_square", "label": "Social square"},
+}
 
 
 def _upload(project_id: str, package_id: str, media: media_factory.MediaFile) -> str:
@@ -37,15 +52,19 @@ def build_cinematic_package(
     initiated_by: str = "art-city-producer",
     brand_colors: Optional[dict[str, str]] = None,
     usage_rights: str = "Art City proprietary — internal + licensed broadcast/social",
+    dialect: Optional[str] = "sorani",
+    character_key: Optional[str] = None,
+    character_name: Optional[str] = None,
+    channels: Optional[list[str]] = None,
+    requested_by: Optional[str] = None,
 ) -> dict[str, Any]:
     """
-    Build a complete Art City Cinema advertising campaign:
-    Hero film + social cutdowns + music + VO + end card + campaign manifest + technical QC.
+    Full Art City Cinema advertising campaign via Model Gateway:
+    hero + social cutdowns + music + VO + end card + manifest + technical QC.
     """
     started = time.perf_counter()
     started_at = datetime.now(timezone.utc)
     package_id = str(uuid4())
-    provider = get_provider("stub")
     vo_text = voiceover_script or f"{campaign}. {brief}. {cta}."
     colors = brand_colors or {
         "ink": "#05070b",
@@ -54,130 +73,105 @@ def build_cinematic_package(
         "teal": "#3aa39c",
         "paper": "#f3f6fa",
     }
-
+    selected = channels or ["broadcast", "social_vertical", "social_square"]
     deliverables: list[dict[str, Any]] = []
     generation_history: list[dict[str, Any]] = []
     total_cost = 0.0
     storage = get_storage()
 
-    def _job(
+    def _from_job(
+        job: GenerationJob,
+        *,
+        role: str,
         modality: str,
-        prompt: str,
-        primary: str,
-        meta: dict[str, Any],
-        audio: str | None = None,
-    ) -> GenerationJob:
+        name: str,
+        aspect: Optional[str] = None,
+        extra: Optional[dict[str, Any]] = None,
+    ) -> None:
         nonlocal total_cost
-        est = provider.estimate_cost(prompt, modality if modality in {"image", "video", "voice", "audio", "music"} else "video")
-        prv = provider.submit(
-            prompt,
-            modality if modality in {"image", "video", "voice", "audio", "music"} else "video",
-            "artcity-cinema-v1",
-        )
-        job = GenerationJob(
-            project_id=project_id,
-            modality=modality,
-            provider=provider.name,
-            model="artcity-cinema-v1",
-            prompt=prompt,
-            status=GenerationStatus.SUCCEEDED.value,
-            result_uri=primary,
-            estimated_cost=est,
-            actual_cost=prv.actual_cost,
-            provider_job_id=prv.provider_job_id,
-        )
-        db.add(job)
-        db.flush()
-        if prv.actual_cost:
-            total_cost += float(prv.actual_cost)
-            db.add(
-                CostRecord(
-                    project_id=project_id,
-                    generation_job_id=job.id,
-                    provider=provider.name,
-                    model="artcity-cinema-v1",
-                    amount=prv.actual_cost,
-                    note=f"cinema package {package_id[:8]} · {meta.get('role')}",
-                )
+        cost = float(job.actual_cost or job.estimated_cost or 0)
+        total_cost += cost
+        audio_path = None
+        if modality == "video":
+            beds = (
+                db.query(Asset)
+                .filter(Asset.project_id == project_id, Asset.asset_type == AssetType.AUDIO.value)
+                .order_by(Asset.created_at.desc())
+                .all()
             )
+            linked = next(
+                (a for a in beds if (a.metadata_json or {}).get("linked_job") == job.id),
+                None,
+            )
+            if linked:
+                audio_path = linked.storage_path
 
         history = {
-            "role": meta.get("role"),
+            "role": role,
             "job_id": job.id,
-            "prompt": prompt,
-            "prompt_version": "cinema-brief-v1",
-            "provider": provider.name,
-            "model": "artcity-cinema-v1",
-            "provider_job_id": prv.provider_job_id,
-            "estimated_cost": est,
-            "actual_cost": prv.actual_cost,
+            "prompt": job.prompt,
+            "prompt_version": "cinema-gateway-v1",
+            "provider": job.provider,
+            "model": job.model,
+            "model_version": job.model_version,
+            "registered_model_id": job.registered_model_id,
+            "provider_job_id": job.provider_job_id,
+            "estimated_cost": job.estimated_cost,
+            "actual_cost": job.actual_cost,
             "generated_at": datetime.now(timezone.utc).isoformat(),
-            "storage_path": primary,
-            "audio_storage_path": audio,
+            "storage_path": job.result_uri,
+            "audio_storage_path": audio_path,
+            "route_reason": (job.params_json or {}).get("route_reason"),
+            "knowledge_hits": (job.params_json or {}).get("knowledge_hits"),
+            "dialect": (job.params_json or {}).get("dialect"),
         }
         generation_history.append(history)
 
-        db.add(
-            Asset(
-                project_id=project_id,
-                asset_type=meta.get("asset_type", AssetType.OTHER.value),
-                name=meta.get("name", f"{modality}:{campaign}")[:255],
-                storage_path=primary,
-                metadata_json={
-                    **meta,
-                    "package_id": package_id,
-                    "campaign": campaign,
-                    "brand": brand,
-                    "generation": history,
-                },
-            )
-        )
-        if audio:
-            db.add(
-                Asset(
-                    project_id=project_id,
-                    asset_type=AssetType.AUDIO.value,
-                    name=f"bed:{meta.get('name', modality)}"[:255],
-                    storage_path=audio,
-                    metadata_json={
+        # Tag job assets for cinema package ownership
+        for asset in (
+            db.query(Asset)
+            .filter(Asset.project_id == project_id)
+            .order_by(Asset.created_at.desc())
+            .limit(40)
+            .all()
+        ):
+            meta = dict(asset.metadata_json or {})
+            if meta.get("job_id") == job.id or meta.get("linked_job") == job.id:
+                meta.update(
+                    {
                         "package_id": package_id,
-                        "linked_job": job.id,
-                        "role": "cinema_audio_bed",
-                    },
+                        "campaign": campaign,
+                        "brand": brand,
+                        "cinema_role": role,
+                        "product": "Art City Cinema",
+                    }
                 )
-            )
+                asset.metadata_json = meta
+                db.add(asset)
 
-        file_map = {
-            "broadcast_hero": "broadcast_hero.svg",
-            "social_vertical": "social_vertical.svg",
-            "social_square": "social_square.svg",
-            "music_master": "music_master.wav",
-            "voiceover": "voiceover.wav",
-            "end_card": "end_card.svg",
-        }
-        role = meta.get("role") or ""
         entry: dict[str, Any] = {
             "type": role,
             "role": role,
             "modality": modality,
             "job_id": job.id,
-            "label": meta.get("name"),
-            "aspect_ratio": meta.get("aspect"),
-            "aspect": meta.get("aspect"),
+            "label": name,
+            "aspect_ratio": aspect,
+            "aspect": aspect,
             "media_url": f"/api/media/{project_id}/{job.id}/primary",
-            "audio_url": f"/api/media/{project_id}/{job.id}/audio" if audio else None,
-            "video_file": file_map.get(role) if modality == "video" else None,
-            "audio_file": f"{role}_audio_bed.wav" if audio else None,
-            "file": file_map.get(role),
+            "audio_url": f"/api/media/{project_id}/{job.id}/audio" if audio_path else None,
+            "video_file": FILE_MAP.get(role) if modality == "video" else None,
+            "audio_file": f"{role}_audio_bed.wav" if audio_path else None,
+            "file": FILE_MAP.get(role),
             "mood": music_style if role == "music_master" else None,
-            "storage_path": primary,
+            "storage_path": job.result_uri,
             "generation": history,
-            "export_preset": EXPORT_PRESETS.get(meta.get("aspect") or "", None),
+            "export_preset": EXPORT_PRESETS.get(aspect or "", None),
+            "channel": next((k for k, v in CHANNEL_PRESETS.items() if v["role"] == role), role),
+            **(extra or {}),
         }
         deliverables.append(entry)
-        return job
 
-    # Brand logo asset
+    # Brand logo
     logo = media_factory.make_brand_logo()
     logo_key = _upload(project_id, package_id, logo)
     db.add(
@@ -189,80 +183,137 @@ def build_cinematic_package(
             metadata_json={"package_id": package_id, "role": "brand_logo", "brand_colors": colors},
         )
     )
+    db.flush()
 
-    for aspect, role in (("16:9", "broadcast_hero"), ("9:16", "social_vertical"), ("1:1", "social_square")):
-        visual, bed = media_factory.make_cinematic_video(
-            brief,
-            aspect=aspect,
+    # Video cutdowns via Gateway
+    for channel_id in selected:
+        preset = CHANNEL_PRESETS.get(channel_id)
+        if not preset:
+            continue
+        aspect = preset["aspect"]
+        role = preset["role"]
+        prompt = (
+            f"[{aspect} Art City advertising {role}] Campaign: {campaign}. "
+            f"Brief: {brief}. CTA: {cta}. Brand: {brand}. "
+            f"Cinematic commercial for broadcast and social."
+        )
+        job = enqueue_generation(
+            db,
+            project_id=project_id,
+            modality="video",
+            prompt=prompt,
+            character_key=character_key,
+            character_name=character_name or campaign,
             duration_seconds=duration_seconds,
-            brand=brand,
-            campaign=campaign,
-            cta=cta,
-        )
-        primary = _upload(project_id, package_id, visual)
-        audio = _upload(project_id, package_id, bed)
-        _job(
-            "video",
-            f"[{aspect}] {campaign}: {brief}",
-            primary,
-            {
-                "role": role,
+            requested_by=requested_by,
+            params={
+                "dialect": dialect,
                 "aspect": aspect,
-                "name": f"{campaign} · {aspect}",
-                "asset_type": AssetType.VIDEO.value,
-                "preview_kind": "video_proxy",
-                "duration_seconds": duration_seconds,
+                "campaign": campaign,
                 "cta": cta,
-                "fps": 24.0,
+                "brand": brand,
+                "cinema_role": role,
+                "package_id": package_id,
+                "music_style": music_style,
+                "advertising": True,
             },
-            audio=audio,
         )
+        if job.status != "succeeded":
+            raise ValueError(f"Cinema video failed for {role}: {job.error_message or job.status}")
+        _from_job(job, role=role, modality="video", name=f"{campaign} · {aspect}", aspect=aspect)
 
-    music = media_factory.make_cinematic_music(brief, duration_seconds=duration_seconds, style=music_style)
-    _job(
-        "music",
-        f"Music bed · {music_style} · {campaign}",
-        _upload(project_id, package_id, music),
-        {
-            "role": "music_master",
-            "name": f"{campaign} · Music",
-            "asset_type": AssetType.MUSIC.value,
-            "preview_kind": "audio",
+    # Music master
+    music_job = enqueue_generation(
+        db,
+        project_id=project_id,
+        modality="music",
+        prompt=f"Advertising music bed · {music_style} · {campaign}. {brief}",
+        duration_seconds=duration_seconds,
+        requested_by=requested_by,
+        params={
+            "dialect": dialect,
             "music_style": music_style,
-            "duration_seconds": duration_seconds,
+            "campaign": campaign,
+            "cinema_role": "music_master",
+            "package_id": package_id,
+            "advertising": True,
         },
     )
+    if music_job.status != "succeeded":
+        raise ValueError(f"Cinema music failed: {music_job.error_message or music_job.status}")
+    _from_job(
+        music_job,
+        role="music_master",
+        modality="music",
+        name=f"{campaign} · Music",
+        extra={"music_style": music_style},
+    )
 
-    vo = media_factory.make_ad_voiceover(vo_text, brand=brand)
-    _job(
-        "voice",
-        f"VO · {campaign}",
-        _upload(project_id, package_id, vo),
-        {
-            "role": "voiceover",
-            "name": f"{campaign} · Voiceover",
-            "asset_type": AssetType.VOICE.value,
-            "preview_kind": "audio",
+    # Voice-over
+    vo_job = enqueue_generation(
+        db,
+        project_id=project_id,
+        modality="voice",
+        prompt=f"Advertising voice-over · {campaign}. Script: {vo_text}",
+        character_key=character_key,
+        character_name=character_name or brand,
+        duration_seconds=min(duration_seconds, 30.0),
+        requested_by=requested_by,
+        params={
+            "dialect": dialect,
+            "campaign": campaign,
+            "brand": brand,
+            "cinema_role": "voiceover",
+            "package_id": package_id,
             "script": vo_text,
+            "advertising": True,
         },
     )
+    if vo_job.status != "succeeded":
+        raise ValueError(f"Cinema voice failed: {vo_job.error_message or vo_job.status}")
+    _from_job(
+        vo_job,
+        role="voiceover",
+        modality="voice",
+        name=f"{campaign} · Voiceover",
+        extra={"script": vo_text},
+    )
 
-    end = media_factory.make_end_card(campaign, cta, brand=brand, prompt=brief)
-    _job(
-        "image",
-        f"End card · {campaign}",
-        _upload(project_id, package_id, end),
-        {
-            "role": "end_card",
-            "name": f"{campaign} · End card",
-            "asset_type": AssetType.IMAGE.value,
-            "preview_kind": "image",
+    # End card
+    end_job = enqueue_generation(
+        db,
+        project_id=project_id,
+        modality="image",
+        prompt=(
+            f"Advertising end card for {campaign}. Brand {brand}. CTA: {cta}. "
+            f"Brief mood: {brief}. Clean Art City title card."
+        ),
+        character_key=character_key,
+        character_name=character_name,
+        requested_by=requested_by,
+        params={
+            "dialect": dialect,
+            "campaign": campaign,
             "cta": cta,
+            "brand": brand,
+            "cinema_role": "end_card",
+            "package_id": package_id,
             "aspect": "16:9",
+            "advertising": True,
+            "end_card": True,
         },
     )
+    if end_job.status != "succeeded":
+        raise ValueError(f"Cinema end card failed: {end_job.error_message or end_job.status}")
+    _from_job(
+        end_job,
+        role="end_card",
+        modality="image",
+        name=f"{campaign} · End card",
+        aspect="16:9",
+        extra={"cta": cta},
+    )
 
-    # Attach audio bed bytes for validation sync checks
     jobs_by_id: dict[str, GenerationJob] = {}
     enriched: list[dict[str, Any]] = []
     for d in deliverables:
@@ -299,6 +350,7 @@ def build_cinematic_package(
 
     campaign_manifest = {
         "product": "Art City Cinema",
+        "kind": "advertising_campaign",
         "campaign_id": package_id,
         "project_id": project_id,
         "campaign_name": campaign,
@@ -308,9 +360,13 @@ def build_cinematic_package(
         "cta": cta,
         "voiceover_script": vo_text,
         "music_style": music_style,
+        "dialect": dialect,
+        "character_key": character_key,
+        "channels": selected,
         "duration_seconds": duration_seconds,
         "frame_rate_fps": 24.0,
         "export_presets": EXPORT_PRESETS,
+        "gateway": "Art City Model Gateway",
         "initiated_by": initiated_by,
         "started_at": started_at.isoformat(),
         "completed_at": finished_at.isoformat(),
@@ -323,12 +379,14 @@ def build_cinematic_package(
         "deliverables": [
             {
                 "type": d.get("type"),
+                "channel": d.get("channel"),
                 "aspect_ratio": d.get("aspect_ratio"),
                 "video_file": d.get("video_file"),
                 "audio_file": d.get("audio_file"),
                 "file": d.get("file"),
                 "mood": d.get("mood"),
                 "storage_location": d.get("storage_path"),
+                "job_id": d.get("job_id"),
                 "checksum_sha256": next(
                     (
                         r["technical"].get("sha256")
@@ -349,24 +407,12 @@ def build_cinematic_package(
         "ownership": "Art City owns campaign package, masters, stems, prompts, and metadata.",
     }
 
-    # Strip private validation bytes from stored deliverables
-    public_deliverables = []
-    for d in deliverables:
-        clean = {k: v for k, v in d.items() if not k.startswith("_")}
-        public_deliverables.append(clean)
+    public_deliverables = [{k: v for k, v in d.items() if not k.startswith("_")} for d in deliverables]
 
     manifest_key = f"projects/{project_id}/cinema/{package_id}/CAMPAIGN_MANIFEST.json"
-    storage.upload_bytes(
-        manifest_key,
-        json.dumps(campaign_manifest, indent=2).encode("utf-8"),
-        "application/json",
-    )
+    storage.upload_bytes(manifest_key, json.dumps(campaign_manifest, indent=2).encode("utf-8"), "application/json")
     validation_key = f"projects/{project_id}/cinema/{package_id}/TECHNICAL_VALIDATION.json"
-    storage.upload_bytes(
-        validation_key,
-        json.dumps(validation, indent=2).encode("utf-8"),
-        "application/json",
-    )
+    storage.upload_bytes(validation_key, json.dumps(validation, indent=2).encode("utf-8"), "application/json")
 
     package_asset = Asset(
         project_id=project_id,
@@ -383,9 +429,12 @@ def build_cinematic_package(
             "brand": brand,
             "brand_colors": colors,
             "music_style": music_style,
+            "dialect": dialect,
+            "character_key": character_key,
+            "channels": selected,
             "duration_seconds": duration_seconds,
             "voiceover_script": vo_text,
-            "formats": ["16:9", "9:16", "1:1"],
+            "formats": [CHANNEL_PRESETS[c]["aspect"] for c in selected if c in CHANNEL_PRESETS],
             "deliverables": public_deliverables,
             "total_cost": total_cost,
             "production_time_seconds": elapsed,
@@ -397,8 +446,8 @@ def build_cinematic_package(
             "validation_key": validation_key,
             "pipeline": [
                 "brief",
-                "cinematic_video",
-                "format_cutdowns",
+                "model_gateway",
+                "advertising_video_cutdowns",
                 "music",
                 "voiceover",
                 "end_card",
@@ -411,7 +460,6 @@ def build_cinematic_package(
     db.add(package_asset)
     db.commit()
     db.refresh(package_asset)
-
     return serialize_package(package_asset)
 
 
@@ -427,6 +475,9 @@ def serialize_package(asset: Asset) -> dict[str, Any]:
         "brand": meta.get("brand"),
         "brand_colors": meta.get("brand_colors"),
         "music_style": meta.get("music_style"),
+        "dialect": meta.get("dialect"),
+        "character_key": meta.get("character_key"),
+        "channels": meta.get("channels", []),
         "duration_seconds": meta.get("duration_seconds"),
         "formats": meta.get("formats", []),
         "deliverables": meta.get("deliverables", []),

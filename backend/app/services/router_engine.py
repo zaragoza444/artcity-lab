@@ -106,23 +106,22 @@ def resolve_route(
                 reason="character_model_registry",
             )
 
-    if modality == "image":
+    defaults = {
+        "image": ("artcity-image", "artcity-local-v1"),
+        "video": ("artcity-video", "artcity-video-v1"),
+        "voice": ("artcity-voice", "artcity-voice-v1"),
+        "music": ("artcity-music", "artcity-music-v1"),
+        "audio": ("artcity-audio", "artcity-audio-v1"),
+    }
+    if modality in defaults:
+        provider, default_model = defaults[modality]
         return RouteDecision(
-            provider="artcity-image",
-            model_name=model or "artcity-local-v1",
+            provider=provider,
+            model_name=model or default_model,
             model_version="v1",
             registered_model_id=None,
             character_key=character_key,
-            reason="default_artcity_image",
-        )
-    if modality == "video":
-        return RouteDecision(
-            provider="artcity-video",
-            model_name=model or "artcity-video-v1",
-            model_version="v1",
-            registered_model_id=None,
-            character_key=character_key,
-            reason="default_artcity_video",
+            reason=f"default_{provider}",
         )
     return RouteDecision(
         provider="stub",

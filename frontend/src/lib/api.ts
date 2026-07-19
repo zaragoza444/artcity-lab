@@ -428,6 +428,10 @@ export const api = {
       music_style?: "epic" | "warm" | "pulse" | "soft";
       duration_seconds?: number;
       initiated_by?: string;
+      dialect?: string;
+      character_key?: string;
+      character_name?: string;
+      channels?: string[];
     }
   ) =>
     request<CinemaPackage>(`/api/projects/${projectId}/cinema/packages`, {

@@ -116,6 +116,10 @@ def main() -> None:
             ("Kurdiya image", "image", "kurdiya", mu, "artcity-image", 10),
             ("Default image", "image", None, None, "artcity-image", 100),
             ("Default video", "video", None, None, "artcity-video", 100),
+            ("Default voice", "voice", None, None, "artcity-voice", 100),
+            ("Default music", "music", None, None, "artcity-music", 100),
+            ("Default audio", "audio", None, None, "artcity-audio", 100),
+            ("Advertising video", "video", None, None, "artcity-video", 20),
         ]:
             exists = (
                 db.query(RouteRule)

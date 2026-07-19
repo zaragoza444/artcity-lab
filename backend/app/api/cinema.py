@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.api.schemas import CinemaPackageCreate, CinemaPackageOut
 from app.core.db import get_db
-from app.core.deps import get_current_user
+from app.core.deps import CurrentUser, get_current_user
 from app.core.ids import load_project, require_uuid
 from app.services.cinema import (
     build_cinematic_package,
@@ -27,21 +27,32 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 def create_cinema_package(
-    project_id: str, payload: CinemaPackageCreate, db: Session = Depends(get_db)
+    project_id: str,
+    payload: CinemaPackageCreate,
+    user: CurrentUser,
+    db: Session = Depends(get_db),
 ) -> CinemaPackageOut:
     project = load_project(db, project_id)
-    package = build_cinematic_package(
-        db,
-        project_id=project.id,
-        campaign=payload.campaign,
-        brief=payload.brief,
-        cta=payload.cta,
-        brand=payload.brand,
-        voiceover_script=payload.voiceover_script,
-        music_style=payload.music_style,
-        duration_seconds=payload.duration_seconds,
-        initiated_by=payload.initiated_by,
-    )
+    try:
+        package = build_cinematic_package(
+            db,
+            project_id=project.id,
+            campaign=payload.campaign,
+            brief=payload.brief,
+            cta=payload.cta,
+            brand=payload.brand,
+            voiceover_script=payload.voiceover_script,
+            music_style=payload.music_style,
+            duration_seconds=payload.duration_seconds,
+            initiated_by=payload.initiated_by or user.email,
+            dialect=payload.dialect,
+            character_key=payload.character_key,
+            character_name=payload.character_name,
+            channels=payload.channels,
+            requested_by=user.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return CinemaPackageOut.model_validate(package)
 
 

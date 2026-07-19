@@ -10,6 +10,7 @@ import { useAuth } from "@/components/AuthProvider";
 const primary = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/projects", label: "Projects" },
+  { href: "/advertising", label: "Advertising" },
   { href: "/cinema", label: "Cinema" },
   { href: "/studio", label: "Studio" },
   { href: "/publish", label: "Publish" },

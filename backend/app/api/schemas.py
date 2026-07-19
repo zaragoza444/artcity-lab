@@ -190,6 +190,10 @@ class CinemaPackageCreate(BaseModel):
     music_style: str = Field(default="epic")
     duration_seconds: float = Field(default=15.0, ge=5.0, le=60.0)
     initiated_by: str = Field(default="art-city-producer", max_length=120)
+    dialect: Optional[str] = Field(default="sorani")
+    character_key: Optional[str] = None
+    character_name: Optional[str] = None
+    channels: Optional[list[str]] = None
 
     @field_validator("campaign", "brief", "cta", "brand", "voiceover_script", "initiated_by", mode="before")
     @classmethod
@@ -249,6 +253,9 @@ class CinemaPackageOut(BaseModel):
     brand: str
     brand_colors: Optional[dict[str, str]] = None
     music_style: str
+    dialect: Optional[str] = None
+    character_key: Optional[str] = None
+    channels: Optional[list[str]] = None
     duration_seconds: float
     formats: list[str]
     deliverables: list[CinemaDeliverable]
