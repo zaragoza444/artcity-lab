@@ -14,19 +14,20 @@ from app.api.schemas import (
 )
 from app.api.studio import _enrich_job
 from app.core.db import get_db
+from app.core.deps import CurrentUser
 from app.models import Character, GenerationJob, Project, Script
-from app.services.studio import run_studio_generation
+from app.services.gateway import enqueue_generation
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
 @router.get("", response_model=list[ProjectOut])
-def list_projects(db: Session = Depends(get_db)) -> list[Project]:
+def list_projects(user: CurrentUser, db: Session = Depends(get_db)) -> list[Project]:
     return db.query(Project).order_by(Project.created_at.desc()).all()
 
 
 @router.post("", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
-def create_project(payload: ProjectCreate, db: Session = Depends(get_db)) -> Project:
+def create_project(payload: ProjectCreate, user: CurrentUser, db: Session = Depends(get_db)) -> Project:
     project = Project(
         name=payload.name,
         description=payload.description,
@@ -39,7 +40,7 @@ def create_project(payload: ProjectCreate, db: Session = Depends(get_db)) -> Pro
 
 
 @router.get("/{project_id}", response_model=ProjectOut)
-def get_project(project_id: str, db: Session = Depends(get_db)) -> Project:
+def get_project(project_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> Project:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -47,7 +48,9 @@ def get_project(project_id: str, db: Session = Depends(get_db)) -> Project:
 
 
 @router.patch("/{project_id}", response_model=ProjectOut)
-def update_project(project_id: str, payload: ProjectUpdate, db: Session = Depends(get_db)) -> Project:
+def update_project(
+    project_id: str, payload: ProjectUpdate, user: CurrentUser, db: Session = Depends(get_db)
+) -> Project:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -59,7 +62,7 @@ def update_project(project_id: str, payload: ProjectUpdate, db: Session = Depend
 
 
 @router.get("/{project_id}/characters", response_model=list[CharacterOut])
-def list_characters(project_id: str, db: Session = Depends(get_db)) -> list[Character]:
+def list_characters(project_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> list[Character]:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -72,7 +75,7 @@ def list_characters(project_id: str, db: Session = Depends(get_db)) -> list[Char
     status_code=status.HTTP_201_CREATED,
 )
 def create_character(
-    project_id: str, payload: CharacterCreate, db: Session = Depends(get_db)
+    project_id: str, payload: CharacterCreate, user: CurrentUser, db: Session = Depends(get_db)
 ) -> Character:
     project = db.get(Project, project_id)
     if not project:
@@ -93,7 +96,7 @@ def create_character(
 
 
 @router.get("/{project_id}/scripts", response_model=list[ScriptOut])
-def list_scripts(project_id: str, db: Session = Depends(get_db)) -> list[Script]:
+def list_scripts(project_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> list[Script]:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -105,7 +108,9 @@ def list_scripts(project_id: str, db: Session = Depends(get_db)) -> list[Script]
     response_model=ScriptOut,
     status_code=status.HTTP_201_CREATED,
 )
-def create_script(project_id: str, payload: ScriptCreate, db: Session = Depends(get_db)) -> Script:
+def create_script(
+    project_id: str, payload: ScriptCreate, user: CurrentUser, db: Session = Depends(get_db)
+) -> Script:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -127,27 +132,36 @@ def create_script(project_id: str, payload: ScriptCreate, db: Session = Depends(
     status_code=status.HTTP_201_CREATED,
 )
 def submit_generation(
-    project_id: str, payload: GenerationSubmit, db: Session = Depends(get_db)
+    project_id: str, payload: GenerationSubmit, user: CurrentUser, db: Session = Depends(get_db)
 ) -> GenerationJobOut:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    job = run_studio_generation(
+    character_key = None
+    if payload.character_name:
+        key = payload.character_name.strip().lower()
+        if "kardokh" in key:
+            character_key = "kardokh"
+        elif "kurdiya" in key:
+            character_key = "kurdiya"
+    job = enqueue_generation(
         db,
         project_id=project_id,
         modality=payload.modality,
         prompt=payload.prompt,
         model=payload.model,
-        provider_name=payload.provider,
+        character_key=character_key,
+        character_name=payload.character_name,
         duration_seconds=payload.duration_seconds,
         dialogue_lines=payload.dialogue_lines,
-        character_name=payload.character_name,
+        prefer_external=payload.provider == "external-fallback",
+        requested_by=user.id,
     )
     return _enrich_job(job)
 
 
 @router.get("/{project_id}/generations", response_model=list[GenerationJobOut])
-def list_generations(project_id: str, db: Session = Depends(get_db)) -> list[GenerationJobOut]:
+def list_generations(project_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> list[GenerationJobOut]:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")

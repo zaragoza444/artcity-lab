@@ -90,6 +90,9 @@ class GenerationJobOut(BaseModel):
     modality: str
     provider: str
     model: Optional[str]
+    model_version: Optional[str] = None
+    registered_model_id: Optional[str] = None
+    character_key: Optional[str] = None
     prompt: Optional[str]
     status: str
     result_uri: Optional[str]

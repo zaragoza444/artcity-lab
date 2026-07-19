@@ -1,3 +1,5 @@
+import { getAccessToken } from "@/lib/auth";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type Project = {
@@ -93,12 +95,16 @@ export function mediaAbsolute(path?: string | null): string | null {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init?.headers as Record<string, string> | undefined),
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+    headers,
     cache: "no-store",
   });
   if (!res.ok) {
@@ -109,8 +115,115 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export type TokenResponse = {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  role: string;
+  email: string;
+  full_name: string;
+  user_id: string;
+};
+
+export type Dataset = {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  media_type: string;
+  status: string;
+  version: string;
+  ai_training_permission: boolean;
+  commercial_use: boolean;
+  checksum: string | null;
+  record_count: number;
+  created_at: string;
+};
+
+export type RightsRecord = {
+  id: string;
+  dataset_id: string | null;
+  copyright_owner: string;
+  ai_training: boolean;
+  commercial_use: boolean;
+  legal_status: string;
+  created_at: string;
+};
+
+export type RegistryModel = {
+  id: string;
+  name: string;
+  version: string;
+  model_type: string;
+  character_key: string | null;
+  modality: string;
+  status: string;
+  checksum: string | null;
+  commercial_use: boolean;
+  created_at: string;
+};
+
+export type TrainingJob = {
+  id: string;
+  base_model: string;
+  dataset_id: string;
+  status: string;
+  epochs: number;
+  estimated_cost: number | null;
+  resulting_model_id: string | null;
+  created_at: string;
+};
+
+export type KnowledgeEntry = {
+  id: string;
+  term: string;
+  language: string;
+  dialect: string | null;
+  definition: string;
+  category: string;
+  approval_status: string;
+  created_at: string;
+};
+
+export type EvaluationRun = {
+  id: string;
+  candidate_model_id: string;
+  modality: string;
+  metrics: Record<string, unknown> | null;
+  status: string;
+  human_decision: string | null;
+  created_at: string;
+};
+
 export const api = {
   health: () => request<Health>("/health"),
+  login: (email: string, password: string) =>
+    request<TokenResponse>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+  me: () => request<{ id: string; email: string; full_name: string; role: string }>("/api/auth/me"),
+  listDatasets: () => request<Dataset[]>("/api/datasets"),
+  listRights: () => request<RightsRecord[]>("/api/rights"),
+  listRegistryModels: () => request<RegistryModel[]>("/api/models/registry"),
+  listTraining: () => request<TrainingJob[]>("/api/training"),
+  listKnowledge: (q?: string) =>
+    request<KnowledgeEntry[]>(`/api/knowledge${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  listEvaluations: () => request<EvaluationRun[]>("/api/evaluations"),
+  listProviders: () => request<{ name: string; healthy: boolean }[]>("/api/v1/ai/providers"),
+  listAiModels: () => request<RegistryModel[]>("/api/v1/ai/models"),
+  generateImage: (body: {
+    project_id: string;
+    prompt: string;
+    character_key?: string;
+    character_name?: string;
+    model?: string;
+  }) =>
+    request<GenerationJob>("/api/v1/ai/images/generate", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getAiJob: (jobId: string) => request<GenerationJob>(`/api/v1/ai/jobs/${jobId}`),
   listProjects: () => request<Project[]>("/api/projects"),
   createProject: (body: { name: string; description?: string; budget_limit?: number }) =>
     request<Project>("/api/projects", { method: "POST", body: JSON.stringify(body) }),

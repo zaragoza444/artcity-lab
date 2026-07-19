@@ -109,6 +109,26 @@ GitHub autodeploy (optional): connect each service to `zaragoza444/art-city-ai-s
 - `backend/` — FastAPI, SQLAlchemy, Alembic
 - `docker-compose.yml` — PostgreSQL, Redis, MinIO
 
+## Branch policy
+
+`feature/*` → `development` → `staging` → `main`
+
+Production deploys only from `main` after approval. Never commit `.env`, datasets, or model weights.
+
+## AI Core
+
+Art City AI Core adds Model Gateway, Data Lab, Rights, Model Registry, Training, Evaluations, and async inference workers under Cinema / Studio / Publish. See [docs/ART_CITY_AI_CORE_DIRECTIVE.md](docs/ART_CITY_AI_CORE_DIRECTIVE.md).
+
+Local worker (after Redis is up):
+
+```bat
+cd backend
+venv\Scripts\activate
+python -m app.worker
+```
+
+Default admin (after seed): `admin@artcity.ai` / `ArtCityAdmin!2026` — change immediately.
+
 ## Ownership principle
 
-Art City owns the platform, source code, data, characters, workflows, and IP. External AI models are replaceable providers only.
+Art City owns the platform, source code, data, characters, workflows, datasets, fine-tuned models, and IP. External AI models are optional replaceable providers only.

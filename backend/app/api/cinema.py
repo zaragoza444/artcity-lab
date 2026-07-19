@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.core.deps import get_current_user
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -13,7 +15,11 @@ from app.services.cinema import (
 )
 from app.services.packaging import build_campaign_zip
 
-router = APIRouter(prefix="/api/projects", tags=["cinema"])
+router = APIRouter(
+    prefix="/api/projects",
+    tags=["cinema"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.post(

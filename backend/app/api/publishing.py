@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.core.deps import get_current_user
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -14,7 +16,7 @@ from app.services.publishing import (
 )
 from app.services.storage import get_storage
 
-router = APIRouter(tags=["publishing"])
+router = APIRouter(tags=["publishing"], dependencies=[Depends(get_current_user)])
 
 
 @router.post(

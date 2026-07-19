@@ -12,9 +12,11 @@ from app.api.schemas import (
     StudioSummary,
 )
 from app.core.db import get_db
+from app.core.deps import CurrentUser
 from app.models import Asset, CostRecord, GenerationJob, Project, Review
+from app.services.gateway import enqueue_generation
 from app.services.storage import get_storage
-from app.services.studio import add_review, run_studio_generation
+from app.services.studio import add_review
 
 router = APIRouter(tags=["studio"])
 
@@ -37,7 +39,7 @@ def _enrich_asset(asset: Asset) -> AssetOut:
 
 
 @router.get("/api/projects/{project_id}/studio/summary", response_model=StudioSummary)
-def studio_summary(project_id: str, db: Session = Depends(get_db)) -> StudioSummary:
+def studio_summary(project_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> StudioSummary:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -82,27 +84,36 @@ def studio_summary(project_id: str, db: Session = Depends(get_db)) -> StudioSumm
     status_code=status.HTTP_201_CREATED,
 )
 def studio_generate(
-    project_id: str, payload: GenerationSubmit, db: Session = Depends(get_db)
+    project_id: str, payload: GenerationSubmit, user: CurrentUser, db: Session = Depends(get_db)
 ) -> GenerationJobOut:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    job = run_studio_generation(
+    character_key = None
+    if payload.character_name:
+        key = payload.character_name.strip().lower()
+        if "kardokh" in key:
+            character_key = "kardokh"
+        elif "kurdiya" in key:
+            character_key = "kurdiya"
+    job = enqueue_generation(
         db,
         project_id=project_id,
         modality=payload.modality,
         prompt=payload.prompt,
         model=payload.model,
-        provider_name=payload.provider,
+        character_key=character_key,
+        character_name=payload.character_name,
         duration_seconds=payload.duration_seconds,
         dialogue_lines=payload.dialogue_lines,
-        character_name=payload.character_name,
+        prefer_external=payload.provider == "external-fallback",
+        requested_by=user.id,
     )
     return _enrich_job(job)
 
 
 @router.get("/api/projects/{project_id}/assets", response_model=list[AssetOut])
-def list_assets(project_id: str, db: Session = Depends(get_db)) -> list[AssetOut]:
+def list_assets(project_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> list[AssetOut]:
     project = db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -124,6 +135,7 @@ def create_review(
     project_id: str,
     job_id: str,
     payload: ReviewCreate,
+    user: CurrentUser,
     db: Session = Depends(get_db),
 ) -> Review:
     job = db.get(GenerationJob, job_id)
@@ -139,7 +151,7 @@ def create_review(
 
 
 @router.get("/api/projects/{project_id}/generations/{job_id}/reviews", response_model=list[ReviewOut])
-def list_reviews(project_id: str, job_id: str, db: Session = Depends(get_db)) -> list[Review]:
+def list_reviews(project_id: str, job_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> list[Review]:
     job = db.get(GenerationJob, job_id)
     if not job or job.project_id != project_id:
         raise HTTPException(status_code=404, detail="Generation job not found")

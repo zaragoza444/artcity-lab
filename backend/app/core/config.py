@@ -30,6 +30,11 @@ class Settings(BaseSettings):
 
     secret_key: str = "change-me-local-dev-secret"
     cors_origins: str = "http://localhost:3000"
+    environment: str = "development"
+    auth_required: bool = True
+    external_providers_enabled: bool = True
+    default_admin_email: str = "admin@artcity.ai"
+    default_admin_password: str = "ArtCityAdmin!2026"
 
     fal_api_key: str = ""
     openai_api_key: str = ""

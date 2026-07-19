@@ -127,6 +127,11 @@ class GenerationJob(Base):
     modality: Mapped[str] = mapped_column(String(50), default=MediaModality.IMAGE.value)
     provider: Mapped[str] = mapped_column(String(100), default="stub")
     model: Mapped[Optional[str]] = mapped_column(String(255))
+    model_version: Mapped[Optional[str]] = mapped_column(String(50))
+    registered_model_id: Mapped[Optional[str]] = mapped_column(String(36))
+    dataset_id: Mapped[Optional[str]] = mapped_column(String(36))
+    character_key: Mapped[Optional[str]] = mapped_column(String(100))
+    requested_by: Mapped[Optional[str]] = mapped_column(String(36))
     prompt: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(50), default=GenerationStatus.PENDING.value)
     result_uri: Mapped[Optional[str]] = mapped_column(String(1024))
@@ -134,6 +139,7 @@ class GenerationJob(Base):
     estimated_cost: Mapped[Optional[float]] = mapped_column(Float)
     actual_cost: Mapped[Optional[float]] = mapped_column(Float)
     provider_job_id: Mapped[Optional[str]] = mapped_column(String(255))
+    params_json: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -175,3 +181,42 @@ class CostRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     project: Mapped["Project"] = relationship(back_populates="cost_records")
+
+
+# AI Core models (re-export)
+from app.models_ai import (  # noqa: E402
+    AnnotationTask,
+    AuditLog,
+    Dataset,
+    EvaluationRun,
+    IngestionRun,
+    KnowledgeEntry,
+    RegisteredModel,
+    RightsRecord,
+    RouteRule,
+    TrainingJob,
+    User,
+)
+
+__all__ = [
+    "Project",
+    "Character",
+    "Script",
+    "Scene",
+    "Shot",
+    "Asset",
+    "GenerationJob",
+    "Review",
+    "CostRecord",
+    "User",
+    "AuditLog",
+    "Dataset",
+    "RightsRecord",
+    "RegisteredModel",
+    "TrainingJob",
+    "KnowledgeEntry",
+    "AnnotationTask",
+    "IngestionRun",
+    "EvaluationRun",
+    "RouteRule",
+]

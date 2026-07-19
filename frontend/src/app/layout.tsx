@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Figtree, Literata, Syne } from "next/font/google";
+import { Providers } from "@/components/Providers";
 import "./globals.css";
 
 const syne = Syne({
@@ -44,7 +45,9 @@ export default function RootLayout({
         <div className="ac-shell">
           <div className="ac-grain" aria-hidden />
           <div className="ac-vignette" aria-hidden />
-          <div className="ac-content">{children}</div>
+          <div className="ac-content">
+            <Providers>{children}</Providers>
+          </div>
         </div>
       </body>
     </html>

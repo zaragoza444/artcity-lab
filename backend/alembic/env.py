@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from app.core.config import get_settings
 from app.core.db import Base
 import app.models  # noqa: F401 — register models
+import app.models_ai  # noqa: F401 — AI Core models
 
 config = context.config
 if config.config_file_name is not None:
