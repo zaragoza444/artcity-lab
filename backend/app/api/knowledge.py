@@ -34,11 +34,12 @@ class KnowledgeOut(BaseModel):
     language: str
     dialect: Optional[str]
     definition: str
-    child_friendly_definition: Optional[str]
-    translation: Optional[str]
-    example_sentence: Optional[str]
+    child_friendly_definition: Optional[str] = None
+    translation: Optional[str] = None
+    example_sentence: Optional[str] = None
     category: str
     approval_status: str
+    cultural_notes: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -77,6 +78,7 @@ def create_entry(payload: KnowledgeCreate, user: CurrentUser, db: Session = Depe
 def query_for_prompts(
     user: CurrentUser,
     terms: str = Query("", description="Comma-separated terms"),
+    dialect: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     parts = [t.strip() for t in terms.split(",") if t.strip()]
@@ -84,14 +86,50 @@ def query_for_prompts(
         return []
     results: list[KnowledgeEntry] = []
     for term in parts:
-        hit = (
-            db.query(KnowledgeEntry)
-            .filter(KnowledgeEntry.term.ilike(term), KnowledgeEntry.approval_status == "approved")
-            .first()
+        q = db.query(KnowledgeEntry).filter(
+            KnowledgeEntry.term.ilike(term),
+            KnowledgeEntry.approval_status == "approved",
         )
+        if dialect:
+            q = q.filter(KnowledgeEntry.dialect == dialect)
+        hit = q.first()
         if hit:
             results.append(hit)
     return results
+
+
+@router.get("/cultural-pack")
+def cultural_pack(
+    user: CurrentUser,
+    dialect: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Approved Kurdish cultural pack for Studio / Cinema prompt prep."""
+    q = db.query(KnowledgeEntry).filter(KnowledgeEntry.approval_status == "approved")
+    if dialect:
+        q = q.filter(KnowledgeEntry.dialect == dialect)
+    if category:
+        q = q.filter(KnowledgeEntry.category == category)
+    entries = q.order_by(KnowledgeEntry.category.asc(), KnowledgeEntry.term.asc()).limit(100).all()
+    by_cat: dict[str, list[dict]] = {}
+    for e in entries:
+        by_cat.setdefault(e.category or "general", []).append(
+            {
+                "id": e.id,
+                "term": e.term,
+                "dialect": e.dialect,
+                "definition": e.definition,
+                "translation": e.translation,
+                "example_sentence": e.example_sentence,
+            }
+        )
+    return {
+        "language": "ku",
+        "dialect": dialect,
+        "count": len(entries),
+        "categories": by_cat,
+    }
 
 
 @router.patch("/{entry_id}/approve", response_model=KnowledgeOut)

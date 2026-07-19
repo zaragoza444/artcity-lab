@@ -25,12 +25,13 @@ class GenerateRequest(BaseModel):
     model: Optional[str] = None
     character_key: Optional[str] = None
     character_name: Optional[str] = None
+    dialect: Optional[str] = Field(default=None, description="Kurdish dialect: sorani|badini|kurmanji")
     duration_seconds: float = Field(default=4.0, ge=0.5, le=60.0)
     dialogue_lines: Optional[list[str]] = None
     prefer_external: bool = False
     params: Optional[dict[str, Any]] = None
 
-    @field_validator("project_id", "prompt", "model", "character_key", "character_name", mode="before")
+    @field_validator("project_id", "prompt", "model", "character_key", "character_name", "dialect", mode="before")
     @classmethod
     def strip_fields(cls, v: object) -> object:
         if isinstance(v, str):
@@ -69,6 +70,9 @@ class ModelRegistryOut(BaseModel):
 def _generate(modality: str, payload: GenerateRequest, user: CurrentUser, request: Request, db: Session) -> GenerationJobOut:
     project = load_project(db, payload.project_id)
     project_id = project.id
+    merged_params = dict(payload.params or {})
+    if payload.dialect:
+        merged_params["dialect"] = payload.dialect
     job = enqueue_generation(
         db,
         project_id=project_id,
@@ -81,7 +85,7 @@ def _generate(modality: str, payload: GenerateRequest, user: CurrentUser, reques
         dialogue_lines=payload.dialogue_lines,
         prefer_external=payload.prefer_external,
         requested_by=user.id,
-        params=payload.params,
+        params=merged_params,
     )
     write_audit(
         db,

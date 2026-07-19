@@ -132,13 +132,30 @@ def main() -> int:
     for m in models[:5]:
         check("GET", f"/api/v1/ai/models/{m['id']}")
 
-    # Speech ASR
+    # Speech ASR + Kurdish international layer
+    check("GET", "/api/v1/ai/speech/dialects")
+    check(
+        "POST",
+        "/api/v1/ai/speech/detect",
+        json_body={"text": "Silav Newroz Zagros Kardokh"},
+        ok={200},
+    )
     check(
         "POST",
         "/api/v1/ai/speech/asr",
         json_body={"audio_storage_key": "smoke/test.wav", "dialect": "sorani"},
         ok={200},
     )
+    for dialect in ("sorani", "badini", "kurmanji"):
+        check(
+            "POST",
+            "/api/v1/ai/speech/asr",
+            json_body={"audio_storage_key": f"smoke/{dialect}.wav", "dialect": dialect},
+            ok={200},
+        )
+    check("GET", "/api/knowledge/cultural-pack")
+    check("GET", "/api/knowledge/cultural-pack?dialect=sorani")
+    check("GET", "/api/knowledge/query?terms=Kardokh,Kurdiya,Newroz")
 
     # Pad with /health to reach exactly TARGET
     while len(results) < TARGET:

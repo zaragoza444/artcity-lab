@@ -81,6 +81,7 @@ class GenerationSubmit(BaseModel):
     prompt: str = Field(..., min_length=1)
     model: Optional[str] = "artcity-local-v1"
     provider: str = "stub"
+    dialect: Optional[str] = None
     duration_seconds: float = Field(default=4.0, ge=0.5, le=60.0)
     dialogue_lines: Optional[list[str]] = None
     character_name: Optional[str] = None
@@ -98,7 +99,7 @@ class GenerationSubmit(BaseModel):
             return m
         return v
 
-    @field_validator("prompt", "character_name", "model", "provider", mode="before")
+    @field_validator("prompt", "character_name", "model", "provider", "dialect", mode="before")
     @classmethod
     def strip_text(cls, v: object) -> object:
         if isinstance(v, str):

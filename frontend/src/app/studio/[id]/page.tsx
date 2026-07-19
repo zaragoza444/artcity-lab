@@ -41,6 +41,7 @@ export default function ProjectStudioPage() {
   const [duration, setDuration] = useState(4);
   const [dialogue, setDialogue] = useState("");
   const [characterName, setCharacterName] = useState("");
+  const [dialect, setDialect] = useState("sorani");
   const [busy, setBusy] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
@@ -97,6 +98,7 @@ export default function ProjectStudioPage() {
         duration_seconds: duration,
         dialogue_lines: tab === "voice" && lines.length ? lines : undefined,
         character_name: characterName.trim() || undefined,
+        dialect,
       });
       setPrompt("");
       setDialogue("");
@@ -229,6 +231,22 @@ export default function ProjectStudioPage() {
                         }
                         required
                       />
+                    </div>
+
+                    <div>
+                      <label className="ac-label" htmlFor="dialect">
+                        Kurdish dialect
+                      </label>
+                      <select
+                        id="dialect"
+                        value={dialect}
+                        onChange={(e) => setDialect(e.target.value)}
+                        className="ac-field"
+                      >
+                        <option value="sorani">Sorani</option>
+                        <option value="badini">Badini</option>
+                        <option value="kurmanji">Kurmanji</option>
+                      </select>
                     </div>
 
                     {(tab === "video" || tab === "music") && (

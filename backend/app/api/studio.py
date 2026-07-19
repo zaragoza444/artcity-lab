@@ -105,6 +105,7 @@ def studio_generate(
         dialogue_lines=payload.dialogue_lines,
         prefer_external=payload.provider == "external-fallback",
         requested_by=user.id,
+        params={"dialect": payload.dialect} if payload.dialect else None,
     )
     return _enrich_job(job)
 

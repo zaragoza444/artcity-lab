@@ -18,6 +18,7 @@ const primary = [
 const core = [
   { href: "/data-lab", label: "Data Lab" },
   { href: "/knowledge", label: "Knowledge" },
+  { href: "/speech", label: "Speech" },
   { href: "/rights", label: "Rights" },
   { href: "/models", label: "Models" },
   { href: "/training", label: "Training" },

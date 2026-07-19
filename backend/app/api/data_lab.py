@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.deps import CurrentUser, require_roles
 from app.core.enums import DATASET_UPLOAD_ROLES, AnnotationStatus, DatasetStatus
-from app.models import User,  AnnotationTask, Dataset, IngestionRun
+from app.models import User, AnnotationTask, Dataset, IngestionRun
+from app.services.speech import detect_language_dialect
 from app.services.storage import get_storage
 
 router = APIRouter(tags=["data-lab"])
@@ -60,6 +61,8 @@ async def ingest_files(
     user: User = Depends(require_roles(*DATASET_UPLOAD_ROLES)),
     dataset_id: Optional[str] = Form(None),
     dataset_name: Optional[str] = Form(None),
+    language: Optional[str] = Form("ku"),
+    dialect: Optional[str] = Form(None),
     files: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
@@ -89,6 +92,8 @@ async def ingest_files(
     duplicates = 0
     unknown_rights = 0
     total_bytes = 0
+    text_samples: list[str] = []
+    dialect_votes: dict[str, int] = {}
     seen: set[str] = set()
     start = datetime.now(timezone.utc)
 
@@ -105,8 +110,38 @@ async def ingest_files(
             imported += 1
             total_bytes += len(data)
             unknown_rights += 1
+            name = (f.filename or "").lower()
+            ctype = (f.content_type or "").lower()
+            if "text" in ctype or name.endswith((".txt", ".md", ".srt", ".vtt", ".csv", ".json")):
+                try:
+                    sample = data[:4000].decode("utf-8", errors="ignore")
+                    if sample.strip():
+                        text_samples.append(sample)
+                        detected = detect_language_dialect(sample)
+                        dialect_votes[detected["dialect"]] = dialect_votes.get(detected["dialect"], 0) + 1
+                except Exception:  # noqa: BLE001
+                    pass
         except Exception:  # noqa: BLE001
             failed += 1
+
+    detected_dialect = dialect
+    detected_language = language or "ku"
+    detection_confidence = None
+    if dialect_votes:
+        detected_dialect = max(dialect_votes, key=dialect_votes.get)
+        detection_confidence = round(
+            dialect_votes[detected_dialect] / max(sum(dialect_votes.values()), 1), 3
+        )
+    elif text_samples:
+        detected = detect_language_dialect("\n".join(text_samples[:3]))
+        detected_dialect = detected["dialect"]
+        detected_language = detected["language"]
+        detection_confidence = detected["confidence"]
+
+    if detected_language and not dataset.language:
+        dataset.language = detected_language
+    if detected_dialect and not dataset.dialect:
+        dataset.dialect = detected_dialect
 
     dataset.record_count = (dataset.record_count or 0) + imported
     dataset.size_bytes = (dataset.size_bytes or 0) + total_bytes
@@ -126,6 +161,11 @@ async def ingest_files(
         "total_bytes": total_bytes,
         "duration_seconds": (run.finished_at - start).total_seconds(),
         "operator": user.email,
+        "language": detected_language,
+        "dialect": detected_dialect,
+        "dialect_votes": dialect_votes,
+        "detection_confidence": detection_confidence,
+        "text_files_scanned": len(text_samples),
     }
     db.commit()
     db.refresh(run)

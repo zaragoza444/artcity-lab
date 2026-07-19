@@ -99,17 +99,32 @@ def process_generation_job(db: Session, job_id: str) -> GenerationJob:
     job.status = GenerationStatus.RUNNING.value
     db.commit()
 
-    params = job.params_json or {}
+    params = dict(job.params_json or {})
     provider = get_provider(job.provider)
     try:
+        from app.services.knowledge_enrich import enrich_prompt
+
+        base_prompt = job.prompt or ""
+        enriched_prompt, knowledge_hits = enrich_prompt(
+            db,
+            base_prompt,
+            character_key=job.character_key,
+            dialect=params.get("dialect"),
+        )
+        if knowledge_hits:
+            params["knowledge_hits"] = knowledge_hits
+            params["prompt_enriched"] = True
+            job.params_json = params
+
         result = provider.submit_generation(
-            job.prompt or "",
+            enriched_prompt,
             job.modality,
             job.model,
             duration_seconds=params.get("duration_seconds", 4.0),
             character_name=params.get("character_name"),
             character_key=job.character_key,
             dialogue_lines=params.get("dialogue_lines"),
+            dialect=params.get("dialect"),
         )
         job.provider_job_id = result.provider_job_id
 

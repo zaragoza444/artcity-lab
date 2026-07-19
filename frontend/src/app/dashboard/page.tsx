@@ -41,6 +41,7 @@ export default function DashboardPage() {
           ["/models", "Models"],
           ["/training", "Training"],
           ["/knowledge", "Knowledge"],
+          ["/speech", "Speech"],
           ["/rights", "Rights"],
           ["/evaluations", "Evaluations"],
         ].map(([href, label]) => (

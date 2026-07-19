@@ -222,8 +222,45 @@ export type KnowledgeEntry = {
   language: string;
   dialect: string | null;
   definition: string;
+  translation?: string | null;
+  example_sentence?: string | null;
   category: string;
   approval_status: string;
+  cultural_notes?: string | null;
+  created_at: string;
+};
+
+export type SpeechDialect = {
+  id: string;
+  label: string;
+  script: string;
+};
+
+export type AsrManifest = {
+  engine: string;
+  status: string;
+  language: string;
+  dialect: string;
+  average_confidence: number;
+  segment_count: number;
+  segments: {
+    start: number;
+    end: number;
+    text: string;
+    speaker?: string;
+    dialect?: string;
+    confidence: number;
+  }[];
+};
+
+export type AnnotationTask = {
+  id: string;
+  dataset_id: string;
+  media_type: string;
+  payload: Record<string, unknown>;
+  labels: Record<string, unknown> | null;
+  status: string;
+  comments: unknown[] | null;
   created_at: string;
 };
 
@@ -249,8 +286,73 @@ export const api = {
   listRights: () => request<RightsRecord[]>("/api/rights"),
   listRegistryModels: () => request<RegistryModel[]>("/api/models/registry"),
   listTraining: () => request<TrainingJob[]>("/api/training"),
-  listKnowledge: (q?: string) =>
-    request<KnowledgeEntry[]>(`/api/knowledge${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  listKnowledge: (q?: string, dialect?: string) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (dialect) params.set("dialect", dialect);
+    const qs = params.toString();
+    return request<KnowledgeEntry[]>(`/api/knowledge${qs ? `?${qs}` : ""}`);
+  },
+  createKnowledge: (body: {
+    term: string;
+    definition: string;
+    language?: string;
+    dialect?: string;
+    translation?: string;
+    example_sentence?: string;
+    category?: string;
+  }) =>
+    request<KnowledgeEntry>("/api/knowledge", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  approveKnowledge: (id: string) =>
+    request<KnowledgeEntry>(`/api/knowledge/${id}/approve`, { method: "PATCH" }),
+  queryKnowledge: (terms: string, dialect?: string) => {
+    const params = new URLSearchParams({ terms });
+    if (dialect) params.set("dialect", dialect);
+    return request<KnowledgeEntry[]>(`/api/knowledge/query?${params}`);
+  },
+  culturalPack: (dialect?: string) =>
+    request<{
+      language: string;
+      dialect: string | null;
+      count: number;
+      categories: Record<string, KnowledgeEntry[]>;
+    }>(`/api/knowledge/cultural-pack${dialect ? `?dialect=${encodeURIComponent(dialect)}` : ""}`),
+  listSpeechDialects: () =>
+    request<{ language: string; dialects: SpeechDialect[]; model: string }>(
+      "/api/v1/ai/speech/dialects"
+    ),
+  detectLanguage: (text: string) =>
+    request<{ language: string; dialect: string; script: string; confidence: number }>(
+      "/api/v1/ai/speech/detect",
+      { method: "POST", body: JSON.stringify({ text }) }
+    ),
+  runAsr: (body: { audio_storage_key: string; dialect?: string; duration_hint?: number }) =>
+    request<AsrManifest>("/api/v1/ai/speech/asr", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  listAnnotations: () => request<AnnotationTask[]>("/api/data-lab/annotations"),
+  createAnnotation: (body: {
+    dataset_id: string;
+    media_type?: string;
+    payload: Record<string, unknown>;
+    labels?: Record<string, unknown>;
+  }) =>
+    request<AnnotationTask>("/api/data-lab/annotations", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateAnnotation: (
+    id: string,
+    body: { labels?: Record<string, unknown>; status?: string; comment?: string }
+  ) =>
+    request<AnnotationTask>(`/api/data-lab/annotations/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
   listEvaluations: () => request<EvaluationRun[]>("/api/evaluations"),
   listProviders: () => request<{ name: string; healthy: boolean }[]>("/api/v1/ai/providers"),
   listAiModels: () => request<RegistryModel[]>("/api/v1/ai/models"),
@@ -299,6 +401,7 @@ export const api = {
       duration_seconds?: number;
       dialogue_lines?: string[];
       character_name?: string;
+      dialect?: string;
     }
   ) =>
     request<GenerationJob>(`/api/projects/${projectId}/studio/generate`, {

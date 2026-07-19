@@ -32,7 +32,7 @@ Art City AI Studio — private production OS + AI Core.
 tags_metadata = [
     {"name": "auth", "description": "Login, refresh, users, RBAC"},
     {"name": "model-gateway", "description": "Art City Model Gateway — sole AI generation entry"},
-    {"name": "speech", "description": "Kurdish ASR pilot"},
+    {"name": "speech", "description": "Kurdish ASR — Sorani / Badini / Kurmanji + subtitles"},
     {"name": "projects", "description": "Projects, characters, scripts, generations"},
     {"name": "studio", "description": "Studio generate, assets, reviews, media"},
     {"name": "cinema", "description": "Full advertising campaign packages + QC + ZIP"},

@@ -138,13 +138,26 @@ def main() -> None:
             )
 
         knowledge = [
-            ("Kardokh", "sorani", "Art City boy character — Story Bible hero of homecoming.", "character"),
-            ("Kurdiya", "sorani", "Art City girl character — Story Bible companion of homecoming.", "character"),
-            ("Newroz", "sorani", "Kurdish New Year / spring celebration.", "customs"),
-            ("Zagros", "sorani", "Mountain range central to Kurdish geography.", "geography"),
+            ("Kardokh", "sorani", "Art City boy character — Story Bible hero of homecoming.", "character", "Kardokh", "کاردۆخ گەڕایەوە بۆ ماڵ."),
+            ("Kurdiya", "sorani", "Art City girl character — Story Bible companion of homecoming.", "character", "Kurdiya", "کوردیا چیرۆک دەگێڕێتەوە."),
+            ("Newroz", "sorani", "Kurdish New Year / spring celebration.", "customs", "Newroz", "نەورۆز جەژنی بەهارە."),
+            ("Zagros", "sorani", "Mountain range central to Kurdish geography.", "geography", "Zagros", "زاگرۆس شاخی نیشتمانە."),
+            ("Kardokh", "badini", "Art City boy character — Badini Story Bible naming.", "character", "Kardokh", "کاردۆخ ڤەگەڕیا بۆ مال."),
+            ("Kurdiya", "badini", "Art City girl character — Badini Story Bible naming.", "character", "Kurdiya", "کوردیا چیرۆکێ دبێژیت."),
+            ("Newroz", "kurmanji", "Kurdish New Year celebrated across the mountains.", "customs", "Newroz", "Newroz cejna biharê ye."),
+            ("Zagros", "kurmanji", "Mountain range of Kurdish homeland geography.", "geography", "Zagros", "Zagros çiyayên welat in."),
+            ("Shayi", "sorani", "Kurdish folk dance / celebration movement.", "customs", "Shayi", "شایی جووڵەی خۆشی و کۆمەڵایەتییە."),
+            ("Sorani", "sorani", "Central Kurdish dialect used across Art City scripts.", "terminology", "Central Kurdish", None),
+            ("Badini", "badini", "Northern Iraq Kurdish dialect (Behdini).", "terminology", "Badini", None),
+            ("Kurmanji", "kurmanji", "Northern Kurdish dialect (Latin script).", "terminology", "Kurmanji", None),
         ]
-        for term, dialect, definition, category in knowledge:
-            if db.query(KnowledgeEntry).filter(KnowledgeEntry.term == term).first():
+        for term, dialect, definition, category, translation, example in knowledge:
+            exists = (
+                db.query(KnowledgeEntry)
+                .filter(KnowledgeEntry.term == term, KnowledgeEntry.dialect == dialect)
+                .first()
+            )
+            if exists:
                 continue
             db.add(
                 KnowledgeEntry(
@@ -154,6 +167,8 @@ def main() -> None:
                     dialect=dialect,
                     definition=definition,
                     child_friendly_definition=definition,
+                    translation=translation,
+                    example_sentence=example,
                     category=category,
                     source="Art City Story Bible",
                     licence="Art City proprietary",
@@ -162,10 +177,88 @@ def main() -> None:
                 )
             )
 
+        speech_ds = db.query(Dataset).filter(Dataset.name == "KD-SPEECH-KU-v1").first()
+        if not speech_ds:
+            speech_ds = Dataset(
+                id=str(uuid4()),
+                name="KD-SPEECH-KU-v1",
+                description="Kurdish speech corpus scaffold — Sorani / Badini / Kurmanji",
+                category="speech",
+                media_type="audio",
+                language="ku",
+                dialect="sorani",
+                owner="Art City",
+                copyright_holder="Art City Group",
+                licence="Art City proprietary",
+                commercial_use=True,
+                ai_training_permission=True,
+                version="v1",
+                status=DatasetStatus.EVALUATION_ONLY.value,
+                checksum=sha256(b"KD-SPEECH-KU-v1").hexdigest(),
+                intended_model_use="AC-KURDISH-ASR",
+                record_count=0,
+                created_by=admin.id,
+            )
+            db.add(speech_ds)
+            db.flush()
+            db.add(
+                RightsRecord(
+                    id=str(uuid4()),
+                    dataset_id=speech_ds.id,
+                    copyright_owner="Art City Group",
+                    source_organisation="Art City",
+                    commercial_use=True,
+                    ai_training=True,
+                    fine_tuning=True,
+                    image_generation=False,
+                    legal_status=RightsStatus.APPROVED_FOR_TRAINING.value,
+                    legal_notes="Speech pilot seed — Art City owned",
+                    created_by=admin.id,
+                )
+            )
+
+        asr_model = db.query(RegisteredModel).filter(RegisteredModel.name == "AC-KURDISH-ASR-v1").first()
+        if not asr_model:
+            asr_model = RegisteredModel(
+                id=str(uuid4()),
+                name="AC-KURDISH-ASR-v1",
+                version="v1",
+                model_type="asr",
+                base_model="Art City speech base",
+                licence="Art City proprietary",
+                commercial_use=True,
+                owner="Art City",
+                training_dataset_id=speech_ds.id,
+                training_method="supervised",
+                character_key=None,
+                modality="speech",
+                status=ModelStatus.EVALUATING.value,
+                checkpoint_path="models/AC-KURDISH-ASR-v1/pilot",
+                checksum=sha256(b"AC-KURDISH-ASR-v1").hexdigest(),
+                quality_score=0.72,
+                created_by=admin.id,
+            )
+            db.add(asr_model)
+            db.flush()
+
+        if not db.query(RouteRule).filter(RouteRule.name == "Kurdish ASR").first():
+            db.add(
+                RouteRule(
+                    id=str(uuid4()),
+                    name="Kurdish ASR",
+                    modality="speech",
+                    character_key=None,
+                    model_id=asr_model.id,
+                    provider="stub",
+                    priority=10,
+                    is_active=True,
+                )
+            )
+
         db.commit()
         print("AI Core seed complete")
-        print(f"  datasets: {kd.name}, {ku.name}")
-        print(f"  models: {mk.name}, {mu.name}")
+        print(f"  datasets: {kd.name}, {ku.name}, {speech_ds.name}")
+        print(f"  models: {mk.name}, {mu.name}, {asr_model.name}")
     finally:
         db.close()
 
