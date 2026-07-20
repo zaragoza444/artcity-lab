@@ -198,6 +198,8 @@ class CinemaPackageCreate(BaseModel):
     character_key: Optional[str] = None
     character_name: Optional[str] = None
     channels: Optional[list[str]] = None
+    delivery_targets: Optional[list[str]] = None
+    variants: Optional[list[str]] = Field(default=None, description="A/B/C advertising variants")
 
     @field_validator("campaign", "brief", "cta", "brand", "voiceover_script", "initiated_by", mode="before")
     @classmethod
@@ -225,6 +227,25 @@ class CinemaPackageCreate(BaseModel):
         if isinstance(v, str):
             return float(v)
         return v
+
+    @field_validator("variants", mode="before")
+    @classmethod
+    def normalize_variants(cls, v: object) -> object:
+        if v is None or v == "":
+            return None
+        if isinstance(v, str):
+            parts = [p.strip().upper() for p in v.replace(",", " ").split() if p.strip()]
+            return [p for p in parts if p in {"A", "B", "C"}] or None
+        if isinstance(v, list):
+            out = [str(p).strip().upper() for p in v if str(p).strip().upper() in {"A", "B", "C"}]
+            return out or None
+        return None
+
+
+class CinemaTimelineUpdate(BaseModel):
+    music_gain_db: Optional[float] = None
+    voice_gain_db: Optional[float] = None
+    duck_music_under_vo: Optional[bool] = None
 
 
 class CinemaDeliverable(BaseModel):

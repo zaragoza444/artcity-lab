@@ -160,6 +160,7 @@ class ArtCityVideoProvider(ProviderAdapter):
 
     def submit(self, prompt: str, modality: str, model: Optional[str] = None, **kwargs) -> ProviderResult:
         from app.services import media_factory
+        from app.services.video_mux import mux_still_with_audio
 
         job_id = f"ac-vid-{uuid4()}"
         duration = float(kwargs.get("duration_seconds") or 4.0)
@@ -168,6 +169,7 @@ class ArtCityVideoProvider(ProviderAdapter):
         brand = str(kwargs.get("brand") or "Art City")
         campaign = str(kwargs.get("campaign") or title)
         cta = str(kwargs.get("cta") or "Art City Studios")
+        sizes = media_factory.ASPECT_SIZES.get(aspect, media_factory.ASPECT_SIZES["16:9"])
         if duration >= 6 or kwargs.get("advertising"):
             visual, bed = media_factory.make_cinematic_video(
                 prompt,
@@ -179,14 +181,33 @@ class ArtCityVideoProvider(ProviderAdapter):
             )
         else:
             visual, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
+        # Prefer real MP4 master when ffmpeg is present; keep SVG storyboard as fallback bytes.
+        poster = media_factory.make_cinema_poster_png(
+            campaign=campaign,
+            brief=prompt[:160],
+            cta=cta,
+            brand=brand,
+            aspect=aspect,
+            filename=visual.filename.replace(".svg", ".png"),
+        )
+        mp4 = mux_still_with_audio(
+            poster_png=poster.data,
+            audio_wav=bed.data,
+            duration_seconds=duration,
+            filename=visual.filename.replace(".svg", ".mp4"),
+            width=sizes[0],
+            height=sizes[1],
+            fps=24.0,
+        )
+        primary = mp4 if mp4 else visual
         return ProviderResult(
             provider_job_id=job_id,
             status=GenerationStatus.SUCCEEDED,
             result_uri=f"inline://{job_id}",
             actual_cost=self.estimate_cost(prompt, modality),
-            output_bytes=visual.data,
-            content_type=visual.content_type,
-            filename=visual.filename,
+            output_bytes=primary.data,
+            content_type=primary.content_type,
+            filename=primary.filename,
             sidecar_bytes=bed.data,
             sidecar_content_type=bed.content_type,
             sidecar_filename=bed.filename,
@@ -210,15 +231,26 @@ class ArtCityVoiceProvider(ProviderAdapter):
 
     def submit(self, prompt: str, modality: str, model: Optional[str] = None, **kwargs) -> ProviderResult:
         from app.services import media_factory
+        from app.services.audio_mix import optional_external_tts
 
         job_id = f"ac-vo-{uuid4()}"
         brand = str(kwargs.get("brand") or kwargs.get("character_name") or "Art City")
         script = str(kwargs.get("script") or prompt)
+        dialect = kwargs.get("dialect")
         dialogue = kwargs.get("dialogue_lines") or []
         if dialogue:
             media = media_factory.make_voice_conversation(prompt, list(dialogue))
         else:
-            media = media_factory.make_ad_voiceover(script, brand=brand)
+            external = optional_external_tts(script, brand=brand)
+            if external:
+                media = media_factory.MediaFile(
+                    filename="voiceover.wav",
+                    content_type="audio/wav",
+                    data=external,
+                    kind="audio",
+                )
+            else:
+                media = media_factory.make_ad_voiceover(script, brand=brand, dialect=str(dialect) if dialect else None)
         return ProviderResult(
             provider_job_id=job_id,
             status=GenerationStatus.SUCCEEDED,

@@ -14,19 +14,35 @@ import { EmptyState } from "@/components/EmptyState";
 import { SiteHeader } from "@/components/SiteHeader";
 
 function DeliverableCard({ item }: { item: CinemaDeliverable }) {
-  const media = mediaAbsolute(item.media_url);
+  const media = mediaAbsolute(item.mp4_url || item.media_url);
   const audio = mediaAbsolute(item.audio_url);
   const isVisual = item.modality === "video" || item.modality === "image";
+  const isMp4 = Boolean(item.is_mp4 || item.file?.endsWith(".mp4") || item.mp4_url);
 
   return (
     <article className="border border-[var(--line)] bg-[rgba(10,15,22,0.5)] p-4 md:p-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <p className="ac-display text-[var(--paper)]">{item.label ?? item.role}</p>
         <span className="ac-display text-[0.65rem] tracking-[0.16em] text-[var(--mist-soft)] uppercase">
+          {item.variant ? `${item.variant} · ` : ""}
+          {isMp4 ? "MP4 · " : ""}
           {item.aspect ?? item.modality}
         </span>
       </div>
-      {isVisual && media ? (
+      {isVisual && media && isMp4 ? (
+        <video
+          controls
+          src={media}
+          className={`w-full border border-[var(--line)] bg-black object-cover ${
+            item.aspect === "9:16"
+              ? "aspect-[9/16] max-h-[28rem] mx-auto"
+              : item.aspect === "1:1"
+                ? "aspect-square max-h-[22rem] mx-auto"
+                : "aspect-video"
+          }`}
+        />
+      ) : null}
+      {isVisual && media && !isMp4 ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={media}
@@ -92,6 +108,14 @@ export default function CinemaProjectPage() {
     "social_vertical",
     "social_square",
   ]);
+  const [variants, setVariants] = useState<string[]>(["A"]);
+  const [deliveryTargets, setDeliveryTargets] = useState<string[]>([
+    "youtube",
+    "meta_stories",
+    "broadcast_tv",
+  ]);
+  const [musicGain, setMusicGain] = useState(0);
+  const [voiceGain, setVoiceGain] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -147,8 +171,14 @@ export default function CinemaProjectPage() {
               : undefined
           : undefined,
         channels,
+        variants,
+        delivery_targets: deliveryTargets,
       });
       setActiveId(pkg.package_id);
+      if (pkg.timeline?.mix) {
+        setMusicGain(Number(pkg.timeline.mix.music_gain_db ?? 0));
+        setVoiceGain(Number(pkg.timeline.mix.voice_gain_db ?? 0));
+      }
       setCampaign("");
       setBrief("");
       const pkgs = await api.listCinemaPackages(projectId);
@@ -358,6 +388,55 @@ export default function CinemaProjectPage() {
                     </label>
                   ))}
                 </fieldset>
+                <fieldset className="space-y-2">
+                  <legend className="ac-label">A/B variants</legend>
+                  {[
+                    ["A", "A · Control"],
+                    ["B", "B · Alt CTA"],
+                    ["C", "C · Alt music"],
+                  ].map(([id, label]) => (
+                    <label key={id} className="flex items-center gap-2 text-sm text-[var(--mist)]">
+                      <input
+                        type="checkbox"
+                        checked={variants.includes(id)}
+                        onChange={(e) => {
+                          setVariants((prev) => {
+                            const next = e.target.checked
+                              ? [...prev, id]
+                              : prev.filter((c) => c !== id);
+                            return next.length ? next : ["A"];
+                          });
+                        }}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </fieldset>
+                <fieldset className="space-y-2">
+                  <legend className="ac-label">World delivery targets</legend>
+                  {[
+                    ["youtube", "YouTube"],
+                    ["meta_feed", "Meta Feed"],
+                    ["meta_stories", "Meta / TikTok Stories"],
+                    ["broadcast_tv", "Broadcast / TV"],
+                    ["ctv", "CTV"],
+                  ].map(([id, label]) => (
+                    <label key={id} className="flex items-center gap-2 text-sm text-[var(--mist)]">
+                      <input
+                        type="checkbox"
+                        checked={deliveryTargets.includes(id)}
+                        onChange={(e) => {
+                          setDeliveryTargets((prev) =>
+                            e.target.checked
+                              ? [...prev, id]
+                              : prev.filter((c) => c !== id)
+                          );
+                        }}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </fieldset>
                 <button
                   type="submit"
                   disabled={busy || channels.length === 0}
@@ -420,6 +499,87 @@ export default function CinemaProjectPage() {
                             {active.total_cost.toFixed(2)} ·{" "}
                             {active.production_time_seconds ?? "—"}s render
                           </p>
+                          {active.variants?.length ? (
+                            <p className="mt-2 text-sm text-[var(--mist)]">
+                              Variants{" "}
+                              {active.variants.map((v) => v.id).join(" · ")}
+                              {active.delivery_targets?.length
+                                ? ` · Delivery ${active.delivery_targets
+                                    .map((d) => d.label || d.id)
+                                    .join(", ")}`
+                                : ""}
+                            </p>
+                          ) : null}
+                          {active.timeline?.clips?.length ? (
+                            <div className="mt-6 border border-[var(--line)] p-4">
+                              <p className="ac-display text-[0.68rem] tracking-[0.16em] text-[var(--gold)] uppercase">
+                                Finishing timeline
+                              </p>
+                              <ul className="mt-3 space-y-2">
+                                {active.timeline.clips.map((clip) => (
+                                  <li
+                                    key={clip.id}
+                                    className="flex justify-between gap-3 text-sm text-[var(--mist)]"
+                                  >
+                                    <span>
+                                      {clip.track} · {clip.label}
+                                    </span>
+                                    <span className="font-mono text-[0.7rem] text-[var(--mist-soft)]">
+                                      {clip.start.toFixed(1)}–{clip.end.toFixed(1)}s
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                <label className="text-xs text-[var(--mist)]">
+                                  Music gain (dB)
+                                  <input
+                                    type="number"
+                                    className="ac-field mt-1"
+                                    value={musicGain}
+                                    onChange={(e) => setMusicGain(Number(e.target.value))}
+                                  />
+                                </label>
+                                <label className="text-xs text-[var(--mist)]">
+                                  Voice gain (dB)
+                                  <input
+                                    type="number"
+                                    className="ac-field mt-1"
+                                    value={voiceGain}
+                                    onChange={(e) => setVoiceGain(Number(e.target.value))}
+                                  />
+                                </label>
+                              </div>
+                              <button
+                                type="button"
+                                className="ac-btn ac-btn-secondary mt-3"
+                                onClick={async () => {
+                                  try {
+                                    const updated = await api.updateCinemaTimeline(
+                                      projectId,
+                                      active.package_id,
+                                      {
+                                        music_gain_db: musicGain,
+                                        voice_gain_db: voiceGain,
+                                        duck_music_under_vo: true,
+                                      }
+                                    );
+                                    setPackages((prev) =>
+                                      prev.map((p) =>
+                                        p.package_id === updated.package_id ? updated : p
+                                      )
+                                    );
+                                  } catch (err) {
+                                    setError(
+                                      err instanceof Error ? err.message : "Timeline update failed"
+                                    );
+                                  }
+                                }}
+                              >
+                                Save mix
+                              </button>
+                            </div>
+                          ) : null}
                           <div className="mt-4 flex flex-wrap gap-2">
                             <span
                               className={`ac-display text-[0.68rem] tracking-[0.14em] uppercase ${

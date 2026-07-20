@@ -15,9 +15,9 @@ from app.services.storage import get_storage
 
 
 CANONICAL_NAMES = {
-    "broadcast_hero": ("broadcast_hero.svg", "broadcast_hero_audio_bed.wav"),
-    "social_vertical": ("social_vertical.svg", "social_vertical_audio_bed.wav"),
-    "social_square": ("social_square.svg", "social_square_audio_bed.wav"),
+    "broadcast_hero": ("broadcast_hero.mp4", "broadcast_hero_audio_bed.wav"),
+    "social_vertical": ("social_vertical.mp4", "social_vertical_audio_bed.wav"),
+    "social_square": ("social_square.mp4", "social_square_audio_bed.wav"),
     "music_master": ("music_master.wav", None),
     "voiceover": ("voiceover.wav", None),
     "end_card": ("end_card.svg", None),
@@ -52,8 +52,14 @@ def build_campaign_zip(db: Session, project_id: str, package_id: str) -> bytes:
             job = db.get(GenerationJob, d.get("job_id"))
             if not job or not job.result_uri:
                 continue
-            data, _ = storage.get_object(job.result_uri)
-            zf.writestr(f"deliverables/{names[0]}", data)
+            data, ctype = storage.get_object(job.result_uri)
+            out_name = names[0]
+            # Keep extension honest when still shipping SVG proxy (no ffmpeg)
+            if out_name.endswith(".mp4") and not (
+                (ctype or "").endswith("mp4") or (len(data) > 12 and data[4:8] == b"ftyp")
+            ):
+                out_name = out_name.replace(".mp4", ".svg")
+            zf.writestr(f"deliverables/{out_name}", data)
 
             # audio bed
             if names[1]:
@@ -89,13 +95,25 @@ Brand: {package.get('brand')}
 Package ID: {package_id}
 
 Contents:
-- CAMPAIGN_MANIFEST.json
+- CAMPAIGN_MANIFEST.json (delivery targets, variants, timeline)
 - TECHNICAL_VALIDATION.json
-- deliverables/ (six outputs + audio beds)
+- deliverables/ (MP4 channel masters when muxed, stems, end card)
 - brand/art_city_logo.svg
 
 Ownership: Art City proprietary package.
 """
         zf.writestr("README.txt", readme)
+        # Mix master stem
+        mix_path = package.get("mix_master_path")
+        if mix_path:
+            try:
+                mdata, _ = storage.get_object(mix_path)
+                zf.writestr("deliverables/mix_master.wav", mdata)
+            except Exception:
+                pass
+        # Timeline finishing doc
+        timeline = package.get("timeline") or (package.get("campaign_manifest") or {}).get("timeline")
+        if timeline:
+            zf.writestr("TIMELINE.json", json.dumps(timeline, indent=2))
 
     return buf.getvalue()

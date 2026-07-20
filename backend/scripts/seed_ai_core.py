@@ -117,9 +117,46 @@ def main() -> None:
         mk = ensure_model("AC-KARDOKH-IMAGE-v1", kd, "kardokh")
         mu = ensure_model("AC-KURDIYA-IMAGE-v1", ku, "kurdiya")
 
+        def ensure_lora(name: str, modality: str, character: str, dataset: Dataset) -> RegisteredModel:
+            existing = db.query(RegisteredModel).filter(RegisteredModel.name == name).first()
+            if existing:
+                return existing
+            checksum = sha256(f"{name}:{character}:{modality}".encode()).hexdigest()
+            m = RegisteredModel(
+                id=str(uuid4()),
+                name=name,
+                version="v1",
+                model_type="lora",
+                base_model=f"Art City {modality} base",
+                licence="Art City proprietary",
+                commercial_use=True,
+                owner="Art City",
+                training_dataset_id=dataset.id,
+                training_method="lora",
+                character_key=character,
+                modality=modality,
+                status=ModelStatus.STAGING.value,
+                checkpoint_path=f"models/{name}/adapter.safetensors",
+                checksum=checksum,
+                quality_score=0.82,
+                created_by=admin.id,
+            )
+            db.add(m)
+            db.flush()
+            return m
+
+        vk = ensure_lora("AC-KARDOKH-VIDEO-LORA-v1", "video", "kardokh", kd)
+        vu = ensure_lora("AC-KURDIYA-VIDEO-LORA-v1", "video", "kurdiya", ku)
+        vok = ensure_lora("AC-KARDOKH-VOICE-LORA-v1", "voice", "kardokh", kd)
+        vou = ensure_lora("AC-KURDIYA-VOICE-LORA-v1", "voice", "kurdiya", ku)
+
         for name, modality, character, model, provider, priority in [
             ("Kardokh image", "image", "kardokh", mk, "artcity-image", 10),
             ("Kurdiya image", "image", "kurdiya", mu, "artcity-image", 10),
+            ("Kardokh video LoRA", "video", "kardokh", vk, "artcity-video", 10),
+            ("Kurdiya video LoRA", "video", "kurdiya", vu, "artcity-video", 10),
+            ("Kardokh voice LoRA", "voice", "kardokh", vok, "artcity-voice", 10),
+            ("Kurdiya voice LoRA", "voice", "kurdiya", vou, "artcity-voice", 10),
             ("Default image", "image", None, None, "artcity-image", 100),
             ("Default video", "video", None, None, "artcity-video", 100),
             ("Default voice", "voice", None, None, "artcity-voice", 100),

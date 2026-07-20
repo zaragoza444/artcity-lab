@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.api.schemas import CinemaPackageCreate, CinemaPackageOut
+from app.api.schemas import CinemaPackageCreate, CinemaPackageOut, CinemaTimelineUpdate
 from app.core.db import get_db
 from app.core.deps import CurrentUser, get_current_user
 from app.core.ids import load_project, require_uuid
@@ -11,6 +11,7 @@ from app.services.cinema import (
     get_cinematic_package,
     list_cinematic_packages,
     revalidate_package,
+    update_package_timeline,
 )
 from app.services.packaging import build_campaign_zip
 
@@ -50,6 +51,8 @@ def create_cinema_package(
             character_name=payload.character_name,
             channels=payload.channels,
             requested_by=user.id,
+            delivery_targets=payload.delivery_targets,
+            variants=payload.variants,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -113,6 +116,25 @@ def package_validation(project_id: str, package_id: str, db: Session = Depends(g
 
     data = json.dumps(pkg.get("validation") or {}, indent=2).encode("utf-8")
     return Response(content=data, media_type="application/json")
+
+
+@router.patch(
+    "/{project_id}/cinema/packages/{package_id}/timeline",
+    response_model=CinemaPackageOut,
+)
+def patch_timeline(
+    project_id: str,
+    package_id: str,
+    payload: CinemaTimelineUpdate,
+    db: Session = Depends(get_db),
+) -> CinemaPackageOut:
+    project = load_project(db, project_id)
+    require_uuid(package_id, "package_id")
+    mix = payload.model_dump(exclude_none=True)
+    try:
+        return CinemaPackageOut.model_validate(update_package_timeline(db, project.id, package_id, mix))
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/{project_id}/cinema/packages/{package_id}/zip")

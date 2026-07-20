@@ -96,14 +96,21 @@ def resolve_route(
             .first()
         )
         if reg:
-            provider = "artcity-image" if modality == "image" else "artcity-video" if modality == "video" else "stub"
+            provider_map = {
+                "image": "artcity-image",
+                "video": "artcity-video",
+                "voice": "artcity-voice",
+                "music": "artcity-music",
+                "audio": "artcity-audio",
+            }
+            provider = provider_map.get(modality, "stub")
             return RouteDecision(
                 provider=provider,
                 model_name=reg.name,
                 model_version=reg.version,
                 registered_model_id=reg.id,
                 character_key=character_key,
-                reason="character_model_registry",
+                reason="character_lora_registry" if "LORA" in (reg.name or "").upper() else "character_model_registry",
             )
 
     defaults = {

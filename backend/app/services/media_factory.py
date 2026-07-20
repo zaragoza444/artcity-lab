@@ -1,4 +1,4 @@
-"""Local production media factory — playable stub assets until real providers are wired."""
+"""Local production media factory — Cinema frames, music, VO, and MP4-ready posters."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ class MediaFile:
     filename: str
     content_type: str
     data: bytes
-    kind: str  # image | audio | video_proxy
+    kind: str  # image | audio | video_proxy | video
 
 
 def _wav_bytes(samples: list[float], sample_rate: int = 22050) -> bytes:
@@ -251,7 +251,7 @@ ASPECT_SIZES = {
 
 
 def make_cinematic_music(prompt: str, duration_seconds: float = 15.0, style: str = "epic") -> MediaFile:
-    """Richer advertising / trailer music beds."""
+    """Advertising music bed with bass + pad + melody stems mixed to -16 LUFS."""
     styles = {
         "epic": [98.0, 146.83, 196.0, 246.94, 293.66, 392.0],
         "warm": [130.81, 164.81, 196.0, 220.0, 261.63, 329.63],
@@ -260,53 +260,168 @@ def make_cinematic_music(prompt: str, duration_seconds: float = 15.0, style: str
     }
     scale = styles.get(style, styles["epic"])
     seed = int(hashlib.sha256((prompt + style).encode()).hexdigest()[:8], 16)
-    samples: list[float] = []
+    sample_rate = 22050
+    target = int(duration_seconds * sample_rate)
+    samples = [0.0] * target
     t = 0.0
     step = 0
     while t < duration_seconds:
-        # layered root + fifth
         root = scale[(seed + step) % len(scale)]
+        bass = root * 0.5
         fifth = root * 1.5
-        seg = 0.55 if step % 3 else 0.9
+        seg = 0.5 if style == "pulse" else (0.55 if step % 3 else 0.9)
         seg = min(seg, duration_seconds - t)
-        a = _tone(seg, root, volume=0.22)
-        b = _tone(seg, fifth, volume=0.12)
-        samples += [x + y for x, y in zip(a, b)]
-        if step % 4 == 0:
-            samples += _tone(0.12, root * 2, volume=0.08, attack=0.01, release=0.08)
-        samples += _silence(0.04)
-        t += seg + 0.04
+        a = _tone(seg, bass, volume=0.2, sample_rate=sample_rate)
+        b = _tone(seg, root, volume=0.16, sample_rate=sample_rate)
+        c = _tone(seg, fifth, volume=0.1, sample_rate=sample_rate)
+        start = int(t * sample_rate)
+        for i, (x, y, z) in enumerate(zip(a, b, c)):
+            idx = start + i
+            if idx >= target:
+                break
+            samples[idx] += x + y + z
+        if style == "pulse" and step % 2 == 0:
+            hit = _tone(0.08, root * 2, volume=0.12, attack=0.005, release=0.05, sample_rate=sample_rate)
+            for i, h in enumerate(hit):
+                idx = start + i
+                if idx < target:
+                    samples[idx] += h
+        t += seg + 0.03
         step += 1
     # End sting
-    samples += _tone(0.45, scale[0] * 2, volume=0.2, attack=0.02, release=0.25)
-    samples = _normalize_to_lufs(_exact_duration(samples, duration_seconds), -16.0)
+    sting = _tone(0.45, scale[0] * 2, volume=0.18, attack=0.02, release=0.25, sample_rate=sample_rate)
+    for i, s in enumerate(sting):
+        idx = target - len(sting) + i
+        if 0 <= idx < target:
+            samples[idx] += s
+    samples = _normalize_to_lufs(_exact_duration(samples, duration_seconds, sample_rate), -16.0)
     return MediaFile(
         filename="music_master.wav",
         content_type="audio/wav",
-        data=_wav_bytes(samples),
+        data=_wav_bytes(samples, sample_rate=sample_rate),
         kind="audio",
     )
 
 
-def make_ad_voiceover(script: str, brand: str = "Art City") -> MediaFile:
-    """Broadcast-style VO cadence for advertising spots."""
+def _formant_syllable(seconds: float, base_hz: float, sample_rate: int = 22050) -> list[float]:
+    """Lightweight formant-ish TTS proxy (owned Art City voice bed until neural TTS)."""
+    n = int(seconds * sample_rate)
+    out: list[float] = []
+    f1, f2 = base_hz * 2.2, base_hz * 3.6
+    for i in range(n):
+        t = i / sample_rate
+        env = 1.0
+        if t < 0.02:
+            env = t / 0.02
+        elif t > seconds - 0.04:
+            env = max(0.0, (seconds - t) / 0.04)
+        vibrato = 1.0 + 0.012 * math.sin(2 * math.pi * 5.2 * t)
+        v = (
+            0.55 * math.sin(2 * math.pi * base_hz * vibrato * t)
+            + 0.28 * math.sin(2 * math.pi * f1 * t)
+            + 0.12 * math.sin(2 * math.pi * f2 * t)
+        )
+        out.append(v * 0.38 * env)
+    return out
+
+
+def make_ad_voiceover(script: str, brand: str = "Art City", dialect: str | None = None) -> MediaFile:
+    """Broadcast-style VO with syllable timing; dialect shifts base pitch slightly."""
     lines = [ln.strip() for ln in script.replace(".", ".\n").split("\n") if ln.strip()]
     if not lines:
         lines = [f"{brand} — craft the story."]
+    dialect_shift = {"sorani": 0.0, "badini": 8.0, "kurmanji": -6.0}.get((dialect or "").lower(), 0.0)
     samples: list[float] = []
     samples += _silence(0.25)
-    for i, line in enumerate(lines[:10]):
-        seconds = min(3.2, max(0.7, len(line) * 0.05))
-        freq = 175.0 if i % 2 == 0 else 195.0
-        samples += _tone(seconds, freq, volume=0.34, attack=0.03, release=0.12)
-        samples += _silence(0.22)
-    samples += _tone(0.35, 260.0, volume=0.2, attack=0.02, release=0.2)
+    for i, line in enumerate(lines[:14]):
+        words = max(1, len(line.split()))
+        for w, word in enumerate(line.split()[:24]):
+            sec = min(0.55, max(0.12, len(word) * 0.045))
+            base = (168.0 if i % 2 == 0 else 188.0) + dialect_shift + (w % 3) * 3
+            samples += _formant_syllable(sec, base)
+            samples += _silence(0.04)
+        samples += _silence(0.16)
+        _ = words
+    samples += _tone(0.32, 250.0 + dialect_shift, volume=0.18, attack=0.02, release=0.18)
     samples = _normalize_to_lufs(samples, -16.0)
     return MediaFile(
         filename="voiceover.wav",
         content_type="audio/wav",
         data=_wav_bytes(samples),
         kind="audio",
+    )
+
+
+def make_cinema_poster_png(
+    *,
+    campaign: str,
+    brief: str,
+    cta: str,
+    brand: str = "Art City",
+    aspect: str = "16:9",
+    filename: str = "poster.png",
+) -> MediaFile:
+    """Raster poster for ffmpeg MP4 mux (PIL)."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    width, height = ASPECT_SIZES.get(aspect, ASPECT_SIZES["16:9"])
+    c1, c2 = _hash_color(campaign + aspect + brief[:40])
+    img = Image.new("RGB", (width, height), "#05070b")
+    draw = ImageDraw.Draw(img)
+    # Gradient-ish bands
+    for y in range(height):
+        t = y / max(1, height - 1)
+        # blend ink → accent
+        def hex_rgb(h: str) -> tuple[int, int, int]:
+            h = h.lstrip("#")
+            return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+        r1, g1, b1 = hex_rgb("#05070b")
+        r2, g2, b2 = hex_rgb(c2)
+        r = int(r1 * (1 - t) + r2 * t * 0.55)
+        g = int(g1 * (1 - t) + g2 * t * 0.55)
+        b = int(b1 * (1 - t) + b2 * t * 0.55)
+        draw.line([(0, y), (width, y)], fill=(r, g, b))
+    margin = int(min(width, height) * 0.06)
+    draw.rectangle(
+        [margin, margin, width - margin, height - margin],
+        outline="#efd39a",
+        width=max(2, width // 640),
+    )
+    try:
+        font_lg = ImageFont.truetype("DejaVuSans.ttf", size=max(28, width // 28))
+        font_md = ImageFont.truetype("DejaVuSans.ttf", size=max(20, width // 40))
+        font_sm = ImageFont.truetype("DejaVuSans.ttf", size=max(16, width // 52))
+    except OSError:
+        font_lg = ImageFont.load_default()
+        font_md = font_lg
+        font_sm = font_lg
+    draw.text((margin + 24, margin + 28), "ART CITY · CINEMA", fill="#efd39a", font=font_sm)
+    draw.text((margin + 24, margin + 80), campaign[:48], fill="#f3f6fa", font=font_lg)
+    draw.text((margin + 24, margin + 150), brief[:90], fill="#b7c2d1", font=font_md)
+    draw.text((margin + 24, height - margin - 90), cta[:40], fill="#c5a15e", font=font_md)
+    draw.text(
+        (margin + 24, height - margin - 48),
+        f"{brand} · {aspect} · MP4 MASTER",
+        fill="#8d9aad",
+        font=font_sm,
+    )
+    # Shot markers
+    shots = 5
+    for i in range(shots):
+        x0 = margin + 24 + i * ((width - 2 * margin - 48) // shots)
+        w = (width - 2 * margin - 48) // shots - 12
+        y0 = height // 2 - 40
+        fill = c1 if i % 2 == 0 else c2
+        draw.rectangle([x0, y0, x0 + w, y0 + 120], fill=fill)
+        draw.text((x0 + 10, y0 + 48), f"SHOT {i + 1:02d}", fill="#0a0f16", font=font_sm)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return MediaFile(
+        filename=filename,
+        content_type="image/png",
+        data=buf.getvalue(),
+        kind="image",
     )
 
 

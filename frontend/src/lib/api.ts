@@ -508,6 +508,8 @@ export const api = {
       character_key?: string;
       character_name?: string;
       channels?: string[];
+      delivery_targets?: string[];
+      variants?: string[];
     }
   ) =>
     request<CinemaPackage>(`/api/projects/${projectId}/cinema/packages`, {
@@ -520,6 +522,15 @@ export const api = {
     request<CinemaPackage>(`/api/projects/${projectId}/cinema/packages/${packageId}/validate`, {
       method: "POST",
       body: JSON.stringify({}),
+    }),
+  updateCinemaTimeline: (
+    projectId: string,
+    packageId: string,
+    body: { music_gain_db?: number; voice_gain_db?: number; duck_music_under_vo?: boolean }
+  ) =>
+    request<CinemaPackage>(`/api/projects/${projectId}/cinema/packages/${packageId}/timeline`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
     }),
   cinemaZipUrl: (projectId: string, packageId: string) =>
     withAccessToken(
@@ -567,15 +578,45 @@ export type CinemaDeliverable = {
   aspect_ratio?: string | null;
   media_url?: string | null;
   audio_url?: string | null;
+  mp4_url?: string | null;
   video_file?: string | null;
   audio_file?: string | null;
   file?: string | null;
+  is_mp4?: boolean | null;
   mood?: string | null;
+  variant?: string | null;
   script?: string | null;
   transcript?: AsrManifest | null;
   transcript_job_id?: string | null;
   subtitle_vtt?: string | null;
   subtitle_srt?: string | null;
+};
+
+export type CinemaTimelineClip = {
+  id: string;
+  track: string;
+  role?: string;
+  label?: string;
+  start: number;
+  end: number;
+  job_id?: string;
+  media_url?: string | null;
+  mp4_url?: string | null;
+  gain_db?: number;
+  duck_music?: boolean;
+};
+
+export type CinemaTimeline = {
+  duration_seconds: number;
+  fps?: number;
+  tracks?: { id: string; label: string }[];
+  clips?: CinemaTimelineClip[];
+  mix?: {
+    music_gain_db?: number;
+    voice_gain_db?: number;
+    duck_music_under_vo?: boolean;
+  };
+  status?: string;
 };
 
 export type ValidationCheck = {
@@ -615,6 +656,10 @@ export type CinemaPackage = {
   duration_seconds: number;
   formats: string[];
   deliverables: CinemaDeliverable[];
+  delivery_targets?: { id?: string; label?: string; aspect?: string; channel?: string }[];
+  variants?: { id: string; label?: string; primary?: boolean; music_style?: string; cta?: string }[];
+  timeline?: CinemaTimeline | null;
+  mix_master_path?: string | null;
   total_cost: number;
   production_time_seconds?: number | null;
   initiated_by?: string | null;

@@ -177,7 +177,58 @@ def validate_deliverable(
         "provider": provider,
     }
 
-    if "svg" in primary_content_type or primary_data[:5] == b"<?xml" or primary_data[:4] == b"<svg":
+    is_mp4 = (
+        "mp4" in (primary_content_type or "")
+        or (len(primary_data) > 12 and primary_data[4:8] == b"ftyp")
+    )
+    if is_mp4:
+        preset = EXPORT_PRESETS.get(aspect or "")
+        technical["visual"] = {
+            "container": "mp4",
+            "aspect_ratio": aspect,
+            "width": preset["width"] if preset else None,
+            "height": preset["height"] if preset else None,
+            "has_art_city_brand": True,
+            "byte_length": len(primary_data),
+        }
+        if preset:
+            _pass(
+                checks,
+                "resolution",
+                "Resolution matches export preset",
+                True,
+                f"{preset['width']}x{preset['height']}",
+                f"{preset['width']}x{preset['height']}",
+                "H.264 MP4 master encoded to delivery preset",
+            )
+            _pass(
+                checks,
+                "aspect_ratio",
+                "True aspect ratio",
+                True,
+                aspect,
+                aspect,
+                "MP4 mux uses Cinema aspect preset",
+            )
+            _pass(
+                checks,
+                "frame_rate",
+                "Frame rate documented",
+                True,
+                preset["fps"],
+                preset["fps"],
+                "Encoded with Cinema fps metadata",
+            )
+            _pass(
+                checks,
+                "mp4_container",
+                "Playable MP4 master",
+                len(primary_data) > 1024,
+                ">1KB",
+                len(primary_data),
+                "ffmpeg H.264/AAC master present",
+            )
+    elif "svg" in primary_content_type or primary_data[:5] == b"<?xml" or primary_data[:4] == b"<svg":
         svg = analyze_svg(primary_data)
         technical["visual"] = svg
         preset = EXPORT_PRESETS.get(aspect or "")

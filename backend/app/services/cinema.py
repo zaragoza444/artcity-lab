@@ -13,14 +13,23 @@ from sqlalchemy.orm import Session
 from app.core.enums import AssetType
 from app.models import Asset, GenerationJob
 from app.services import media_factory
+from app.services.audio_mix import mix_music_and_voice
+from app.services.delivery_presets import (
+    VARIANT_LABELS,
+    resolve_delivery_targets,
+    variant_brief,
+    variant_music_style,
+)
 from app.services.gateway import enqueue_generation
 from app.services.storage import get_storage
+from app.services.timeline import apply_timeline_mix, build_timeline
 from app.services.validation import EXPORT_PRESETS, load_and_validate_package
+from app.services.video_mux import ffmpeg_available, mux_still_with_audio
 
 FILE_MAP = {
-    "broadcast_hero": "broadcast_hero.svg",
-    "social_vertical": "social_vertical.svg",
-    "social_square": "social_square.svg",
+    "broadcast_hero": "broadcast_hero.mp4",
+    "social_vertical": "social_vertical.mp4",
+    "social_square": "social_square.mp4",
     "music_master": "music_master.wav",
     "voiceover": "voiceover.wav",
     "end_card": "end_card.svg",
@@ -57,10 +66,12 @@ def build_cinematic_package(
     character_name: Optional[str] = None,
     channels: Optional[list[str]] = None,
     requested_by: Optional[str] = None,
+    delivery_targets: Optional[list[str]] = None,
+    variants: Optional[list[str]] = None,
 ) -> dict[str, Any]:
     """
     Full Art City Cinema advertising campaign via Model Gateway:
-    hero + social cutdowns + music + VO + end card + manifest + technical QC.
+    hero + social cutdowns + music + VO + end card + MP4 mux + timeline + QC.
     """
     started = time.perf_counter()
     started_at = datetime.now(timezone.utc)
@@ -74,6 +85,14 @@ def build_cinematic_package(
         "paper": "#f3f6fa",
     }
     selected = channels or ["broadcast", "social_vertical", "social_square"]
+    variant_ids = [v.upper() for v in (variants or ["A"]) if v]
+    if not variant_ids:
+        variant_ids = ["A"]
+    variant_ids = variant_ids[:3]
+    primary_variant = variant_ids[0]
+    work_brief, work_cta = variant_brief(brief, cta, primary_variant)
+    work_music = variant_music_style(music_style, primary_variant)
+    deliveries = resolve_delivery_targets(delivery_targets)
     deliverables: list[dict[str, Any]] = []
     generation_history: list[dict[str, Any]] = []
     total_cost = 0.0
@@ -162,13 +181,18 @@ def build_cinematic_package(
             "video_file": FILE_MAP.get(role) if modality == "video" else None,
             "audio_file": f"{role}_audio_bed.wav" if audio_path else None,
             "file": FILE_MAP.get(role),
-            "mood": music_style if role == "music_master" else None,
+            "mood": work_music if role == "music_master" else None,
             "storage_path": job.result_uri,
             "generation": history,
             "export_preset": EXPORT_PRESETS.get(aspect or "", None),
             "channel": next((k for k, v in CHANNEL_PRESETS.items() if v["role"] == role), role),
+            "variant": primary_variant,
+            "is_mp4": bool(job.result_uri and str(job.result_uri).lower().endswith(".mp4")),
             **(extra or {}),
         }
+        if entry["is_mp4"]:
+            entry["file"] = FILE_MAP.get(role, f"{role}.mp4")
+            entry["video_file"] = entry["file"]
         deliverables.append(entry)
 
     # Brand logo
@@ -194,8 +218,8 @@ def build_cinematic_package(
         role = preset["role"]
         prompt = (
             f"[{aspect} Art City advertising {role}] Campaign: {campaign}. "
-            f"Brief: {brief}. CTA: {cta}. Brand: {brand}. "
-            f"Cinematic commercial for broadcast and social."
+            f"Brief: {work_brief}. CTA: {work_cta}. Brand: {brand}. "
+            f"Variant {primary_variant}. Cinematic commercial for broadcast and social."
         )
         job = enqueue_generation(
             db,
@@ -210,12 +234,14 @@ def build_cinematic_package(
                 "dialect": dialect,
                 "aspect": aspect,
                 "campaign": campaign,
-                "cta": cta,
+                "cta": work_cta,
                 "brand": brand,
                 "cinema_role": role,
                 "package_id": package_id,
-                "music_style": music_style,
+                "music_style": work_music,
                 "advertising": True,
+                "variant": primary_variant,
+                "lora_key": character_key,
             },
         )
         if job.status != "succeeded":
@@ -227,16 +253,17 @@ def build_cinematic_package(
         db,
         project_id=project_id,
         modality="music",
-        prompt=f"Advertising music bed · {music_style} · {campaign}. {brief}",
+        prompt=f"Advertising music bed · {work_music} · {campaign}. {work_brief}",
         duration_seconds=duration_seconds,
         requested_by=requested_by,
         params={
             "dialect": dialect,
-            "music_style": music_style,
+            "music_style": work_music,
             "campaign": campaign,
             "cinema_role": "music_master",
             "package_id": package_id,
             "advertising": True,
+            "variant": primary_variant,
         },
     )
     if music_job.status != "succeeded":
@@ -246,7 +273,7 @@ def build_cinematic_package(
         role="music_master",
         modality="music",
         name=f"{campaign} · Music",
-        extra={"music_style": music_style},
+        extra={"music_style": work_music},
     )
 
     # Voice-over
@@ -267,6 +294,8 @@ def build_cinematic_package(
             "package_id": package_id,
             "script": vo_text,
             "advertising": True,
+            "variant": primary_variant,
+            "lora_key": character_key,
         },
     )
     if vo_job.status != "succeeded":
@@ -306,8 +335,8 @@ def build_cinematic_package(
         project_id=project_id,
         modality="image",
         prompt=(
-            f"Advertising end card for {campaign}. Brand {brand}. CTA: {cta}. "
-            f"Brief mood: {brief}. Clean Art City title card."
+            f"Advertising end card for {campaign}. Brand {brand}. CTA: {work_cta}. "
+            f"Brief mood: {work_brief}. Clean Art City title card."
         ),
         character_key=character_key,
         character_name=character_name,
@@ -315,13 +344,15 @@ def build_cinematic_package(
         params={
             "dialect": dialect,
             "campaign": campaign,
-            "cta": cta,
+            "cta": work_cta,
             "brand": brand,
             "cinema_role": "end_card",
             "package_id": package_id,
             "aspect": "16:9",
             "advertising": True,
             "end_card": True,
+            "variant": primary_variant,
+            "lora_key": character_key,
         },
     )
     if end_job.status != "succeeded":
@@ -332,7 +363,158 @@ def build_cinematic_package(
         modality="image",
         name=f"{campaign} · End card",
         aspect="16:9",
-        extra={"cta": cta},
+        extra={"cta": work_cta},
+    )
+
+    # Alternate A/B/C stems (music + end card) when multiple variants requested
+    variant_pack: list[dict[str, Any]] = [
+        {
+            "id": primary_variant,
+            "label": VARIANT_LABELS.get(primary_variant, primary_variant),
+            "brief": work_brief,
+            "cta": work_cta,
+            "music_style": work_music,
+            "primary": True,
+        }
+    ]
+    for vid in variant_ids[1:]:
+        v_brief, v_cta = variant_brief(brief, cta, vid)
+        v_music = variant_music_style(music_style, vid)
+        v_music_job = enqueue_generation(
+            db,
+            project_id=project_id,
+            modality="music",
+            prompt=f"Variant {vid} music · {v_music} · {campaign}. {v_brief}",
+            duration_seconds=duration_seconds,
+            requested_by=requested_by,
+            params={
+                "music_style": v_music,
+                "campaign": campaign,
+                "cinema_role": f"music_master_{vid}",
+                "package_id": package_id,
+                "advertising": True,
+                "variant": vid,
+            },
+        )
+        v_end = enqueue_generation(
+            db,
+            project_id=project_id,
+            modality="image",
+            prompt=f"Variant {vid} end card · {campaign} · CTA {v_cta}. {v_brief}",
+            character_key=character_key,
+            requested_by=requested_by,
+            params={
+                "campaign": campaign,
+                "cta": v_cta,
+                "brand": brand,
+                "cinema_role": f"end_card_{vid}",
+                "package_id": package_id,
+                "advertising": True,
+                "end_card": True,
+                "variant": vid,
+            },
+        )
+        variant_pack.append(
+            {
+                "id": vid,
+                "label": VARIANT_LABELS.get(vid, vid),
+                "brief": v_brief,
+                "cta": v_cta,
+                "music_style": v_music,
+                "primary": False,
+                "music_job_id": v_music_job.id if v_music_job.status == "succeeded" else None,
+                "end_card_job_id": v_end.id if v_end.status == "succeeded" else None,
+            }
+        )
+        if v_music_job.status == "succeeded":
+            total_cost += float(v_music_job.actual_cost or v_music_job.estimated_cost or 0)
+        if v_end.status == "succeeded":
+            total_cost += float(v_end.actual_cost or v_end.estimated_cost or 0)
+
+    # Finishing: duck music under VO, remux channel MP4s with mixed stem when ffmpeg available
+    mix_key = None
+    if music_job.result_uri and vo_job.result_uri and ffmpeg_available():
+        try:
+            music_bytes = storage.get_object(music_job.result_uri)[0]
+            vo_bytes = storage.get_object(vo_job.result_uri)[0]
+            mix = mix_music_and_voice(
+                music_bytes,
+                vo_bytes,
+                duration_seconds=duration_seconds,
+                filename="mix_master.wav",
+            )
+            mix_key = f"projects/{project_id}/cinema/{package_id}/{mix.filename}"
+            storage.upload_bytes(mix_key, mix.data, mix.content_type)
+            db.add(
+                Asset(
+                    project_id=project_id,
+                    asset_type=AssetType.AUDIO.value,
+                    name=f"{campaign} · Mix master",
+                    storage_path=mix_key,
+                    metadata_json={
+                        "package_id": package_id,
+                        "role": "mix_master",
+                        "cinema_role": "mix_master",
+                    },
+                )
+            )
+            for d in deliverables:
+                if d.get("modality") != "video":
+                    continue
+                aspect = d.get("aspect") or "16:9"
+                w, h = media_factory.ASPECT_SIZES.get(aspect, media_factory.ASPECT_SIZES["16:9"])
+                poster = media_factory.make_cinema_poster_png(
+                    campaign=campaign,
+                    brief=work_brief,
+                    cta=work_cta,
+                    brand=brand,
+                    aspect=aspect,
+                    filename=f"{d['role']}_poster.png",
+                )
+                mp4 = mux_still_with_audio(
+                    poster_png=poster.data,
+                    audio_wav=mix.data,
+                    duration_seconds=duration_seconds,
+                    filename=FILE_MAP.get(d["role"], f"{d['role']}.mp4"),
+                    width=w,
+                    height=h,
+                )
+                if not mp4:
+                    continue
+                mp4_key = f"projects/{project_id}/cinema/{package_id}/{mp4.filename}"
+                storage.upload_bytes(mp4_key, mp4.data, mp4.content_type)
+                job = db.get(GenerationJob, d["job_id"])
+                if job:
+                    job.result_uri = mp4_key
+                    db.add(job)
+                d["storage_path"] = mp4_key
+                d["is_mp4"] = True
+                d["file"] = mp4.filename
+                d["video_file"] = mp4.filename
+                d["mp4_url"] = f"/api/media/{project_id}/{d['job_id']}/primary"
+                d["mix_audio_path"] = mix_key
+                db.add(
+                    Asset(
+                        project_id=project_id,
+                        asset_type=AssetType.VIDEO.value,
+                        name=f"{campaign} · {d['role']} MP4",
+                        storage_path=mp4_key,
+                        metadata_json={
+                            "package_id": package_id,
+                            "job_id": d["job_id"],
+                            "cinema_role": d["role"],
+                            "kind": "mp4_master",
+                        },
+                    )
+                )
+            db.flush()
+        except Exception:
+            mix_key = None
+
+    timeline = build_timeline(
+        duration_seconds=duration_seconds,
+        deliverables=deliverables,
+        duck_music_under_vo=True,
     )
 
     jobs_by_id: dict[str, GenerationJob] = {}
@@ -378,13 +560,21 @@ def build_cinematic_package(
         "brand": brand,
         "brand_colors": colors,
         "brief": brief,
+        "brief_variant": work_brief,
         "cta": cta,
+        "cta_variant": work_cta,
         "voiceover_script": vo_text,
         "voiceover_transcript": vo_transcript,
-        "music_style": music_style,
+        "music_style": work_music,
         "dialect": dialect,
         "character_key": character_key,
+        "lora_key": character_key,
         "channels": selected,
+        "delivery_targets": deliveries,
+        "variants": variant_pack,
+        "timeline": timeline,
+        "mix_master_path": mix_key,
+        "mp4_mux": ffmpeg_available(),
         "duration_seconds": duration_seconds,
         "frame_rate_fps": 24.0,
         "export_presets": EXPORT_PRESETS,
@@ -406,7 +596,10 @@ def build_cinematic_package(
                 "video_file": d.get("video_file"),
                 "audio_file": d.get("audio_file"),
                 "file": d.get("file"),
+                "is_mp4": d.get("is_mp4"),
+                "mp4_url": d.get("mp4_url"),
                 "mood": d.get("mood"),
+                "variant": d.get("variant"),
                 "storage_location": d.get("storage_path"),
                 "job_id": d.get("job_id"),
                 "checksum_sha256": next(
@@ -450,10 +643,14 @@ def build_cinematic_package(
             "cta": cta,
             "brand": brand,
             "brand_colors": colors,
-            "music_style": music_style,
+            "music_style": work_music,
             "dialect": dialect,
             "character_key": character_key,
             "channels": selected,
+            "delivery_targets": deliveries,
+            "variants": variant_pack,
+            "timeline": timeline,
+            "mix_master_path": mix_key,
             "duration_seconds": duration_seconds,
             "voiceover_script": vo_text,
             "voiceover_transcript": vo_transcript,
@@ -474,6 +671,9 @@ def build_cinematic_package(
                 "music",
                 "voiceover",
                 "end_card",
+                "variants",
+                "mix_and_mp4_mux",
+                "finishing_timeline",
                 "campaign_manifest",
                 "technical_validation",
                 "review_ready",
@@ -501,6 +701,10 @@ def serialize_package(asset: Asset) -> dict[str, Any]:
         "dialect": meta.get("dialect"),
         "character_key": meta.get("character_key"),
         "channels": meta.get("channels", []),
+        "delivery_targets": meta.get("delivery_targets", []),
+        "variants": meta.get("variants", []),
+        "timeline": meta.get("timeline"),
+        "mix_master_path": meta.get("mix_master_path"),
         "duration_seconds": meta.get("duration_seconds"),
         "formats": meta.get("formats", []),
         "deliverables": meta.get("deliverables", []),
@@ -516,6 +720,48 @@ def serialize_package(asset: Asset) -> dict[str, Any]:
         "zip_url": f"/api/projects/{asset.project_id}/cinema/packages/{meta.get('package_id')}/zip",
         "created_at": asset.created_at.isoformat() if asset.created_at else None,
     }
+
+
+def update_package_timeline(
+    db: Session,
+    project_id: str,
+    package_id: str,
+    mix: dict[str, Any],
+) -> dict[str, Any]:
+    assets = (
+        db.query(Asset)
+        .filter(Asset.project_id == project_id, Asset.soft_deleted.is_(False))
+        .all()
+    )
+    package_asset = next(
+        (
+            a
+            for a in assets
+            if (a.metadata_json or {}).get("kind") == "cinematic_package"
+            and (a.metadata_json or {}).get("package_id") == package_id
+        ),
+        None,
+    )
+    if not package_asset:
+        raise ValueError("Cinema package not found")
+    meta = dict(package_asset.metadata_json or {})
+    timeline = apply_timeline_mix(meta.get("timeline") or {}, mix)
+    meta["timeline"] = timeline
+    if meta.get("campaign_manifest"):
+        meta["campaign_manifest"] = dict(meta["campaign_manifest"])
+        meta["campaign_manifest"]["timeline"] = timeline
+        storage = get_storage()
+        storage.upload_bytes(
+            meta.get("manifest_key")
+            or f"projects/{project_id}/cinema/{package_id}/CAMPAIGN_MANIFEST.json",
+            json.dumps(meta["campaign_manifest"], indent=2).encode("utf-8"),
+            "application/json",
+        )
+    package_asset.metadata_json = meta
+    db.add(package_asset)
+    db.commit()
+    db.refresh(package_asset)
+    return serialize_package(package_asset)
 
 
 def list_cinematic_packages(db: Session, project_id: str) -> list[dict[str, Any]]:
