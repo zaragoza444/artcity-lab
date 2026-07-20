@@ -236,6 +236,34 @@ class IngestionRun(Base):
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
 
+class DatasetFile(Base):
+    __tablename__ = "dataset_files"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
+    dataset_id: Mapped[str] = mapped_column(UUID(as_uuid=False), ForeignKey("datasets.id"), nullable=False, index=True)
+    ingestion_run_id: Mapped[Optional[str]] = mapped_column(
+        UUID(as_uuid=False), ForeignKey("ingestion_runs.id")
+    )
+    filename: Mapped[str] = mapped_column(String(512), nullable=False)
+    storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
+    checksum: Mapped[str] = mapped_column(String(128), nullable=False)
+    content_type: Mapped[Optional[str]] = mapped_column(String(255))
+    media_type: Mapped[str] = mapped_column(String(50), default="other")
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    language: Mapped[Optional[str]] = mapped_column(String(50))
+    dialect: Mapped[Optional[str]] = mapped_column(String(50))
+    rights_status: Mapped[str] = mapped_column(String(50), default=RightsStatus.UNKNOWN.value)
+    duration_seconds: Mapped[Optional[float]] = mapped_column(Float)
+    width: Mapped[Optional[int]] = mapped_column(Integer)
+    height: Mapped[Optional[int]] = mapped_column(Integer)
+    metadata_json: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    soft_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class EvaluationRun(Base):
     __tablename__ = "evaluation_runs"
 

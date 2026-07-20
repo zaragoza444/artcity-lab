@@ -215,8 +215,19 @@ def update_dataset_status(
     if not ds:
         raise HTTPException(status_code=404, detail="Dataset not found")
     if payload.status == DatasetStatus.TRAINING_READY.value:
-        if not ds.ai_training_permission:
-            raise HTTPException(status_code=400, detail="AI-training permission required")
+        from app.services.rights_gate import assert_dataset_rights_for_training
+
+        rights = (
+            db.query(RightsRecord)
+            .filter(RightsRecord.dataset_id == dataset_id)
+            .order_by(RightsRecord.created_at.desc())
+            .first()
+        )
+        if rights and rights.ai_training:
+            ds.ai_training_permission = True
+            db.add(ds)
+            db.flush()
+        assert_dataset_rights_for_training(db, dataset_id)
     ds.status = payload.status
     db.commit()
     db.refresh(ds)

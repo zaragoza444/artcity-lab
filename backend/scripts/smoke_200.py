@@ -349,6 +349,114 @@ def main() -> int:
         }
     )
 
+    # Data Lab production: ingest → files → annotate → export → rights gate
+    smoke_txt = b"Silav Newroz Zagros Kardokh Kurdiya — Art City Data Lab smoke.\n"
+    dl_up = check_upload(
+        "/api/data-lab/ingest",
+        files={"files": ("smoke-ku.txt", smoke_txt, "text/plain")},
+        data={"dataset_name": "Smoke Data Lab", "language": "ku", "dialect": "sorani"},
+    )
+    dl_dataset_id = None
+    if dl_up:
+        dl_dataset_id = dl_up.json().get("dataset_id") or (dl_up.json().get("report") or {}).get("dataset_id")
+        run_id = dl_up.json().get("id")
+        if run_id:
+            check("GET", f"/api/data-lab/ingestions/{run_id}")
+    if dl_dataset_id:
+        check("GET", f"/api/data-lab/datasets/{dl_dataset_id}")
+        check("GET", f"/api/data-lab/datasets/{dl_dataset_id}/files")
+        # training_ready without rights must fail
+        gate = client.patch(
+            f"/api/datasets/{dl_dataset_id}/status",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"status": "training_ready"},
+        )
+        results.append(
+            {
+                "method": "PATCH",
+                "path": f"/api/datasets/{dl_dataset_id}/status?training_ready_blocked",
+                "code": gate.status_code,
+                "pass": gate.status_code == 400,
+                "err": "" if gate.status_code == 400 else gate.text[:160],
+            }
+        )
+        # attach rights then promote
+        rights = client.post(
+            "/api/rights",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "dataset_id": dl_dataset_id,
+                "copyright_owner": "Art City Group",
+                "commercial_use": True,
+                "ai_training": True,
+                "fine_tuning": True,
+                "legal_status": "approved_for_training",
+            },
+        )
+        results.append(
+            {
+                "method": "POST",
+                "path": "/api/rights?datalab",
+                "code": rights.status_code,
+                "pass": rights.status_code in {200, 201},
+                "err": "" if rights.status_code in {200, 201} else rights.text[:160],
+            }
+        )
+        check(
+            "PATCH",
+            f"/api/datasets/{dl_dataset_id}/status",
+            json_body={"status": "verified"},
+        )
+        check(
+            "PATCH",
+            f"/api/datasets/{dl_dataset_id}/status",
+            json_body={"status": "training_ready"},
+        )
+        ann = client.post(
+            "/api/data-lab/annotations",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "dataset_id": dl_dataset_id,
+                "media_type": "text",
+                "payload": {"text": "Silav Newroz", "language": "ku"},
+                "labels": {"dialect": "sorani", "source": "smoke"},
+            },
+        )
+        results.append(
+            {
+                "method": "POST",
+                "path": "/api/data-lab/annotations",
+                "code": ann.status_code,
+                "pass": ann.status_code in {200, 201},
+                "err": "" if ann.status_code in {200, 201} else ann.text[:160],
+            }
+        )
+        if ann.status_code in {200, 201}:
+            aid = ann.json()["id"]
+            check(
+                "PATCH",
+                f"/api/data-lab/annotations/{aid}",
+                json_body={"status": "approved", "comment": "Smoke approve"},
+            )
+            # reject requires comment
+            rej = client.patch(
+                f"/api/data-lab/annotations/{aid}",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"status": "rejected"},
+            )
+            results.append(
+                {
+                    "method": "PATCH",
+                    "path": f"/api/data-lab/annotations/{aid}?reject_needs_comment",
+                    "code": rej.status_code,
+                    "pass": rej.status_code == 422,
+                    "err": "" if rej.status_code == 422 else rej.text[:160],
+                }
+            )
+        check("GET", f"/api/data-lab/datasets/{dl_dataset_id}/export?format=jsonl")
+        check("GET", f"/api/data-lab/datasets/{dl_dataset_id}/export?format=csv")
+        check("GET", f"/api/data-lab/datasets/{dl_dataset_id}/manifest")
+
     check("GET", "/api/knowledge/cultural-pack")
     check("GET", "/api/knowledge/cultural-pack?dialect=sorani")
     check("GET", "/api/knowledge/query?terms=Kardokh,Kurdiya,Newroz")

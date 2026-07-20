@@ -183,6 +183,70 @@ export type Dataset = {
   checksum: string | null;
   record_count: number;
   created_at: string;
+  language?: string | null;
+  dialect?: string | null;
+  size_bytes?: number;
+};
+
+export type IngestionRun = {
+  id: string;
+  dataset_id: string | null;
+  source_type: string;
+  status: string;
+  report: {
+    imported?: number;
+    duplicates?: number;
+    failed?: number;
+    unknown_rights?: number;
+    needs_review?: number;
+    total_bytes?: number;
+    duration_seconds?: number;
+    operator?: string;
+    language?: string;
+    dialect?: string;
+    media_counts?: Record<string, number>;
+  } | null;
+  created_at: string;
+};
+
+export type DatasetFile = {
+  id: string;
+  dataset_id: string;
+  ingestion_run_id?: string | null;
+  filename: string;
+  storage_key: string;
+  checksum: string;
+  content_type?: string | null;
+  media_type: string;
+  size_bytes: number;
+  language?: string | null;
+  dialect?: string | null;
+  rights_status: string;
+  duration_seconds?: number | null;
+  media_url?: string | null;
+  created_at?: string | null;
+};
+
+export type DatasetDetail = Dataset & {
+  file_count: number;
+  approved_annotations: number;
+  pending_annotations: number;
+  storage_path?: string | null;
+  intended_model_use?: string | null;
+  voice_cloning_permission?: boolean;
+  rights: {
+    id: string;
+    copyright_owner: string;
+    legal_status: string;
+    ai_training: boolean;
+    commercial_use: boolean;
+  } | null;
+  latest_ingestion: {
+    id: string;
+    status: string;
+    report: IngestionRun["report"];
+    created_at: string | null;
+  } | null;
 };
 
 export type RightsRecord = {
@@ -410,7 +474,71 @@ export const api = {
     }
     return res.blob();
   },
-  listAnnotations: () => request<AnnotationTask[]>("/api/data-lab/annotations"),
+  ingestFiles: async (opts: {
+    files: FileList | File[];
+    datasetId?: string;
+    datasetName?: string;
+    language?: string;
+    dialect?: string;
+  }) => {
+    const token = getAccessToken();
+    const form = new FormData();
+    const list = Array.from(opts.files);
+    for (const file of list) form.append("files", file);
+    if (opts.datasetId) form.append("dataset_id", opts.datasetId);
+    if (opts.datasetName) form.append("dataset_name", opts.datasetName);
+    if (opts.language) form.append("language", opts.language);
+    if (opts.dialect) form.append("dialect", opts.dialect);
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${API_URL}/api/data-lab/ingest`, {
+      method: "POST",
+      headers,
+      body: form,
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(formatApiError(res.status, text));
+    }
+    return res.json() as Promise<IngestionRun>;
+  },
+  listIngestions: () => request<IngestionRun[]>("/api/data-lab/ingestions"),
+  getIngestion: (runId: string) => request<IngestionRun>(`/api/data-lab/ingestions/${runId}`),
+  getDatasetDetail: (datasetId: string) =>
+    request<DatasetDetail>(`/api/data-lab/datasets/${datasetId}`),
+  listDatasetFiles: (datasetId: string) =>
+    request<DatasetFile[]>(`/api/data-lab/datasets/${datasetId}/files`),
+  getDatasetManifest: (datasetId: string) =>
+    request<Record<string, unknown>>(`/api/data-lab/datasets/${datasetId}/manifest`),
+  exportDataset: async (datasetId: string, format: "jsonl" | "csv" = "jsonl", persist = false) => {
+    const token = getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const qs = new URLSearchParams({ format, persist: String(persist) });
+    const res = await fetch(`${API_URL}/api/data-lab/datasets/${datasetId}/export?${qs}`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(formatApiError(res.status, text));
+    }
+    return res.blob();
+  },
+  updateDatasetStatus: (datasetId: string, status: string) =>
+    request<Dataset>(`/api/datasets/${datasetId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  listAnnotations: (opts?: { dataset_id?: string; status?: string; media_type?: string }) => {
+    const params = new URLSearchParams();
+    if (opts?.dataset_id) params.set("dataset_id", opts.dataset_id);
+    if (opts?.status) params.set("status", opts.status);
+    if (opts?.media_type) params.set("media_type", opts.media_type);
+    const qs = params.toString();
+    return request<AnnotationTask[]>(`/api/data-lab/annotations${qs ? `?${qs}` : ""}`);
+  },
   createAnnotation: (body: {
     dataset_id: string;
     media_type?: string;

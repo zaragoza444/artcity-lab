@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-import hashlib
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
-from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import Response
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.deps import CurrentUser, require_roles
-from app.core.enums import DATASET_UPLOAD_ROLES, AnnotationStatus, DatasetStatus
-from app.models import User, AnnotationTask, Dataset, IngestionRun
-from app.services.speech import detect_language_dialect
-from app.services.storage import get_storage
+from app.core.enums import DATASET_UPLOAD_ROLES, AnnotationStatus
+from app.models import AnnotationTask, Dataset, IngestionRun, User
+from app.services import data_lab as data_lab_service
 
 router = APIRouter(tags=["data-lab"])
 
@@ -52,7 +50,10 @@ class AnnotationOut(BaseModel):
 
 class AnnotationUpdate(BaseModel):
     labels: Optional[dict] = None
-    status: Optional[str] = None
+    status: Optional[str] = Field(
+        default=None,
+        pattern="^(pending|in_review|approved|rejected|conflict)$",
+    )
     comment: Optional[str] = None
 
 
@@ -66,110 +67,15 @@ async def ingest_files(
     files: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
-    run = IngestionRun(source_type="upload", status="processing", operator_id=user.id, report={})
-    db.add(run)
-    db.flush()
-
-    if dataset_id:
-        dataset = db.get(Dataset, dataset_id)
-        if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset not found")
-    else:
-        dataset = Dataset(
-            name=dataset_name or f"Ingest {datetime.now(timezone.utc).date()}",
-            category="archive",
-            media_type="mixed",
-            owner="Art City",
-            status=DatasetStatus.INGESTING.value,
-            created_by=user.id,
-        )
-        db.add(dataset)
-        db.flush()
-
-    storage = get_storage()
-    imported = 0
-    failed = 0
-    duplicates = 0
-    unknown_rights = 0
-    total_bytes = 0
-    text_samples: list[str] = []
-    dialect_votes: dict[str, int] = {}
-    seen: set[str] = set()
-    start = datetime.now(timezone.utc)
-
-    for f in files:
-        try:
-            data = await f.read()
-            digest = hashlib.sha256(data).hexdigest()
-            if digest in seen:
-                duplicates += 1
-                continue
-            seen.add(digest)
-            key = f"datasets/{dataset.id}/raw/{digest[:16]}_{f.filename or uuid4().hex}"
-            storage.upload_bytes(key, data, f.content_type or "application/octet-stream")
-            imported += 1
-            total_bytes += len(data)
-            unknown_rights += 1
-            name = (f.filename or "").lower()
-            ctype = (f.content_type or "").lower()
-            if "text" in ctype or name.endswith((".txt", ".md", ".srt", ".vtt", ".csv", ".json")):
-                try:
-                    sample = data[:4000].decode("utf-8", errors="ignore")
-                    if sample.strip():
-                        text_samples.append(sample)
-                        detected = detect_language_dialect(sample)
-                        dialect_votes[detected["dialect"]] = dialect_votes.get(detected["dialect"], 0) + 1
-                except Exception:  # noqa: BLE001
-                    pass
-        except Exception:  # noqa: BLE001
-            failed += 1
-
-    detected_dialect = dialect
-    detected_language = language or "ku"
-    detection_confidence = None
-    if dialect_votes:
-        detected_dialect = max(dialect_votes, key=dialect_votes.get)
-        detection_confidence = round(
-            dialect_votes[detected_dialect] / max(sum(dialect_votes.values()), 1), 3
-        )
-    elif text_samples:
-        detected = detect_language_dialect("\n".join(text_samples[:3]))
-        detected_dialect = detected["dialect"]
-        detected_language = detected["language"]
-        detection_confidence = detected["confidence"]
-
-    if detected_language and not dataset.language:
-        dataset.language = detected_language
-    if detected_dialect and not dataset.dialect:
-        dataset.dialect = detected_dialect
-
-    dataset.record_count = (dataset.record_count or 0) + imported
-    dataset.size_bytes = (dataset.size_bytes or 0) + total_bytes
-    dataset.status = DatasetStatus.NEEDS_REVIEW.value
-    dataset.storage_path = f"datasets/{dataset.id}/raw/"
-    dataset.checksum = hashlib.sha256(",".join(sorted(seen)).encode()).hexdigest() if seen else None
-
-    run.dataset_id = dataset.id
-    run.status = "completed"
-    run.finished_at = datetime.now(timezone.utc)
-    run.report = {
-        "imported": imported,
-        "duplicates": duplicates,
-        "failed": failed,
-        "unknown_rights": unknown_rights,
-        "needs_review": imported,
-        "total_bytes": total_bytes,
-        "duration_seconds": (run.finished_at - start).total_seconds(),
-        "operator": user.email,
-        "language": detected_language,
-        "dialect": detected_dialect,
-        "dialect_votes": dialect_votes,
-        "detection_confidence": detection_confidence,
-        "text_files_scanned": len(text_samples),
-    }
-    db.commit()
-    db.refresh(run)
-    return run
+    return await data_lab_service.ingest_uploads(
+        db,
+        user=user,
+        files=files,
+        dataset_id=dataset_id,
+        dataset_name=dataset_name,
+        language=language,
+        dialect=dialect,
+    )
 
 
 @router.get("/api/data-lab/ingestions", response_model=list[IngestionOut])
@@ -177,9 +83,75 @@ def list_ingestions(user: CurrentUser, db: Session = Depends(get_db)):
     return db.query(IngestionRun).order_by(IngestionRun.created_at.desc()).limit(100).all()
 
 
+@router.get("/api/data-lab/ingestions/{run_id}", response_model=IngestionOut)
+def get_ingestion(run_id: str, user: CurrentUser, db: Session = Depends(get_db)):
+    return data_lab_service.get_ingestion(db, run_id)
+
+
+@router.get("/api/data-lab/datasets/{dataset_id}")
+def get_dataset(dataset_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> dict:
+    return data_lab_service.get_dataset_detail(db, dataset_id)
+
+
+@router.get("/api/data-lab/datasets/{dataset_id}/files")
+def list_files(dataset_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> list[dict]:
+    return data_lab_service.list_dataset_files(db, dataset_id)
+
+
+@router.get("/api/data-lab/datasets/{dataset_id}/manifest")
+def dataset_manifest(dataset_id: str, user: CurrentUser, db: Session = Depends(get_db)) -> dict:
+    return data_lab_service.build_training_manifest(db, dataset_id)
+
+
+@router.get("/api/data-lab/datasets/{dataset_id}/export")
+def export_dataset(
+    dataset_id: str,
+    user: CurrentUser,
+    format: str = Query(default="jsonl", pattern="^(jsonl|csv)$"),
+    persist: bool = Query(default=False),
+    db: Session = Depends(get_db),
+) -> Response:
+    body, media, filename = data_lab_service.export_dataset(
+        db, dataset_id, fmt=format, persist=persist
+    )
+    return Response(
+        content=body,
+        media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/api/media/datasets/{dataset_id}/files/{file_id}")
+def dataset_file_media(
+    dataset_id: str,
+    file_id: str,
+    user: CurrentUser,
+    db: Session = Depends(get_db),
+) -> Response:
+    data, media, filename = data_lab_service.get_dataset_file_bytes(db, dataset_id, file_id)
+    return Response(
+        content=data,
+        media_type=media,
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
+
+
 @router.get("/api/data-lab/annotations", response_model=list[AnnotationOut])
-def list_annotations(user: CurrentUser, db: Session = Depends(get_db)):
-    return db.query(AnnotationTask).order_by(AnnotationTask.created_at.desc()).limit(200).all()
+def list_annotations(
+    user: CurrentUser,
+    db: Session = Depends(get_db),
+    dataset_id: Optional[str] = Query(default=None),
+    status: Optional[str] = Query(default=None),
+    media_type: Optional[str] = Query(default=None),
+):
+    q = db.query(AnnotationTask)
+    if dataset_id:
+        q = q.filter(AnnotationTask.dataset_id == dataset_id)
+    if status:
+        q = q.filter(AnnotationTask.status == status)
+    if media_type:
+        q = q.filter(AnnotationTask.media_type == media_type)
+    return q.order_by(AnnotationTask.created_at.desc()).limit(200).all()
 
 
 @router.post("/api/data-lab/annotations", response_model=AnnotationOut, status_code=201)
@@ -203,21 +175,14 @@ def create_annotation(payload: AnnotationCreate, user: CurrentUser, db: Session 
 
 
 @router.patch("/api/data-lab/annotations/{task_id}", response_model=AnnotationOut)
-def update_annotation(task_id: str, payload: AnnotationUpdate, user: CurrentUser, db: Session = Depends(get_db)):
-    task = db.get(AnnotationTask, task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Annotation not found")
-    history = list(task.revision_history or [])
-    history.append({"at": datetime.now(timezone.utc).isoformat(), "by": user.email, "before": task.labels})
-    task.revision_history = history
-    if payload.labels is not None:
-        task.labels = payload.labels
-    if payload.status is not None:
-        task.status = payload.status
-    if payload.comment:
-        comments = list(task.comments or [])
-        comments.append({"by": user.email, "text": payload.comment, "at": datetime.now(timezone.utc).isoformat()})
-        task.comments = comments
-    db.commit()
-    db.refresh(task)
-    return task
+def update_annotation(
+    task_id: str, payload: AnnotationUpdate, user: CurrentUser, db: Session = Depends(get_db)
+):
+    return data_lab_service.update_annotation_task(
+        db,
+        task_id=task_id,
+        user=user,
+        labels=payload.labels,
+        status_value=payload.status,
+        comment=payload.comment,
+    )

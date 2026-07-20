@@ -1,6 +1,6 @@
 # Art City AI Studio — Complete API Documentation
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Base URLs**
 
 | Environment | Base URL |
@@ -401,13 +401,21 @@ Outputs include hero 16:9, social 9:16 / 1:1, music, VO, end card, QC, manifest.
 
 ---
 
-## 8. Data Lab
+## 8. Data Lab (production)
+
+Production ingest → file inventory → annotate → rights gate → export loop. Local multipart upload is the default source (sync). Uploading is never training — `training_ready` requires approved rights.
 
 | Method | Path | Auth notes | Description |
 |--------|------|------------|-------------|
-| POST | `/api/data-lab/ingest` | upload roles | Multipart file ingest |
+| POST | `/api/data-lab/ingest` | upload roles | Multipart ingest → MinIO + `dataset_files` |
 | GET | `/api/data-lab/ingestions` | auth | List ingest runs |
-| GET | `/api/data-lab/annotations` | auth | List annotation tasks |
+| GET | `/api/data-lab/ingestions/{run_id}` | auth | One ingest run + report |
+| GET | `/api/data-lab/datasets/{id}` | auth | Dataset detail + counts + rights |
+| GET | `/api/data-lab/datasets/{id}/files` | auth | File inventory |
+| GET | `/api/data-lab/datasets/{id}/export?format=jsonl\|csv` | auth | Approved annotations export (`persist=true` stores in MinIO) |
+| GET | `/api/data-lab/datasets/{id}/manifest` | auth | Training manifest JSON |
+| GET | `/api/media/datasets/{id}/files/{file_id}` | auth | Authenticated file preview |
+| GET | `/api/data-lab/annotations` | auth | List (`dataset_id`, `status`, `media_type` filters) |
 | POST | `/api/data-lab/annotations` | auth | Create task |
 | PATCH | `/api/data-lab/annotations/{task_id}` | auth | Update labels/status/comment |
 
@@ -418,8 +426,12 @@ Outputs include hero 16:9, social 9:16 / 1:1, music, VO, end card, QC, manifest.
 | files | file[] | yes |
 | dataset_id | string | no |
 | dataset_name | string | no (creates dataset if no id) |
+| language | string | no (`ku`) |
+| dialect | string | no |
 
-**Response report fields:** `imported`, `duplicates`, `failed`, `unknown_rights`, `needs_review`, `total_bytes`, `duration_seconds`, `operator`
+Persists per-file rows (`checksum`, `media_type`, `rights_status`, duration for WAV). Dedupes within batch and against existing dataset files. Auto-creates annotation tasks for text/subtitle/speech. Dataset status → `needs_review`.
+
+**Report fields:** `imported`, `duplicates`, `failed`, `unknown_rights`, `needs_review`, `total_bytes`, `duration_seconds`, `operator`, `language`, `dialect`, `media_counts`, `file_ids`
 
 ### Annotation create body
 
@@ -442,7 +454,11 @@ Outputs include hero 16:9, social 9:16 / 1:1, music, VO, end card, QC, manifest.
 }
 ```
 
-Statuses include: `pending`, `in_review`, `approved`, `rejected`, `conflict`
+Statuses: `pending`, `in_review`, `approved`, `rejected`, `conflict`. Reject requires a non-empty `comment`.
+
+### Dataset status gate
+
+`PATCH /api/datasets/{id}/status` with `training_ready` calls the rights gate (`ai_training_permission` + approved `RightsRecord`). Without rights → **400**.
 
 ---
 
@@ -719,3 +735,4 @@ Absolute media URL = `{BASE}{media_url}`
 |---------|-------|
 | 1.0.0 | AI Core: auth, Gateway, Data Lab, Rights, Models, Training, Knowledge, Evaluations, speech ASR scaffold |
 | 1.1.0 | Production Kurdish ASR: MinIO upload, persisted speech jobs, Cinema/Studio VO transcripts, VTT/SRT |
+| 1.2.0 | Production Data Lab: file inventory, ingest UI path, export manifests, rights-gated training_ready |

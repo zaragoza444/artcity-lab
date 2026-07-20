@@ -229,7 +229,7 @@ def main() -> None:
             speech_ds = Dataset(
                 id=str(uuid4()),
                 name="KD-SPEECH-KU-v1",
-                description="Kurdish speech corpus scaffold — Sorani / Badini / Kurmanji",
+                description="Kurdish speech corpus — Sorani / Badini / Kurmanji; ASR handoff + Data Lab annotation",
                 category="speech",
                 media_type="audio",
                 language="ku",
@@ -259,10 +259,38 @@ def main() -> None:
                     fine_tuning=True,
                     image_generation=False,
                     legal_status=RightsStatus.APPROVED_FOR_TRAINING.value,
-                    legal_notes="Speech pilot seed — Art City owned",
+                    legal_notes="Speech corpus — Art City owned; promote via Data Lab review",
                     created_by=admin.id,
                 )
             )
+        else:
+            if "scaffold" in (speech_ds.description or "").lower():
+                speech_ds.description = (
+                    "Kurdish speech corpus — Sorani / Badini / Kurmanji; ASR handoff + Data Lab annotation"
+                )
+                db.add(speech_ds)
+            rights = (
+                db.query(RightsRecord)
+                .filter(RightsRecord.dataset_id == speech_ds.id)
+                .order_by(RightsRecord.created_at.desc())
+                .first()
+            )
+            if not rights:
+                db.add(
+                    RightsRecord(
+                        id=str(uuid4()),
+                        dataset_id=speech_ds.id,
+                        copyright_owner="Art City Group",
+                        source_organisation="Art City",
+                        commercial_use=True,
+                        ai_training=True,
+                        fine_tuning=True,
+                        image_generation=False,
+                        legal_status=RightsStatus.APPROVED_FOR_TRAINING.value,
+                        legal_notes="Speech corpus — Art City owned; promote via Data Lab review",
+                        created_by=admin.id,
+                    )
+                )
 
         asr_model = db.query(RegisteredModel).filter(RegisteredModel.name == "AC-KURDISH-ASR-v1").first()
         if not asr_model:
