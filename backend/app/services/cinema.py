@@ -544,8 +544,9 @@ def build_cinematic_package(
         enriched,
         expected_duration=duration_seconds,
         brand=brand,
-        cta=cta,
+        cta=work_cta,
         jobs_by_id=jobs_by_id,
+        channels=selected,
     )
 
     elapsed = round(time.perf_counter() - started, 3)
@@ -835,6 +836,7 @@ def revalidate_package(db: Session, project_id: str, package_id: str) -> dict[st
         brand=meta.get("brand") or "Art City",
         cta=meta.get("cta") or "",
         jobs_by_id=jobs_by_id,
+        channels=list(meta.get("channels") or []),
     )
     meta["validation"] = validation
     if meta.get("campaign_manifest"):

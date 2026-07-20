@@ -380,19 +380,39 @@ def validate_deliverable(
     }
 
 
-def validate_package_completeness(roles_present: set[str]) -> CheckResult:
-    required = {
-        "broadcast_hero",
-        "social_vertical",
-        "social_square",
-        "music_master",
-        "voiceover",
-        "end_card",
-    }
+CHANNEL_ROLE_MAP = {
+    "broadcast": "broadcast_hero",
+    "social_vertical": "social_vertical",
+    "social_square": "social_square",
+}
+
+CORE_ROLES = {"music_master", "voiceover", "end_card"}
+
+
+def required_roles_for_channels(channels: list[str] | None) -> set[str]:
+    """QC requires selected channel cutdowns + music + VO + end card."""
+    if not channels:
+        return {
+            "broadcast_hero",
+            "social_vertical",
+            "social_square",
+            *CORE_ROLES,
+        }
+    roles = {CHANNEL_ROLE_MAP[c] for c in channels if c in CHANNEL_ROLE_MAP}
+    if not roles:
+        roles = {"broadcast_hero", "social_vertical", "social_square"}
+    return roles | CORE_ROLES
+
+
+def validate_package_completeness(
+    roles_present: set[str],
+    required: set[str] | None = None,
+) -> CheckResult:
+    required = required or required_roles_for_channels(None)
     missing = sorted(required - roles_present)
     return CheckResult(
         id="package_completeness",
-        label="All six outputs present",
+        label="Required campaign outputs present",
         passed=len(missing) == 0,
         expected=sorted(required),
         actual=sorted(roles_present),
@@ -408,6 +428,8 @@ def load_and_validate_package(
     brand: str,
     cta: str,
     jobs_by_id: dict[str, Any],
+    channels: list[str] | None = None,
+    required_roles: set[str] | None = None,
 ) -> dict[str, Any]:
     """storage_get(key) -> (bytes, content_type). jobs_by_id maps job_id -> GenerationJob-like."""
     results = []
@@ -458,7 +480,8 @@ def load_and_validate_package(
             )
         )
 
-    completeness = validate_package_completeness(roles)
+    need = required_roles or required_roles_for_channels(channels)
+    completeness = validate_package_completeness(roles, need)
     all_passed = completeness.passed and all(r["passed"] for r in results)
     return {
         "passed": all_passed,
@@ -469,5 +492,6 @@ def load_and_validate_package(
             "duration_tolerance_sec": DURATION_TOLERANCE_SEC,
             "audio_loudness_lufs": AUDIO_LOUDNESS_TARGET,
             "fps": 24.0,
+            "required_roles": sorted(need),
         },
     }

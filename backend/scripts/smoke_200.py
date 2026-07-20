@@ -260,38 +260,94 @@ def main() -> int:
         if vj.get("transcript_job_id"):
             check("GET", f"/api/v1/ai/speech/jobs/{vj['transcript_job_id']}")
 
-    # Cinema packages: record VO transcript coverage when a post-ASR package exists
-    pkgs = client.get(
+    # Cinema full production package (MP4 + QC + timeline)
+    cinema = client.post(
         f"/api/projects/{project_id}/cinema/packages",
         headers={"Authorization": f"Bearer {token}"},
+        json={
+            "campaign": "Smoke Full Prod",
+            "brief": "Art City advertising production masters for green suite",
+            "cta": "Watch now",
+            "duration_seconds": 10,
+            "dialect": "sorani",
+            "character_key": "kurdiya",
+            "character_name": "Kurdiya",
+            "channels": ["broadcast", "social_vertical", "social_square"],
+            "variants": ["A", "B"],
+            "delivery_targets": ["youtube", "meta_stories"],
+            "music_style": "warm",
+        },
     )
-    if pkgs.status_code == 200:
-        for pkg in pkgs.json()[:5]:
-            vos = [
-                d
-                for d in (pkg.get("deliverables") or [])
-                if d.get("role") == "voiceover" or d.get("type") == "voiceover"
-            ]
-            if not vos:
-                continue
-            vo = vos[0]
-            manifest = pkg.get("campaign_manifest") or {}
-            has_tx = bool(
-                vo.get("transcript")
-                or vo.get("transcript_job_id")
-                or manifest.get("voiceover_transcript")
+    cinema_ok = cinema.status_code in {200, 201}
+    results.append(
+        {
+            "method": "POST",
+            "path": f"/api/projects/{project_id}/cinema/packages",
+            "code": cinema.status_code,
+            "pass": cinema_ok,
+            "err": "" if cinema_ok else cinema.text[:160],
+        }
+    )
+    if cinema_ok:
+        pkg = cinema.json()
+        package_id = pkg.get("package_id")
+        results.append(
+            {
+                "method": "ASSERT",
+                "path": "cinema.validation_passed",
+                "code": 200 if pkg.get("validation_passed") else 0,
+                "pass": bool(pkg.get("validation_passed")),
+                "err": "" if pkg.get("validation_passed") else str(pkg.get("validation"))[:160],
+            }
+        )
+        vids = [d for d in (pkg.get("deliverables") or []) if d.get("modality") == "video"]
+        mp4ish = any(d.get("is_mp4") or str(d.get("file") or "").endswith(".mp4") for d in vids)
+        results.append(
+            {
+                "method": "ASSERT",
+                "path": "cinema.mp4_masters",
+                "code": 200 if mp4ish else 0,
+                "pass": mp4ish,
+                "err": "" if mp4ish else "no mp4 channel masters",
+            }
+        )
+        if package_id:
+            check(
+                "PATCH",
+                f"/api/projects/{project_id}/cinema/packages/{package_id}/timeline",
+                json_body={"music_gain_db": -1.0, "voice_gain_db": 0.5, "duck_music_under_vo": True},
             )
-            if has_tx:
-                results.append(
-                    {
-                        "method": "ASSERT",
-                        "path": f"cinema.package.{pkg.get('package_id', '?')}.voiceover_transcript",
-                        "code": 200,
-                        "pass": True,
-                        "err": "",
-                    }
-                )
-                break
+            check("GET", f"/api/projects/{project_id}/cinema/packages/{package_id}/zip")
+            check("GET", f"/api/projects/{project_id}/cinema/packages/{package_id}/manifest")
+        vos = [d for d in (pkg.get("deliverables") or []) if d.get("role") == "voiceover"]
+        if vos:
+            vo = vos[0]
+            has_tx = bool(vo.get("transcript") or vo.get("transcript_job_id") or (pkg.get("campaign_manifest") or {}).get("voiceover_transcript"))
+            results.append(
+                {
+                    "method": "ASSERT",
+                    "path": "cinema.voiceover_transcript",
+                    "code": 200 if has_tx else 0,
+                    "pass": has_tx,
+                    "err": "" if has_tx else "missing VO transcript",
+                }
+            )
+
+    # OAuth2 password token (Swagger Authorize)
+    oauth = client.post(
+        "/api/auth/token",
+        data={"username": EMAIL, "password": PASSWORD},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    results.append(
+        {
+            "method": "POST",
+            "path": "/api/auth/token",
+            "code": oauth.status_code,
+            "pass": oauth.status_code == 200,
+            "err": "" if oauth.status_code == 200 else oauth.text[:160],
+        }
+    )
 
     check("GET", "/api/knowledge/cultural-pack")
     check("GET", "/api/knowledge/cultural-pack?dialect=sorani")
