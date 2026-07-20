@@ -116,11 +116,19 @@ def main() -> int:
             if media:
                 mr = client.get(media)
                 ok(f"studio/{modality}/media", mr.status_code)
+                ctype = mr.headers.get("content-type", "")
                 if modality == "video":
-                    ctype = mr.headers.get("content-type", "")
+                    assert_true("studio/video is mp4", "mp4" in ctype or mr.content[4:8] == b"ftyp", ctype)
+                if modality == "image":
                     assert_true(
-                        "studio/video is mp4 or svg",
-                        "mp4" in ctype or "svg" in ctype,
+                        "studio/image is png or jpeg",
+                        "png" in ctype or "jpeg" in ctype or "jpg" in ctype or "svg" in ctype,
+                        ctype,
+                    )
+                if modality in {"voice", "music", "audio"}:
+                    assert_true(
+                        f"studio/{modality} is audio",
+                        "audio" in ctype or "wav" in ctype or "mpeg" in ctype,
                         ctype,
                     )
 

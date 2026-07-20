@@ -25,39 +25,72 @@ def mux_still_with_audio(
     height: int = 1080,
     fps: float = 24.0,
 ) -> Optional[MediaFile]:
+    """Loop a still poster under a WAV bed and produce a playable MP4."""
+    return mux_frames_with_audio(
+        frames_png=[poster_png],
+        audio_wav=audio_wav,
+        duration_seconds=duration_seconds,
+        filename=filename,
+        width=width,
+        height=height,
+        fps=fps,
+    )
+
+
+def mux_frames_with_audio(
+    *,
+    frames_png: list[bytes],
+    audio_wav: bytes,
+    duration_seconds: float,
+    filename: str = "master.mp4",
+    width: int = 1920,
+    height: int = 1080,
+    fps: float = 24.0,
+) -> Optional[MediaFile]:
     """
-    Loop a still poster under a WAV bed and produce a playable MP4.
-    Returns None when ffmpeg is not installed (SVG/WAV pack still ships).
+    Encode a slideshow / multi-shot H.264 MP4 with AAC audio.
+    Returns None when ffmpeg is missing.
     """
     if not ffmpeg_available():
         return None
-    if not poster_png or not audio_wav:
+    if not frames_png or not audio_wav:
         return None
 
     with tempfile.TemporaryDirectory(prefix="artcity-mux-") as tmp:
         root = Path(tmp)
-        poster = root / "poster.png"
+        frames_dir = root / "frames"
+        frames_dir.mkdir()
+        for i, frame in enumerate(frames_png):
+            (frames_dir / f"frame_{i:04d}.png").write_bytes(frame)
         audio = root / "bed.wav"
         out = root / "out.mp4"
-        poster.write_bytes(poster_png)
         audio.write_bytes(audio_wav)
-        # Scale/pad to exact delivery size; stillimage + AAC for social/broadcast preview masters.
+        hold = max(0.4, duration_seconds / max(1, len(frames_png)))
+        # Concat demuxer for variable hold per still
+        list_file = root / "frames.txt"
+        lines = []
+        for i in range(len(frames_png)):
+            path = (frames_dir / f"frame_{i:04d}.png").as_posix()
+            lines.append(f"file '{path}'")
+            lines.append(f"duration {hold:.3f}")
+        lines.append(f"file '{(frames_dir / f'frame_{len(frames_png) - 1:04d}.png').as_posix()}'")
+        list_file.write_text("\n".join(lines), encoding="utf-8")
         cmd = [
             "ffmpeg",
             "-y",
             "-hide_banner",
             "-loglevel",
             "error",
-            "-loop",
-            "1",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
             "-i",
-            str(poster),
+            str(list_file),
             "-i",
             str(audio),
             "-c:v",
             "libx264",
-            "-tune",
-            "stillimage",
             "-pix_fmt",
             "yuv420p",
             "-r",
@@ -77,9 +110,20 @@ def mux_still_with_audio(
             str(out),
         ]
         try:
-            subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+            subprocess.run(cmd, check=True, capture_output=True, timeout=180)
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-            return None
+            # Fallback: single-frame still loop
+            if len(frames_png) == 1:
+                return None
+            return mux_frames_with_audio(
+                frames_png=[frames_png[0]],
+                audio_wav=audio_wav,
+                duration_seconds=duration_seconds,
+                filename=filename,
+                width=width,
+                height=height,
+                fps=fps,
+            )
         if not out.exists() or out.stat().st_size < 32:
             return None
         return MediaFile(

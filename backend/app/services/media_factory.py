@@ -94,41 +94,42 @@ def _hash_color(text: str) -> tuple[str, str]:
     return f"#{a}", f"#{b}"
 
 
-def make_image(prompt: str, title: str = "Art City Frame") -> MediaFile:
-    c1, c2 = _hash_color(prompt)
-    safe_prompt = escape(prompt[:180])
-    safe_title = escape(title)
-    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="{c1}"/>
-      <stop offset="100%" stop-color="{c2}"/>
-    </linearGradient>
-    <radialGradient id="v" cx="50%" cy="40%" r="70%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
-    </radialGradient>
-  </defs>
-  <rect width="1280" height="720" fill="url(#g)"/>
-  <rect width="1280" height="720" fill="url(#v)"/>
-  <rect x="48" y="48" width="1184" height="624" fill="none" stroke="#efd39a" stroke-width="2" opacity="0.7"/>
-  <text x="80" y="120" fill="#efd39a" font-family="Georgia, serif" font-size="28" letter-spacing="6">ART CITY</text>
-  <text x="80" y="180" fill="#f3f6fa" font-family="Georgia, serif" font-size="48">{safe_title}</text>
-  <foreignObject x="80" y="240" width="1120" height="360">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="color:#d5dbe6;font:28px Georgia,serif;line-height:1.45">
-      {safe_prompt}
-    </div>
-  </foreignObject>
-  <text x="80" y="660" fill="#8d9aad" font-family="monospace" font-size="16">LOCAL PRODUCTION PROXY · IMAGE</text>
-</svg>
-"""
-    return MediaFile(
-        filename=f"image-{uuid4().hex[:10]}.svg",
-        content_type="image/svg+xml",
-        data=svg.encode("utf-8"),
-        kind="image",
+def make_image(prompt: str, title: str = "Art City Frame", aspect: str = "16:9") -> MediaFile:
+    """Production PNG master (Art City owned raster when cloud image keys are absent)."""
+    return make_cinema_poster_png(
+        campaign=title,
+        brief=prompt,
+        cta="Art City Studios",
+        brand="Art City",
+        aspect=aspect,
+        filename=f"image-{uuid4().hex[:10]}.png",
     )
+
+
+def make_shot_frames(
+    *,
+    campaign: str,
+    brief: str,
+    cta: str,
+    brand: str = "Art City",
+    aspect: str = "16:9",
+    shot_count: int = 5,
+) -> list[bytes]:
+    """Multi-shot PNG frames for production MP4 slideshow encode."""
+    labels = ["OPEN", "HOOK", "STORY", "BRAND", "CTA"]
+    frames: list[bytes] = []
+    for i in range(max(3, min(8, shot_count))):
+        label = labels[i % len(labels)]
+        media = make_cinema_poster_png(
+            campaign=f"{campaign} · {label}",
+            brief=f"{brief[:100]} · shot {i + 1}",
+            cta=cta if label == "CTA" else f"{label} · {cta}",
+            brand=brand,
+            aspect=aspect,
+            filename=f"shot-{i:02d}.png",
+        )
+        frames.append(media.data)
+    return frames
 
 
 def make_video_proxy(prompt: str, duration_seconds: float = 4.0) -> tuple[MediaFile, MediaFile]:
@@ -523,32 +524,14 @@ def make_cinematic_video(
 
 
 def make_end_card(campaign: str, cta: str, brand: str = "Art City", prompt: str = "") -> MediaFile:
-    """End card at broadcast 16:9 export resolution with Art City brand colours."""
-    # Official Art City cinema palette (matches product UI)
-    gold = "#c5a15e"
-    gold_bright = "#efd39a"
-    ink = "#05070b"
-    paper = "#f3f6fa"
-    mist = "#8d9aad"
-    width, height = 1920, 1080
-    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
-  <rect width="{width}" height="{height}" fill="{ink}"/>
-  <rect x="96" y="96" width="{width - 192}" height="{height - 192}" fill="none" stroke="{gold_bright}" stroke-width="3"/>
-  <rect x="120" y="120" width="72" height="72" fill="none" stroke="{gold}" stroke-width="2"/>
-  <text x="156" y="168" text-anchor="middle" fill="{gold_bright}" font-family="Georgia, serif" font-size="22" font-weight="700">AC</text>
-  <text x="{width // 2}" y="380" text-anchor="middle" fill="{gold_bright}" font-family="Georgia, serif" font-size="34" letter-spacing="12">{escape(brand.upper())}</text>
-  <text x="{width // 2}" y="480" text-anchor="middle" fill="{paper}" font-family="Georgia, serif" font-size="64">{escape(campaign[:48])}</text>
-  <text x="{width // 2}" y="560" text-anchor="middle" fill="{paper}" font-family="Georgia, serif" font-size="32">{escape(cta[:56])}</text>
-  <text x="{width // 2}" y="640" text-anchor="middle" fill="{mist}" font-family="Georgia, serif" font-size="22">{escape(prompt[:90])}</text>
-  <text x="{width // 2}" y="980" text-anchor="middle" fill="{mist}" font-family="monospace" font-size="16">16:9 · 1920x1080 · ART CITY END CARD</text>
-</svg>
-"""
-    return MediaFile(
-        filename="end_card.svg",
-        content_type="image/svg+xml",
-        data=svg.encode("utf-8"),
-        kind="image",
+    """Production end card PNG at broadcast 16:9."""
+    return make_cinema_poster_png(
+        campaign=campaign,
+        brief=prompt or cta,
+        cta=cta,
+        brand=brand,
+        aspect="16:9",
+        filename="end_card.png",
     )
 
 

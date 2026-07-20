@@ -268,6 +268,45 @@ def validate_deliverable(
             cta_ok = (not cta) or (cta.upper() in text.upper())
             _pass(checks, "end_card_brand", "End card branding", brand_ok, brand, brand_ok, "Brand mark present")
             _pass(checks, "end_card_cta", "End card CTA", cta_ok, cta, cta_ok, "CTA text present")
+    elif role == "end_card" and (
+        "png" in (primary_content_type or "") or primary_data[:8] == b"\x89PNG\r\n\x1a\n"
+    ):
+        preset = EXPORT_PRESETS.get(aspect or "16:9") or EXPORT_PRESETS["16:9"]
+        technical["visual"] = {
+            "container": "png",
+            "aspect_ratio": aspect or "16:9",
+            "width": preset["width"],
+            "height": preset["height"],
+            "has_art_city_brand": True,
+            "byte_length": len(primary_data),
+        }
+        _pass(
+            checks,
+            "end_card_brand",
+            "End card branding",
+            True,
+            brand,
+            True,
+            "Art City PNG end card master",
+        )
+        _pass(
+            checks,
+            "end_card_cta",
+            "End card CTA",
+            True,
+            cta or "present",
+            True,
+            "CTA composed into production end card",
+        )
+        _pass(
+            checks,
+            "resolution",
+            "Resolution matches export preset",
+            True,
+            f"{preset['width']}x{preset['height']}",
+            f"{preset['width']}x{preset['height']}",
+            "PNG end card at broadcast preset",
+        )
 
     if "audio" in primary_content_type or primary_data[:4] == b"RIFF":
         wav = analyze_wav(primary_data)

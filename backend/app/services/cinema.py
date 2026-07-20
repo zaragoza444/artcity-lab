@@ -32,7 +32,7 @@ FILE_MAP = {
     "social_square": "social_square.mp4",
     "music_master": "music_master.wav",
     "voiceover": "voiceover.wav",
-    "end_card": "end_card.svg",
+    "end_card": "end_card.png",
 }
 
 CHANNEL_PRESETS = {

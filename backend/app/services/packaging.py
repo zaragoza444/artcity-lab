@@ -20,7 +20,7 @@ CANONICAL_NAMES = {
     "social_square": ("social_square.mp4", "social_square_audio_bed.wav"),
     "music_master": ("music_master.wav", None),
     "voiceover": ("voiceover.wav", None),
-    "end_card": ("end_card.svg", None),
+    "end_card": ("end_card.png", None),
 }
 
 
