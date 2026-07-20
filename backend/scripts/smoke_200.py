@@ -350,7 +350,7 @@ def main() -> int:
     )
 
     # Data Lab production: ingest → files → annotate → export → rights gate
-    smoke_txt = b"Silav Newroz Zagros Kardokh Kurdiya — Art City Data Lab smoke.\n"
+    smoke_txt = b"Silav Newroz Zagros Kardokh Kurdiya - Art City Data Lab smoke.\n"
     dl_up = check_upload(
         "/api/data-lab/ingest",
         files={"files": ("smoke-ku.txt", smoke_txt, "text/plain")},
