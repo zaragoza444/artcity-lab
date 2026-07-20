@@ -433,10 +433,38 @@ def main() -> int:
         )
         if ann.status_code in {200, 201}:
             aid = ann.json()["id"]
+            check("GET", f"/api/data-lab/annotations/stats")
+            check("GET", f"/api/data-lab/annotations/stats?dataset_id={dl_dataset_id}")
+            check("GET", f"/api/data-lab/annotations/{aid}")
+            check(
+                "GET",
+                f"/api/data-lab/annotations?dataset_id={dl_dataset_id}&status=pending",
+            )
             check(
                 "PATCH",
                 f"/api/data-lab/annotations/{aid}",
-                json_body={"status": "approved", "comment": "Smoke approve"},
+                json_body={
+                    "status": "in_review",
+                    "payload": {"text": "Silav Newroz Zagros", "language": "ku"},
+                    "labels": {
+                        "dialect": "sorani",
+                        "translation": "Hello Newroz Zagros",
+                        "speaker": "speaker_1",
+                        "consent": True,
+                        "source": "smoke",
+                    },
+                    "comment": "Smoke in_review with transcript edit",
+                },
+            )
+            check(
+                "PATCH",
+                f"/api/data-lab/annotations/{aid}",
+                json_body={"status": "conflict", "comment": "Smoke conflict"},
+            )
+            check(
+                "PATCH",
+                f"/api/data-lab/annotations/{aid}",
+                json_body={"status": "approved", "comment": "Smoke approve resolve"},
             )
             # reject requires comment
             rej = client.patch(
@@ -451,6 +479,20 @@ def main() -> int:
                     "code": rej.status_code,
                     "pass": rej.status_code == 422,
                     "err": "" if rej.status_code == 422 else rej.text[:160],
+                }
+            )
+            got = client.get(
+                f"/api/data-lab/annotations/{aid}",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            hist_ok = got.status_code == 200 and bool((got.json() or {}).get("revision_history"))
+            results.append(
+                {
+                    "method": "ASSERT",
+                    "path": f"annotations.{aid}.revision_history",
+                    "code": 200 if hist_ok else 0,
+                    "pass": hist_ok,
+                    "err": "" if hist_ok else "missing revision_history",
                 }
             )
         check("GET", f"/api/data-lab/datasets/{dl_dataset_id}/export?format=jsonl")

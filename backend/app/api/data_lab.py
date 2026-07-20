@@ -42,14 +42,18 @@ class AnnotationOut(BaseModel):
     payload: dict
     labels: Optional[dict]
     status: str
+    assignee_id: Optional[str] = None
     comments: Optional[list]
+    revision_history: Optional[list] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
 
 class AnnotationUpdate(BaseModel):
     labels: Optional[dict] = None
+    payload: Optional[dict] = None
     status: Optional[str] = Field(
         default=None,
         pattern="^(pending|in_review|approved|rejected|conflict)$",
@@ -136,6 +140,15 @@ def dataset_file_media(
     )
 
 
+@router.get("/api/data-lab/annotations/stats")
+def annotation_workspace_stats(
+    user: CurrentUser,
+    db: Session = Depends(get_db),
+    dataset_id: Optional[str] = Query(default=None),
+) -> dict:
+    return data_lab_service.annotation_stats(db, dataset_id=dataset_id)
+
+
 @router.get("/api/data-lab/annotations", response_model=list[AnnotationOut])
 def list_annotations(
     user: CurrentUser,
@@ -152,6 +165,11 @@ def list_annotations(
     if media_type:
         q = q.filter(AnnotationTask.media_type == media_type)
     return q.order_by(AnnotationTask.created_at.desc()).limit(200).all()
+
+
+@router.get("/api/data-lab/annotations/{task_id}", response_model=AnnotationOut)
+def get_annotation(task_id: str, user: CurrentUser, db: Session = Depends(get_db)):
+    return data_lab_service.get_annotation(db, task_id)
 
 
 @router.post("/api/data-lab/annotations", response_model=AnnotationOut, status_code=201)
@@ -185,4 +203,5 @@ def update_annotation(
         labels=payload.labels,
         status_value=payload.status,
         comment=payload.comment,
+        payload=payload.payload,
     )

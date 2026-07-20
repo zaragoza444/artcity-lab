@@ -38,6 +38,7 @@ export default function DashboardPage() {
           ["/cinema", "Cinema"],
           ["/studio", "Studio"],
           ["/data-lab", "Data Lab"],
+          ["/data-lab/annotations", "Annotations"],
           ["/models", "Models"],
           ["/training", "Training"],
           ["/knowledge", "Knowledge"],

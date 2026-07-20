@@ -416,8 +416,10 @@ Production ingest → file inventory → annotate → rights gate → export loo
 | GET | `/api/data-lab/datasets/{id}/manifest` | auth | Training manifest JSON |
 | GET | `/api/media/datasets/{id}/files/{file_id}` | auth | Authenticated file preview |
 | GET | `/api/data-lab/annotations` | auth | List (`dataset_id`, `status`, `media_type` filters) |
+| GET | `/api/data-lab/annotations/stats` | auth | Workspace counts by status/media/source |
+| GET | `/api/data-lab/annotations/{task_id}` | auth | One task + comments + revision history |
 | POST | `/api/data-lab/annotations` | auth | Create task |
-| PATCH | `/api/data-lab/annotations/{task_id}` | auth | Update labels/status/comment |
+| PATCH | `/api/data-lab/annotations/{task_id}` | auth | Update labels/payload/status/comment |
 
 ### Ingest (`multipart/form-data`)
 
@@ -449,12 +451,13 @@ Persists per-file rows (`checksum`, `media_type`, `rights_status`, duration for 
 ```json
 {
   "labels": {},
+  "payload": { "text": "corrected transcript" },
   "status": "approved",
   "comment": "ok"
 }
 ```
 
-Statuses: `pending`, `in_review`, `approved`, `rejected`, `conflict`. Reject requires a non-empty `comment`.
+Statuses: `pending`, `in_review`, `approved`, `rejected`, `conflict`. Reject requires a non-empty `comment`. Responses include `comments`, `revision_history`, and `assignee_id`.
 
 ### Dataset status gate
 
@@ -736,3 +739,4 @@ Absolute media URL = `{BASE}{media_url}`
 | 1.0.0 | AI Core: auth, Gateway, Data Lab, Rights, Models, Training, Knowledge, Evaluations, speech ASR scaffold |
 | 1.1.0 | Production Kurdish ASR: MinIO upload, persisted speech jobs, Cinema/Studio VO transcripts, VTT/SRT |
 | 1.2.0 | Production Data Lab: file inventory, ingest UI path, export manifests, rights-gated training_ready |
+| 1.2.1 | Annotations workspace production: stats, get-by-id, payload edits, conflict, revision history |

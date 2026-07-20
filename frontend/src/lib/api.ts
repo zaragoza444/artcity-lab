@@ -345,8 +345,20 @@ export type AnnotationTask = {
   payload: Record<string, unknown>;
   labels: Record<string, unknown> | null;
   status: string;
+  assignee_id?: string | null;
   comments: unknown[] | null;
+  revision_history?: unknown[] | null;
   created_at: string;
+  updated_at?: string | null;
+};
+
+export type AnnotationStats = {
+  total: number;
+  by_status: Record<string, number>;
+  by_media: Record<string, number>;
+  asr_sourced: number;
+  ingest_sourced: number;
+  dataset_id?: string | null;
 };
 
 export type EvaluationRun = {
@@ -539,6 +551,11 @@ export const api = {
     const qs = params.toString();
     return request<AnnotationTask[]>(`/api/data-lab/annotations${qs ? `?${qs}` : ""}`);
   },
+  getAnnotation: (id: string) => request<AnnotationTask>(`/api/data-lab/annotations/${id}`),
+  annotationStats: (datasetId?: string) =>
+    request<AnnotationStats>(
+      `/api/data-lab/annotations/stats${datasetId ? `?dataset_id=${encodeURIComponent(datasetId)}` : ""}`
+    ),
   createAnnotation: (body: {
     dataset_id: string;
     media_type?: string;
@@ -551,7 +568,12 @@ export const api = {
     }),
   updateAnnotation: (
     id: string,
-    body: { labels?: Record<string, unknown>; status?: string; comment?: string }
+    body: {
+      labels?: Record<string, unknown>;
+      payload?: Record<string, unknown>;
+      status?: string;
+      comment?: string;
+    }
   ) =>
     request<AnnotationTask>(`/api/data-lab/annotations/${id}`, {
       method: "PATCH",

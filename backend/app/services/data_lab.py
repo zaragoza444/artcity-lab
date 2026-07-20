@@ -557,6 +557,40 @@ def export_dataset(
     return body, media, filename
 
 
+def get_annotation(db: Session, task_id: str) -> AnnotationTask:
+    task = db.get(AnnotationTask, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Annotation not found")
+    return task
+
+
+def annotation_stats(db: Session, dataset_id: str | None = None) -> dict[str, Any]:
+    q = db.query(AnnotationTask)
+    if dataset_id:
+        q = q.filter(AnnotationTask.dataset_id == dataset_id)
+    tasks = q.order_by(AnnotationTask.created_at.desc()).limit(2000).all()
+    by_status: dict[str, int] = {}
+    by_media: dict[str, int] = {}
+    asr_sourced = 0
+    ingest_sourced = 0
+    for t in tasks:
+        by_status[t.status] = by_status.get(t.status, 0) + 1
+        by_media[t.media_type] = by_media.get(t.media_type, 0) + 1
+        labels = t.labels or {}
+        if labels.get("source_job_id") or labels.get("source") == "asr":
+            asr_sourced += 1
+        if labels.get("source") == "ingest":
+            ingest_sourced += 1
+    return {
+        "total": len(tasks),
+        "by_status": by_status,
+        "by_media": by_media,
+        "asr_sourced": asr_sourced,
+        "ingest_sourced": ingest_sourced,
+        "dataset_id": dataset_id,
+    }
+
+
 def update_annotation_task(
     db: Session,
     *,
@@ -565,6 +599,7 @@ def update_annotation_task(
     labels: Optional[dict] = None,
     status_value: Optional[str] = None,
     comment: Optional[str] = None,
+    payload: Optional[dict] = None,
 ) -> AnnotationTask:
     task = db.get(AnnotationTask, task_id)
     if not task:
@@ -589,11 +624,16 @@ def update_annotation_task(
             "by": user.email,
             "before_labels": task.labels,
             "before_status": task.status,
+            "before_payload": task.payload if payload is not None else None,
         }
     )
     task.revision_history = history
     if labels is not None:
         task.labels = labels
+    if payload is not None:
+        merged = dict(task.payload or {})
+        merged.update(payload)
+        task.payload = merged
     if status_value is not None:
         task.status = status_value
     if comment:
