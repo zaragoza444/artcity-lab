@@ -30,7 +30,17 @@ Thumbs.db
 # Media / uploads
 .tmp/
 uploads/
+backend/*.mp4
+backend/*_live_test.*
+backend/*_live_*.png
+backend/bank_building_live_test.png
+backend/data_bank_seed_bank_building.png
+backend/studio_live_video_show.mp4
 
+# Local suite reports
 backend/smoke_200_report.json
+backend/e2e_200_report.json
+backend/live_products_200_report.json
+backend/*_report.json
 backend/scripts/_gitea_push_helper.py
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 from uuid import uuid4
@@ -20,6 +21,7 @@ def main() -> None:
     settings = get_settings()
     db = SessionLocal()
     try:
+        now = datetime.now(timezone.utc)
         admin = db.query(User).filter(User.email == settings.default_admin_email).first()
         if not admin:
             admin = User(
@@ -29,6 +31,10 @@ def main() -> None:
                 password_hash=hash_password(settings.default_admin_password),
                 role="super_admin",
                 is_active=True,
+                email_verified_at=now,
+                phone_number="+10000000000",
+                phone_verified_at=now,
+                account_state="active",
             )
             db.add(admin)
             db.flush()
@@ -36,10 +42,15 @@ def main() -> None:
         else:
             if not admin.is_active:
                 admin.is_active = True
-                db.add(admin)
-                print(f"Reactivated admin {admin.email}")
-            else:
-                print(f"Admin exists {admin.email}")
+            if not admin.email_verified_at:
+                admin.email_verified_at = now
+            if not admin.phone_verified_at:
+                admin.phone_verified_at = now
+            if not admin.phone_number:
+                admin.phone_number = "+10000000000"
+            admin.account_state = "active"
+            db.add(admin)
+            print(f"Admin ready {admin.email}")
 
         def ensure_dataset(name: str, character: str) -> Dataset:
             ds = db.query(Dataset).filter(Dataset.name == name).first()

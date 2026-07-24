@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from typing import Annotated
+import re
+import secrets
+from datetime import datetime, timezone
+from typing import Annotated, Optional
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -23,6 +27,23 @@ from app.services.audit import write_audit
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+_PHONE_RE = re.compile(r"^\+?[0-9]{8,15}$")
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _normalize_phone(raw: str) -> str:
+    cleaned = re.sub(r"[\s\-()]", "", (raw or "").strip())
+    if not _PHONE_RE.match(cleaned):
+        raise ValueError("Phone must be 8–15 digits, optional leading +")
+    return cleaned
+
+
+def _normalize_email(raw: str) -> str:
+    email = (raw or "").strip().lower()
+    if not _EMAIL_RE.match(email):
+        raise ValueError("Invalid email address")
+    return email
+
 
 class LoginRequest(BaseModel):
     email: str = Field(..., min_length=3)
@@ -44,6 +65,9 @@ class TokenResponse(BaseModel):
     email: str
     full_name: str
     user_id: str
+    phone_number: Optional[str] = None
+    email_verified: bool = False
+    phone_verified: bool = False
 
 
 class RefreshRequest(BaseModel):
@@ -56,6 +80,10 @@ class UserOut(BaseModel):
     full_name: str
     role: str
     is_active: bool
+    phone_number: Optional[str] = None
+    email_verified_at: Optional[datetime] = None
+    phone_verified_at: Optional[datetime] = None
+    account_state: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -65,6 +93,81 @@ class UserCreate(BaseModel):
     full_name: str
     password: str = Field(..., min_length=8)
     role: str = UserRole.VIEWER.value
+    phone_number: Optional[str] = None
+
+
+class SignupRequest(BaseModel):
+    email: str = Field(..., min_length=3)
+    full_name: str = Field(..., min_length=2, max_length=255)
+    password: str = Field(..., min_length=8, max_length=128)
+    phone_number: str = Field(..., min_length=8, max_length=32)
+    accept_terms: bool = False
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def email_ok(cls, v: object) -> object:
+        if isinstance(v, str):
+            return _normalize_email(v)
+        return v
+
+    @field_validator("phone_number", mode="before")
+    @classmethod
+    def phone_ok(cls, v: object) -> object:
+        if isinstance(v, str):
+            return _normalize_phone(v)
+        return v
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def name_ok(cls, v: object) -> object:
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+
+class SignupResponse(BaseModel):
+    user_id: str
+    email: str
+    phone_number: str
+    full_name: str
+    account_state: str
+    message: str
+    email_token: Optional[str] = None
+    phone_code: Optional[str] = None
+    verify_email_path: str = "/api/auth/verify-email"
+    verify_phone_path: str = "/api/auth/verify-phone"
+
+
+class VerifyEmailRequest(BaseModel):
+    email: str
+    token: str
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def email_ok(cls, v: object) -> object:
+        if isinstance(v, str):
+            return _normalize_email(v)
+        return v
+
+
+class VerifyPhoneRequest(BaseModel):
+    email: str
+    code: str
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def email_ok(cls, v: object) -> object:
+        if isinstance(v, str):
+            return _normalize_email(v)
+        return v
+
+
+class VerifyStatusOut(BaseModel):
+    email: str
+    email_verified: bool
+    phone_verified: bool
+    account_state: str
+    can_login: bool
 
 
 def _issue_tokens(user: User) -> TokenResponse:
@@ -75,7 +178,23 @@ def _issue_tokens(user: User) -> TokenResponse:
         email=user.email,
         full_name=user.full_name,
         user_id=user.id,
+        phone_number=user.phone_number,
+        email_verified=bool(user.email_verified_at),
+        phone_verified=bool(user.phone_verified_at),
     )
+
+
+def _customer_can_login(user: User) -> bool:
+    settings = get_settings()
+    if user.email == settings.default_admin_email.lower():
+        return True
+    if user.role in {UserRole.SUPER_ADMIN.value, UserRole.ADMINISTRATOR.value}:
+        return True
+    if settings.signup_require_email_verify and not user.email_verified_at:
+        return False
+    if settings.signup_require_phone_verify and settings.signup_require_phone and not user.phone_verified_at:
+        return False
+    return True
 
 
 def _authenticate(db: Session, email: str, password: str) -> User:
@@ -84,13 +203,140 @@ def _authenticate(db: Session, email: str, password: str) -> User:
     if not user or not verify_password(password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     if not user.is_active:
-        # Keep the seeded platform admin usable; other users need PATCH /users/{id}/active.
         if user.email == settings.default_admin_email.lower():
             user.is_active = True
             db.add(user)
         else:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive")
+    if not _customer_can_login(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Verify email and phone before signing in",
+        )
     return user
+
+
+@router.post("/signup", response_model=SignupResponse, status_code=status.HTTP_201_CREATED)
+def signup(payload: SignupRequest, request: Request, db: Session = Depends(get_db)) -> SignupResponse:
+    settings = get_settings()
+    if not payload.accept_terms:
+        raise HTTPException(status_code=400, detail="accept_terms must be true")
+    if settings.signup_require_phone and not payload.phone_number:
+        raise HTTPException(status_code=400, detail="phone_number is required")
+
+    email = payload.email
+    phone = payload.phone_number
+    if db.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    if phone and db.query(User).filter(User.phone_number == phone).first():
+        raise HTTPException(status_code=400, detail="Phone number already registered")
+
+    email_token = secrets.token_urlsafe(24)
+    phone_code = f"{secrets.randbelow(1_000_000):06d}"
+    now = datetime.now(timezone.utc)
+
+    user = User(
+        id=str(uuid4()),
+        email=email,
+        full_name=payload.full_name,
+        password_hash=hash_password(payload.password),
+        role=UserRole.EDITOR.value,
+        is_active=True,
+        phone_number=phone,
+        email_verify_token=email_token,
+        phone_verify_code=phone_code,
+        account_state="registered_unverified",
+        email_verified_at=None if settings.signup_require_email_verify else now,
+        phone_verified_at=None if settings.signup_require_phone_verify else now,
+    )
+    if not settings.signup_require_email_verify and not settings.signup_require_phone_verify:
+        user.account_state = "active"
+
+    db.add(user)
+    db.flush()  # persist user before audit_logs FK to users.id
+    write_audit(
+        db,
+        action="customer_signup",
+        resource_type="user",
+        resource_id=user.id,
+        user_id=user.id,
+        detail={"email": email, "phone": phone},
+        ip_address=client_ip(request),
+    )
+    db.commit()
+    db.refresh(user)
+
+    return SignupResponse(
+        user_id=user.id,
+        email=user.email,
+        phone_number=user.phone_number or "",
+        full_name=user.full_name,
+        account_state=user.account_state,
+        message="Account created. Verify email and phone to activate production access.",
+        email_token=email_token if settings.signup_expose_codes else None,
+        phone_code=phone_code if settings.signup_expose_codes else None,
+    )
+
+
+@router.post("/verify-email", response_model=VerifyStatusOut)
+def verify_email(payload: VerifyEmailRequest, request: Request, db: Session = Depends(get_db)) -> VerifyStatusOut:
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user or not user.email_verify_token or user.email_verify_token != payload.token.strip():
+        raise HTTPException(status_code=400, detail="Invalid email verification token")
+    user.email_verified_at = datetime.now(timezone.utc)
+    user.email_verify_token = None
+    if user.phone_verified_at or not get_settings().signup_require_phone_verify:
+        user.account_state = "active"
+    else:
+        user.account_state = "pending_phone_verification"
+    db.add(user)
+    write_audit(
+        db,
+        action="verify_email",
+        resource_type="user",
+        resource_id=user.id,
+        user_id=user.id,
+        ip_address=client_ip(request),
+    )
+    db.commit()
+    return VerifyStatusOut(
+        email=user.email,
+        email_verified=True,
+        phone_verified=bool(user.phone_verified_at),
+        account_state=user.account_state,
+        can_login=_customer_can_login(user),
+    )
+
+
+@router.post("/verify-phone", response_model=VerifyStatusOut)
+def verify_phone(payload: VerifyPhoneRequest, request: Request, db: Session = Depends(get_db)) -> VerifyStatusOut:
+    user = db.query(User).filter(User.email == payload.email).first()
+    code = payload.code.strip()
+    if not user or not user.phone_verify_code or user.phone_verify_code != code:
+        raise HTTPException(status_code=400, detail="Invalid phone verification code")
+    user.phone_verified_at = datetime.now(timezone.utc)
+    user.phone_verify_code = None
+    if user.email_verified_at or not get_settings().signup_require_email_verify:
+        user.account_state = "active"
+    else:
+        user.account_state = "pending_email_verification"
+    db.add(user)
+    write_audit(
+        db,
+        action="verify_phone",
+        resource_type="user",
+        resource_id=user.id,
+        user_id=user.id,
+        ip_address=client_ip(request),
+    )
+    db.commit()
+    return VerifyStatusOut(
+        email=user.email,
+        email_verified=bool(user.email_verified_at),
+        phone_verified=True,
+        account_state=user.account_state,
+        can_login=_customer_can_login(user),
+    )
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -138,6 +384,8 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> TokenResp
     user = db.get(User, data.get("sub"))
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="Invalid user")
+    if not _customer_can_login(user):
+        raise HTTPException(status_code=403, detail="Verify email and phone before signing in")
     return _issue_tokens(user)
 
 
@@ -192,12 +440,25 @@ def create_user(payload: UserCreate, user: CurrentUser, request: Request, db: Se
         raise HTTPException(status_code=403, detail="Admin only")
     if db.query(User).filter(User.email == payload.email.lower()).first():
         raise HTTPException(status_code=400, detail="Email already registered")
+    phone = None
+    if payload.phone_number:
+        try:
+            phone = _normalize_phone(payload.phone_number)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if db.query(User).filter(User.phone_number == phone).first():
+            raise HTTPException(status_code=400, detail="Phone number already registered")
+    now = datetime.now(timezone.utc)
     created = User(
         email=payload.email.lower(),
         full_name=payload.full_name,
         password_hash=hash_password(payload.password),
         role=payload.role,
         is_active=True,
+        phone_number=phone,
+        email_verified_at=now,
+        phone_verified_at=now if phone else None,
+        account_state="active",
     )
     db.add(created)
     write_audit(
@@ -206,7 +467,7 @@ def create_user(payload: UserCreate, user: CurrentUser, request: Request, db: Se
         resource_type="user",
         resource_id=None,
         user_id=user.id,
-        detail={"email": payload.email, "role": payload.role},
+        detail={"email": payload.email, "role": payload.role, "phone": phone},
         ip_address=client_ip(request),
     )
     db.commit()

@@ -23,7 +23,7 @@ export default function DashboardPage() {
   return (
     <CoreShell
       title="Dashboard"
-      subtitle="Art City production OS with Model Gateway, Data Lab, and owned inference control."
+      subtitle="Cinema · Studio · Edit · Publish — with Model Gateway, Data Lab, and owned inference control."
     >
       <div className="grid gap-6 md:grid-cols-3">
         <Stat label="Registered models" value={String(models)} />
@@ -35,8 +35,24 @@ export default function DashboardPage() {
       </div>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["/cinema", "Cinema"],
-          ["/studio", "Studio"],
+          ["/cinema", "Cinema", "Complete advertising campaigns"],
+          ["/studio", "Studio", "Individual production assets"],
+          ["/data-bank", "Data Bank", "Project media vault · upload · sync"],
+          ["/edit", "Edit", "Long-form to social clips"],
+          ["/publish", "Publish", "Masters · QC · release"],
+        ].map(([href, label, blurb]) => (
+          <Link
+            key={href}
+            href={href}
+            className="border border-[var(--line)] px-4 py-5 transition hover:border-[var(--gold)]"
+          >
+            <p className="text-sm uppercase tracking-[0.14em] text-[var(--gold-bright)]">{label}</p>
+            <p className="mt-2 text-[0.8rem] leading-snug text-[var(--mist)]">{blurb}</p>
+          </Link>
+        ))}
+      </div>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
           ["/data-lab", "Data Lab"],
           ["/data-lab/annotations", "Annotations"],
           ["/models", "Models"],

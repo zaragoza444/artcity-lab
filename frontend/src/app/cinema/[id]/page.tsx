@@ -231,6 +231,9 @@ export default function CinemaProjectPage() {
                 <Link href={`/studio/${projectId}`} className="ac-btn ac-btn-secondary">
                   Art City Studio
                 </Link>
+                <Link href="/edit" className="ac-btn ac-btn-secondary">
+                  Art City Edit
+                </Link>
                 <Link href={`/projects/${projectId}`} className="ac-btn ac-btn-ghost">
                   Project desk
                 </Link>

@@ -25,16 +25,16 @@ export default function HomePage() {
               Art City
             </span>
             <span className="ac-brand-sheen mt-3 block text-[clamp(2.4rem,7vw,4.2rem)] leading-[0.95] tracking-[-0.03em]">
-              Cinema &amp; Studio
+              Cinema · Studio · Edit
             </span>
           </h1>
           <p className="ac-serif mt-8 max-w-xl text-[1.12rem] leading-[1.75] text-[var(--paper-dim)] animate-rise-delay">
-            Two products. One ownership model. Cinema builds complete advertising campaigns.
-            Studio crafts individual production assets.
+            One ownership model. Cinema builds campaigns. Studio crafts assets. Edit repurposes
+            long-form footage into branded social clips.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-2 animate-rise-late">
+        <div className="mt-12 grid gap-5 md:grid-cols-3 animate-rise-late">
           <Link
             href="/cinema"
             className="group border border-[var(--line)] bg-[rgba(10,15,22,0.55)] p-6 transition hover:border-[var(--gold)]"
@@ -74,6 +74,26 @@ export default function HomePage() {
               Enter Studio →
             </span>
           </Link>
+
+          <Link
+            href="/edit"
+            className="group border border-[var(--line)] bg-[rgba(10,15,22,0.55)] p-6 transition hover:border-[var(--gold)]"
+          >
+            <p className="ac-display text-[0.68rem] tracking-[0.28em] text-[var(--gold-bright)] uppercase">
+              Art City Edit
+            </p>
+            <p className="ac-display mt-3 text-2xl text-[var(--paper)]">
+              Edit &amp; repurpose long-form
+            </p>
+            <ul className="ac-serif mt-4 space-y-1 text-sm text-[var(--mist)]">
+              <li>Upload · Analyse · Candidate clips</li>
+              <li>Timeline · Captions · Brand memory</li>
+              <li>9:16 · 4:5 · 1:1 · 16:9 export</li>
+            </ul>
+            <span className="mt-5 inline-block text-sm text-[var(--gold-bright)] transition group-hover:translate-x-1">
+              Enter Edit →
+            </span>
+          </Link>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
@@ -95,7 +115,7 @@ export default function HomePage() {
             Art City proprietary platform
           </p>
           <p className="text-[0.8rem] tracking-[0.08em] text-[var(--mist-soft)] uppercase">
-            Art City ownership · Cinema + Studio
+            Art City ownership · Cinema · Studio · Edit · Publish
           </p>
         </div>
       </footer>

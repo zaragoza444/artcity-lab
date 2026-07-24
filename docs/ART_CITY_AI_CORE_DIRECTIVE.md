@@ -29,6 +29,7 @@ Retain external providers only as optional fallback or specialist services.
 The current platform consists of:
 Art City Cinema.
 Art City Studio.
+Art City Edit.
 Art City Publish.
 Projects.
 FastAPI backend.

@@ -164,6 +164,17 @@ export default function ProjectStudioPage() {
               <p className="ac-serif mt-3 max-w-2xl text-[var(--mist)]">
                 Full production desk — generate media, listen/watch, and review takes.
               </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link href={`/cinema/${projectId}`} className="ac-btn ac-btn-secondary">
+                  Cinema
+                </Link>
+                <Link href="/edit" className="ac-btn ac-btn-secondary">
+                  Edit
+                </Link>
+                <Link href={`/publish/${projectId}`} className="ac-btn ac-btn-ghost">
+                  Publish
+                </Link>
+              </div>
               {summary ? (
                 <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[0.68rem] tracking-[0.16em] text-[var(--mist-soft)] uppercase">
                   <span>Pending review · {summary.pending_review}</span>

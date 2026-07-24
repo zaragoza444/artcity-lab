@@ -20,3 +20,7 @@ Work only inside this repository: `C:\Users\novac\Documents\art-city-ai-studio`
 ## AI Core directive
 
 See [docs/ART_CITY_AI_CORE_DIRECTIVE.md](docs/ART_CITY_AI_CORE_DIRECTIVE.md).
+
+## Art City Edit
+
+Product PRD: [docs/ART_CITY_EDIT_PRD.md](docs/ART_CITY_EDIT_PRD.md). Edit is part of Art City AI Studio (Cinema · Studio · Edit · Publish).

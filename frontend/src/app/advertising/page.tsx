@@ -51,6 +51,9 @@ export default function AdvertisingHubPage() {
           <Link href="/studio" className="ac-btn ac-btn-secondary">
             Studio singles
           </Link>
+          <Link href="/edit" className="ac-btn ac-btn-secondary">
+            Art City Edit
+          </Link>
           <Link href="/publish" className="ac-btn ac-btn-ghost">
             Publish masters
           </Link>

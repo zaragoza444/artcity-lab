@@ -144,6 +144,21 @@ class GenerationJobOut(BaseModel):
     asr_summary: Optional[str] = None
 
 
+class BankBuildingGenerate(BaseModel):
+    """Optional notes appended to the curated bank-building image prompt."""
+
+    notes: Optional[str] = Field(default=None, max_length=500)
+    project_id: Optional[str] = None
+    prefer_external: bool = True
+
+    @field_validator("notes", "project_id", mode="before")
+    @classmethod
+    def strip_optional(cls, v: object) -> object:
+        if isinstance(v, str):
+            return v.strip() or None
+        return v
+
+
 class ReviewCreate(BaseModel):
     decision: str = Field(..., pattern="^(approve|reject|request_changes)$")
     notes: Optional[str] = None

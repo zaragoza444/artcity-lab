@@ -58,6 +58,12 @@ def main() -> int:
         "/advertising",
         "/cinema",
         "/studio",
+        "/studio/bank-building",
+        "/data-bank",
+        "/edit",
+        "/edit/apply",
+        "/edit/admin",
+        "/edit/admin/applications",
         "/publish",
         "/speech",
         "/knowledge",
@@ -65,6 +71,16 @@ def main() -> int:
     ):
         r = app.get(path)
         ok(f"UI GET {path}", r.status_code)
+        if path == "/dashboard" and r.status_code == 200:
+            body = r.text
+            assert_true(
+                "dashboard shows Edit",
+                'href="/edit"' in body or "Art City Edit" in body or ">Edit<" in body,
+            )
+            assert_true(
+                "dashboard shows Data Bank",
+                'href="/data-bank"' in body or "Data Bank" in body,
+            )
 
     # Auth — JSON login + OAuth2 token (Swagger)
     login = client.post("/api/auth/login", json={"email": EMAIL, "password": PASSWORD})
@@ -282,6 +298,93 @@ def main() -> int:
             any("LORA" in (n or "").upper() or "KARDOKH" in (n or "").upper() for n in names),
             str(sorted(names)[:8]),
         )
+
+    # Art City Edit
+    edit_summary = client.get("/api/edit/summary", headers=headers)
+    ok("GET /api/edit/summary", edit_summary.status_code)
+    edit_plans = client.get("/api/edit/plans", headers=headers)
+    ok("GET /api/edit/plans", edit_plans.status_code)
+    edit_seed = client.post("/api/edit/seed/internal", headers=headers)
+    ok("POST /api/edit/seed/internal", edit_seed.status_code)
+    edit_ws = client.get("/api/edit/workspaces", headers=headers)
+    ok("GET /api/edit/workspaces", edit_ws.status_code)
+    if edit_seed.status_code in {200, 201}:
+        wid = edit_seed.json()["id"]
+        up = client.post(
+            f"/api/edit/workspaces/{wid}/assets",
+            headers=headers,
+            files={"file": ("e2e_edit.txt", b"Art City Edit e2e source", "text/plain")},
+            data={"rights_attested": "true", "rights_notes": "e2e"},
+        )
+        ok("POST /api/edit/workspaces/{id}/assets", up.status_code)
+        if up.status_code in {200, 201}:
+            proj_e = client.post(
+                f"/api/edit/workspaces/{wid}/projects",
+                headers=headers,
+                json={"title": "E2E Edit", "source_asset_id": up.json()["id"]},
+            )
+            ok("POST /api/edit/workspaces/{id}/projects", proj_e.status_code)
+            if proj_e.status_code in {200, 201}:
+                eid = proj_e.json()["id"]
+                ok(
+                    "GET /api/edit/projects/{id}",
+                    client.get(f"/api/edit/projects/{eid}", headers=headers).status_code,
+                )
+                ok(
+                    "POST /api/edit/projects/{id}/analyse",
+                    client.post(f"/api/edit/projects/{eid}/analyse", headers=headers).status_code,
+                )
+
+    # Project Data Bank + bank-building image
+    db_seed = client.post("/api/data-bank/seed", headers=headers)
+    ok("POST /api/data-bank/seed", db_seed.status_code)
+    ok("GET /api/data-bank", client.get("/api/data-bank", headers=headers).status_code)
+    bank_pid = None
+    if db_seed.status_code in {200, 201}:
+        bank_pid = (db_seed.json().get("project") or {}).get("id")
+        assert_true("data-bank seed succeeded job", db_seed.json().get("seed_status") == "succeeded")
+    if bank_pid:
+        ok(
+            "GET /api/projects/{id}/data-bank/summary",
+            client.get(f"/api/projects/{bank_pid}/data-bank/summary", headers=headers).status_code,
+        )
+        bank_list = client.get(f"/api/projects/{bank_pid}/data-bank", headers=headers)
+        ok("GET /api/projects/{id}/data-bank", bank_list.status_code)
+        assert_true("data-bank has assets", isinstance(bank_list.json(), list) and len(bank_list.json()) >= 1)
+        ok(
+            "POST /api/projects/{id}/data-bank/sync",
+            client.post(f"/api/projects/{bank_pid}/data-bank/sync", headers=headers).status_code,
+        )
+        up_bank = client.post(
+            f"/api/projects/{bank_pid}/data-bank/upload",
+            headers=headers,
+            files={"file": ("e2e-bank.txt", b"E2E Data Bank brief", "text/plain")},
+            data={"name": "E2E bank brief", "tags": "e2e,data-bank"},
+        )
+        ok("POST /api/projects/{id}/data-bank/upload", up_bank.status_code)
+        ok(
+            f"UI GET /projects/{bank_pid}/data-bank",
+            app.get(f"/projects/{bank_pid}/data-bank").status_code,
+        )
+
+    bb = client.post(
+        "/api/studio/bank-building/generate",
+        headers=headers,
+        json={"notes": "e2e night plaza", "prefer_external": True},
+    )
+    ok("POST /api/studio/bank-building/generate", bb.status_code)
+    if bb.status_code in {200, 201}:
+        media = bb.json().get("media_url")
+        if media:
+            mr = client.get(media)
+            ok("bank-building/media", mr.status_code)
+            assert_true(
+                "bank-building is image",
+                "image/" in (mr.headers.get("content-type") or "").lower()
+                or mr.content[:8].startswith(b"\x89PNG")
+                or mr.content[:3] == b"\xff\xd8\xff",
+                mr.headers.get("content-type", ""),
+            )
 
     failed = [r for r in rows if not r["pass"]]
     out = {

@@ -7,6 +7,7 @@ from app.core.config import get_settings
 from app.core.db import Base
 import app.models  # noqa: F401 — register models
 import app.models_ai  # noqa: F401 — AI Core models
+import app.models_edit  # noqa: F401 — Art City Edit models
 
 config = context.config
 if config.config_file_name is not None:

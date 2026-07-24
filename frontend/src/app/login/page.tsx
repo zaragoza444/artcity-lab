@@ -9,8 +9,8 @@ function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
-  const [email, setEmail] = useState("admin@artcity.ai");
-  const [password, setPassword] = useState("ArtCityAdmin!2026");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -71,11 +71,17 @@ export default function LoginPage() {
           Art City sign in
         </h1>
         <p className="mt-2 text-sm text-[var(--mist)]">
-          Private production OS and AI Core. Authorized operators only.
+          Private production OS and AI Core. Customers sign up with email + phone verification.
         </p>
         <Suspense fallback={<p className="mt-8 text-[var(--mist)]">Loading…</p>}>
           <LoginForm />
         </Suspense>
+        <p className="mt-6 text-sm text-[var(--mist)]">
+          New customer?{" "}
+          <a href="/signup" className="text-[var(--gold-bright)]">
+            Create account
+          </a>
+        </p>
       </div>
     </main>
   );

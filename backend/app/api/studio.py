@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.schemas import (
     AssetOut,
+    BankBuildingGenerate,
     GenerationJobOut,
     GenerationSubmit,
     ReviewCreate,
@@ -14,12 +15,19 @@ from app.api.schemas import (
 from app.core.db import get_db
 from app.core.deps import CurrentUser
 from app.core.ids import load_project, require_uuid
-from app.models import Asset, CostRecord, GenerationJob, Review
+from app.models import Asset, CostRecord, GenerationJob, Project, Review
 from app.services.gateway import enqueue_generation
 from app.services.storage import get_storage
 from app.services.studio import add_review
 
 router = APIRouter(tags=["studio"])
+
+BANK_BUILDING_PROMPT = (
+    "Cinematic architectural photograph of a prestigious modern bank building facade, "
+    "Art City Studios production still, marble and glass tower with stone columns, "
+    "gold Art City crest above the entrance, evening city lights, dramatic wide angle, "
+    "photorealistic, 16:9 framing, high detail exterior architecture"
+)
 
 
 def _enrich_job(job: GenerationJob) -> GenerationJobOut:
@@ -150,6 +158,46 @@ def studio_generate(
             db.refresh(job)
         except Exception:
             pass
+    return _enrich_job(job)
+
+
+@router.post(
+    "/api/studio/bank-building/generate",
+    response_model=GenerationJobOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Generate a bank building image (Studio test)",
+)
+def generate_bank_building_image(
+    payload: BankBuildingGenerate,
+    user: CurrentUser,
+    db: Session = Depends(get_db),
+) -> GenerationJobOut:
+    """Curated Studio image generate for a bank building facade test."""
+    if payload.project_id:
+        project = load_project(db, payload.project_id)
+    else:
+        project = Project(
+            name="Bank Building Image Test",
+            description="Studio bank-building image generation",
+        )
+        db.add(project)
+        db.commit()
+        db.refresh(project)
+
+    prompt = BANK_BUILDING_PROMPT
+    if payload.notes:
+        prompt = f"{prompt}. Additional direction: {payload.notes}"
+
+    job = enqueue_generation(
+        db,
+        project_id=project.id,
+        modality="image",
+        prompt=prompt,
+        model="artcity-local-v1",
+        prefer_external=payload.prefer_external,
+        requested_by=user.id,
+        params={"demo": "bank_building"},
+    )
     return _enrich_job(job)
 
 

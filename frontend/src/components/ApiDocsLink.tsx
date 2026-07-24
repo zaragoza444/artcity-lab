@@ -1,7 +1,8 @@
 "use client";
 
 const API_DOCS =
-  process.env.NEXT_PUBLIC_API_DOCS_URL ?? "http://localhost:8000/docs";
+  process.env.NEXT_PUBLIC_API_DOCS_URL ??
+  "https://backend-production-9533.up.railway.app/docs";
 
 /** Active header control — opens live Art City OpenAPI / Swagger docs. */
 export function ApiDocsLink() {

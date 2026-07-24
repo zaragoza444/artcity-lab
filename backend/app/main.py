@@ -4,7 +4,9 @@ from fastapi.openapi.utils import get_openapi
 
 from app.api.auth import router as auth_router
 from app.api.cinema import router as cinema_router
+from app.api.data_bank import router as data_bank_router
 from app.api.data_lab import router as data_lab_router
+from app.api.edit import router as edit_router
 from app.api.evaluations import router as evaluations_router
 from app.api.gateway import router as gateway_router
 from app.api.health import router as health_router
@@ -35,7 +37,12 @@ tags_metadata = [
     {"name": "speech", "description": "Kurdish ASR — Sorani / Badini / Kurmanji + subtitles"},
     {"name": "projects", "description": "Projects, characters, scripts, generations"},
     {"name": "studio", "description": "Studio generate, assets, reviews, media"},
+    {"name": "data-bank", "description": "Project Data Bank — upload, browse, sync Studio generations"},
     {"name": "cinema", "description": "AI advertising campaigns via Model Gateway — video/audio/voice + QC + ZIP"},
+    {
+        "name": "edit",
+        "description": "Art City Edit — long-form repurposing, access approval, entitlements, timelines, multi-ratio export",
+    },
     {"name": "publishing", "description": "Masters packaging and channel release"},
     {"name": "data-lab", "description": "Dataset ingest and annotation workspace"},
     {"name": "registries", "description": "Datasets, rights, model registry, training"},
@@ -71,7 +78,9 @@ app.include_router(evaluations_router)
 app.include_router(speech_router)
 app.include_router(projects_router)
 app.include_router(studio_router)
+app.include_router(data_bank_router)
 app.include_router(cinema_router)
+app.include_router(edit_router)
 app.include_router(publishing_router)
 
 

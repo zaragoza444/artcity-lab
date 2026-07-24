@@ -30,6 +30,19 @@ export default function StudioHubPage() {
           description="Create single images, videos, voice tracks, music tracks, or scene/shot takes — then review. For full campaigns, use Art City Cinema."
         />
 
+        <div className="mb-10 border border-[var(--line)] bg-[rgba(10,15,22,0.35)] px-5 py-6 md:px-7">
+          <p className="ac-display text-[0.68rem] tracking-[0.18em] text-[var(--mist)] uppercase">
+            Image generate test
+          </p>
+          <p className="ac-display mt-2 text-2xl tracking-tight">Bank building</p>
+          <p className="mt-2 max-w-xl text-sm text-[var(--mist-soft)]">
+            Dedicated frontend + backend Studio path that generates a bank building still and previews the image.
+          </p>
+          <Link href="/studio/bank-building" className="ac-btn ac-btn-primary mt-5 inline-flex">
+            Open bank building generate
+          </Link>
+        </div>
+
         {loading ? (
           <p className="text-[0.8rem] tracking-[0.18em] text-[var(--mist)] uppercase">Opening floor…</p>
         ) : error ? (

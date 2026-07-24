@@ -724,11 +724,40 @@ Absolute media URL = `{BASE}{media_url}`
 | projects | Projects, characters, scripts |
 | studio | Studio generate / assets / reviews |
 | cinema | Campaign packages |
+| edit | Art City Edit — access, entitlements, media, timelines, render |
 | publishing | Delivery pipeline |
 | data-lab | Ingest + annotations |
 | registries | Datasets, rights, models, training |
 | knowledge | Kurdish KB |
 | evaluations | Model eval lab |
+
+---
+
+## Art City Edit (`/api/edit`)
+
+Editing and repurposing layer. External processing requires Art City approval + active entitlements. See [`docs/ART_CITY_EDIT_PRD.md`](ART_CITY_EDIT_PRD.md).
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/api/edit/summary` | Workspace/project counts + feature flags |
+| GET | `/api/edit/plans` | Subscription plans |
+| POST | `/api/edit/access-applications` | Submit access request |
+| GET | `/api/edit/access-applications` | Admin queue |
+| POST | `/api/edit/access-applications/{id}/review` | approve / reject / request_info / suspend |
+| POST | `/api/edit/organisations/{id}/activate` | Invoice/manual subscription activation |
+| POST | `/api/edit/seed/internal` | Seed Art City Group internal workspace (admin) |
+| GET | `/api/edit/workspaces` | Membership-scoped workspaces |
+| POST | `/api/edit/workspaces/{id}/assets` | Multipart upload + rights attestation |
+| POST | `/api/edit/workspaces/{id}/projects` | Create edit project |
+| POST | `/api/edit/projects/{id}/analyse` | Queue analysis job |
+| GET | `/api/edit/projects/{id}/candidates` | Ranked clip candidates |
+| POST | `/api/edit/candidates/{id}/decision` | pin / reject / pending |
+| POST | `/api/edit/projects/{id}/timelines` | Build timeline from candidates |
+| POST | `/api/edit/timelines/{id}/decide` | approve / reject / request_changes |
+| POST | `/api/edit/projects/{id}/renders` | Multi-ratio render job |
+| GET | `/api/edit/renders/{id}/package` | Export package + QC |
+
+Feature flags (env): `EDIT_FEATURE_PUBLISHING`, `EDIT_FEATURE_TREND_INTELLIGENCE`, `EDIT_FEATURE_MULTI_CAM`.
 
 ---
 
@@ -740,3 +769,4 @@ Absolute media URL = `{BASE}{media_url}`
 | 1.1.0 | Production Kurdish ASR: MinIO upload, persisted speech jobs, Cinema/Studio VO transcripts, VTT/SRT |
 | 1.2.0 | Production Data Lab: file inventory, ingest UI path, export manifests, rights-gated training_ready |
 | 1.2.1 | Annotations workspace production: stats, get-by-id, payload edits, conflict, revision history |
+| 1.3.0 | Art City Edit: tenancy, access applications, entitlements, media pipeline, timelines, multi-ratio render/QC |

@@ -62,12 +62,32 @@ Open **http://localhost:3000/publish**
 
 Outputs: `MASTER_MANIFEST.json`, `DELIVERY_REPORT.md`, published masters in MinIO.
 
-## Art City Cinema vs Art City Studio
+## Art City Cinema · Studio · Edit · Publish
 
 | Product | Purpose | Outputs |
 |---------|---------|---------|
 | **Art City Cinema** | Complete advertising campaigns | Hero film, social cutdowns, music, VO, end card, campaign manifest, technical QC, ZIP |
 | **Art City Studio** | Individual production assets | Single image / video / voice / music / scene takes |
+| **Art City Edit** | Long-form editing & social repurposing | Upload → analyse → candidate clips → timeline → multi-ratio export + QC (Art City approval + entitlements) |
+| **Art City Publish** | Delivery packaging | Masters, checklist, checksums, channel release |
+
+### Art City Edit (local)
+
+Open **http://localhost:3000/edit**
+
+```bat
+cd backend
+venv\Scripts\activate
+alembic upgrade head
+python scripts\seed_edit.py
+```
+
+1. Seed the internal Art City Edit workspace (or call `POST /api/edit/seed/internal` as admin)  
+2. Upload long-form video with rights attestation  
+3. Run analysis (start worker: `python -m app.worker`)  
+4. Pin candidates → timeline → approve → render multi-ratio package  
+
+PRD: [`docs/ART_CITY_EDIT_PRD.md`](docs/ART_CITY_EDIT_PRD.md)
 
 ## Cinema technical QC
 
@@ -101,7 +121,8 @@ Private stack: **Postgres + Redis + S3 bucket + FastAPI + Next.js**.
 7. Set frontend `NEXT_PUBLIC_API_URL` to the API domain, deploy: `railway up frontend --path-as-root -s frontend -y`
 8. Generate frontend domain and set backend `CORS_ORIGINS` to that URL
 
-GitHub autodeploy (optional): connect each service to `zaragoza444/art-city-ai-studio` on `main`.
+GitHub autodeploy (optional): connect each service to `zaragoza444/artcity-lab` on `main`.
+Gitea mirror: `https://gitea.d-bis.org/zaragoza444/artcity-lab`.
 
 ## Project layout
 

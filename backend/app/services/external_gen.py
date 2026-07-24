@@ -33,7 +33,10 @@ def _has_eleven() -> bool:
 
 
 def external_available(modality: str) -> bool:
-    if modality in {"image", "video"}:
+    if modality == "image":
+        return _has_fal() or _has_openai()
+    if modality == "video":
+        # FAL native video, or OpenAI DALL·E frames + TTS + ffmpeg
         return _has_fal() or _has_openai()
     if modality == "voice":
         return _has_openai() or _has_eleven()
@@ -64,7 +67,8 @@ def generate_external(
             return _gen_music(prompt, duration_seconds)
         if modality == "audio":
             return _gen_sfx(prompt)
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        print(f"external_gen failed modality={modality}: {exc}")
         return None
     return None
 
@@ -93,41 +97,131 @@ def _gen_image(prompt: str, aspect: str) -> Optional[ExternalMedia]:
             return ExternalMedia(raw, ctype or f"image/{ext}", f"fal-image.{ext}", "fal", 0.04)
     if _has_openai():
         settings = get_settings()
-        size = {"16:9": "1792x1024", "9:16": "1024x1792", "1:1": "1024x1024"}.get(aspect, "1024x1024")
+        # Prefer gpt-image-1 (current OpenAI image model); fall back to dall-e-3 for older keys.
+        attempts = [
+            {
+                "model": "gpt-image-1",
+                "prompt": prompt[:3900],
+                "size": "1024x1024" if aspect == "1:1" else ("1536x1024" if aspect != "9:16" else "1024x1536"),
+                "n": 1,
+            },
+            {
+                "model": "dall-e-3",
+                "prompt": prompt[:3900],
+                "size": {"16:9": "1792x1024", "9:16": "1024x1792", "1:1": "1024x1024"}.get(aspect, "1024x1024"),
+                "n": 1,
+            },
+        ]
         with httpx.Client(timeout=90.0) as client:
-            resp = client.post(
-                "https://api.openai.com/v1/images/generations",
-                headers={"Authorization": f"Bearer {settings.openai_api_key}"},
-                json={"model": "dall-e-3", "prompt": prompt[:3900], "size": size, "response_format": "url", "n": 1},
-            )
-            if resp.status_code >= 400:
-                return None
-            url = (resp.json().get("data") or [{}])[0].get("url")
-            if not url:
-                return None
-            raw, ctype = _download(url)
-            return ExternalMedia(raw, ctype or "image/png", "openai-image.png", "openai", 0.08)
+            for payload in attempts:
+                resp = client.post(
+                    "https://api.openai.com/v1/images/generations",
+                    headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+                    json=payload,
+                )
+                if resp.status_code >= 400:
+                    print(f"openai image {payload['model']} failed: {resp.status_code} {resp.text[:240]}")
+                    continue
+                body = resp.json()
+                row = (body.get("data") or [{}])[0]
+                url = row.get("url")
+                b64 = row.get("b64_json")
+                if url:
+                    raw, ctype = _download(url)
+                    return ExternalMedia(raw, ctype or "image/png", "openai-image.png", "openai", 0.08)
+                if b64:
+                    import base64
+
+                    raw = base64.b64decode(b64)
+                    return ExternalMedia(raw, "image/png", "openai-image.png", "openai", 0.08)
     return None
 
 
 def _gen_video(prompt: str, duration_seconds: float, aspect: str) -> Optional[ExternalMedia]:
-    if not _has_fal():
+    if _has_fal():
+        # MiniMax / LTX style short clip — soft-fail on queue errors
+        payload = {
+            "prompt": prompt[:1500],
+            "aspect_ratio": aspect if aspect in {"16:9", "9:16", "1:1"} else "16:9",
+        }
+        data = _fal_run("fal-ai/minimax/video-01-live", payload, timeout=120.0)
+        url = None
+        if isinstance(data, dict):
+            video = data.get("video") or {}
+            url = video.get("url") if isinstance(video, dict) else None
+            url = url or data.get("video_url") or data.get("url")
+        if url:
+            raw, ctype = _download(url)
+            return ExternalMedia(raw, ctype or "video/mp4", "fal-video.mp4", "fal", 0.35)
+    if _has_openai():
+        return _gen_video_openai(prompt, duration_seconds, aspect)
+    return None
+
+
+def _as_png(image_bytes: bytes) -> bytes:
+    from io import BytesIO
+
+    from PIL import Image
+
+    img = Image.open(BytesIO(image_bytes)).convert("RGB")
+    out = BytesIO()
+    img.save(out, format="PNG")
+    return out.getvalue()
+
+
+def _gen_video_openai(prompt: str, duration_seconds: float, aspect: str) -> Optional[ExternalMedia]:
+    """Production video without FAL: DALL·E shot frames + OpenAI TTS + ffmpeg MP4."""
+    from app.services.video_mux import mux_frames_with_audio
+
+    duration = max(3.0, min(float(duration_seconds or 5.0), 12.0))
+    # Keep shot count lean for production latency/cost (Cinema runs multiple cutdowns).
+    frame_count = 2 if duration <= 8 else 3
+    sizes = {"16:9": (1920, 1080), "9:16": (1080, 1920), "1:1": (1080, 1080), "4:5": (1080, 1350)}
+    width, height = sizes.get(aspect, sizes["16:9"])
+
+    frames: list[bytes] = []
+    for i in range(frame_count):
+        shot = (
+            f"Cinematic film still {i + 1}/{frame_count} for Art City. "
+            f"{prompt[:900]}. Photoreal, dramatic lighting, no text overlay."
+        )
+        img = _gen_image(shot, aspect if aspect in {"16:9", "9:16", "1:1"} else "16:9")
+        if not img:
+            break
+        try:
+            frames.append(_as_png(img.data))
+        except Exception:
+            frames.append(img.data)
+    if not frames:
         return None
-    # MiniMax / LTX style short clip — soft-fail on queue errors
-    payload = {
-        "prompt": prompt[:1500],
-        "aspect_ratio": aspect if aspect in {"16:9", "9:16", "1:1"} else "16:9",
-    }
-    data = _fal_run("fal-ai/minimax/video-01-live", payload, timeout=120.0)
-    url = None
-    if isinstance(data, dict):
-        video = data.get("video") or {}
-        url = video.get("url") if isinstance(video, dict) else None
-        url = url or data.get("video_url") or data.get("url")
-    if not url:
+
+    narration = (
+        f"Art City Studios. {prompt[:280]}"
+        if len(prompt) > 40
+        else "Art City Studios presents a cinematic story."
+    )
+    voice = _gen_voice(narration)
+    audio: Optional[bytes] = None
+    if voice and voice.data and ("wav" in (voice.content_type or "") or voice.filename.endswith(".wav")):
+        audio = voice.data
+    if not audio:
+        from app.services import media_factory
+
+        _, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
+        audio = bed.data
+
+    muxed = mux_frames_with_audio(
+        frames_png=frames,
+        audio_wav=audio,
+        duration_seconds=duration,
+        filename="openai-video.mp4",
+        width=width,
+        height=height,
+    )
+    if not muxed:
         return None
-    raw, ctype = _download(url)
-    return ExternalMedia(raw, ctype or "video/mp4", "fal-video.mp4", "fal", 0.35)
+    cost = 0.08 * len(frames) + (0.05 if voice else 0.0) + 0.02
+    return ExternalMedia(muxed.data, "video/mp4", "openai-video.mp4", "openai", round(cost, 4))
 
 
 def _gen_voice(prompt: str) -> Optional[ExternalMedia]:

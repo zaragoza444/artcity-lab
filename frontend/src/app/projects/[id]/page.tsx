@@ -131,9 +131,21 @@ export default function ProjectDetailPage() {
                 <span>Characters · {characters.length}</span>
                 <span>Scripts · {scripts.length}</span>
               </div>
-              <div className="mt-7">
-                <Link href={`/studio/${project.id}`} className="ac-btn ac-btn-primary">
-                  Open media studio
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link href={`/cinema/${project.id}`} className="ac-btn ac-btn-primary">
+                  Cinema
+                </Link>
+                <Link href={`/studio/${project.id}`} className="ac-btn ac-btn-secondary">
+                  Studio
+                </Link>
+                <Link href={`/projects/${project.id}/data-bank`} className="ac-btn ac-btn-secondary">
+                  Data Bank
+                </Link>
+                <Link href="/edit" className="ac-btn ac-btn-secondary">
+                  Edit
+                </Link>
+                <Link href={`/publish/${project.id}`} className="ac-btn ac-btn-ghost">
+                  Publish
                 </Link>
               </div>
               <div className="ac-rule mt-10" />

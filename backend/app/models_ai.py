@@ -30,6 +30,12 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(50), default=UserRole.VIEWER.value)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    email_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    phone_number: Mapped[Optional[str]] = mapped_column(String(32), unique=True, index=True)
+    phone_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    email_verify_token: Mapped[Optional[str]] = mapped_column(String(128))
+    phone_verify_code: Mapped[Optional[str]] = mapped_column(String(16))
+    account_state: Mapped[str] = mapped_column(String(50), default="active")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

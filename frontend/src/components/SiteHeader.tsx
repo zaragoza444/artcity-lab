@@ -13,6 +13,8 @@ const primary = [
   { href: "/advertising", label: "Advertising" },
   { href: "/cinema", label: "Cinema" },
   { href: "/studio", label: "Studio" },
+  { href: "/data-bank", label: "Data Bank" },
+  { href: "/edit", label: "Edit" },
   { href: "/publish", label: "Publish" },
 ];
 
@@ -38,7 +40,9 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
       ? "cinema"
       : pathname.startsWith("/studio")
         ? "studio"
-        : "platform";
+        : pathname.startsWith("/edit")
+          ? "edit"
+          : "platform";
 
   return (
     <header
@@ -86,6 +90,28 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
             <ApiStatus />
           </div>
         </div>
+        <nav
+          className="flex gap-1 overflow-x-auto pb-1 lg:hidden"
+          aria-label="Primary mobile"
+        >
+          {primary.map((link) => {
+            const active =
+              pathname === link.href || pathname.startsWith(`${link.href}/`);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`whitespace-nowrap px-2.5 py-1.5 text-[0.68rem] uppercase tracking-[0.12em] ${
+                  active
+                    ? "text-[var(--gold-bright)]"
+                    : "text-[var(--mist)] hover:text-[var(--paper)]"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
         <nav
           className="hidden gap-1 overflow-x-auto pb-1 md:flex"
           aria-label="AI Core"

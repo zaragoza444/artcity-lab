@@ -503,6 +503,121 @@ def main() -> int:
     check("GET", "/api/knowledge/cultural-pack?dialect=sorani")
     check("GET", "/api/knowledge/query?terms=Kardokh,Kurdiya,Newroz")
 
+    # Art City Edit
+    check("GET", "/api/edit/summary")
+    check("GET", "/api/edit/plans")
+    seed_edit = client.post(
+        "/api/edit/seed/internal",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    results.append(
+        {
+            "method": "POST",
+            "path": "/api/edit/seed/internal",
+            "code": seed_edit.status_code,
+            "pass": seed_edit.status_code in {200, 201},
+            "err": "" if seed_edit.status_code in {200, 201} else seed_edit.text[:160],
+        }
+    )
+    check("GET", "/api/edit/workspaces")
+    check("GET", "/api/edit/organisations")
+    check("GET", "/api/edit/memberships/mine")
+    check("GET", "/api/edit/access-applications")
+    check("GET", "/api/edit/access-applications/mine")
+    workspaces = []
+    if seed_edit.status_code in {200, 201}:
+        workspaces = [seed_edit.json()]
+    else:
+        wr = client.get("/api/edit/workspaces", headers={"Authorization": f"Bearer {token}"})
+        if wr.status_code == 200:
+            workspaces = wr.json() or []
+    if workspaces:
+        wid = workspaces[0]["id"]
+        check("GET", f"/api/edit/workspaces/{wid}/projects")
+        check("GET", f"/api/edit/workspaces/{wid}/assets")
+        check("GET", f"/api/edit/workspaces/{wid}/brands")
+        upload = check_upload(
+            f"/api/edit/workspaces/{wid}/assets",
+            files={"file": ("smoke_edit.txt", b"Art City Edit smoke source", "text/plain")},
+            data={"rights_attested": "true", "rights_notes": "smoke rights"},
+        )
+        if upload is not None:
+            asset_id = upload.json()["id"]
+            created = client.post(
+                f"/api/edit/workspaces/{wid}/projects",
+                headers={"Authorization": f"Bearer {token}"},
+                json={
+                    "title": "Smoke Edit Project",
+                    "source_asset_id": asset_id,
+                    "brief": {"objective": "engagement"},
+                },
+            )
+            results.append(
+                {
+                    "method": "POST",
+                    "path": f"/api/edit/workspaces/{wid}/projects",
+                    "code": created.status_code,
+                    "pass": created.status_code in {200, 201},
+                    "err": "" if created.status_code in {200, 201} else created.text[:160],
+                }
+            )
+            if created.status_code in {200, 201}:
+                eid = created.json()["id"]
+                check("GET", f"/api/edit/projects/{eid}")
+                check("POST", f"/api/edit/projects/{eid}/analyse", json_body={})
+                check("GET", f"/api/edit/projects/{eid}/candidates")
+                check("GET", f"/api/edit/projects/{eid}/analysis")
+                check("GET", f"/api/edit/projects/{eid}/timelines")
+                check("GET", f"/api/edit/projects/{eid}/renders")
+
+    # Project Data Bank — seed, hub, list, upload, sync, summary, bank-building
+    db_seed = client.post(
+        "/api/data-bank/seed",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    results.append(
+        {
+            "method": "POST",
+            "path": "/api/data-bank/seed",
+            "code": db_seed.status_code,
+            "pass": db_seed.status_code in {200, 201},
+            "err": "" if db_seed.status_code in {200, 201} else db_seed.text[:160],
+        }
+    )
+    check("GET", "/api/data-bank")
+    bank_project_id = None
+    if db_seed.status_code in {200, 201}:
+        bank_project_id = (db_seed.json().get("project") or {}).get("id")
+    if not bank_project_id:
+        hub = client.get("/api/data-bank", headers={"Authorization": f"Bearer {token}"})
+        if hub.status_code == 200:
+            bank_project_id = hub.json().get("bank_project_id")
+    if bank_project_id:
+        check("GET", f"/api/projects/{bank_project_id}/data-bank/summary")
+        check("GET", f"/api/projects/{bank_project_id}/data-bank")
+        check("POST", f"/api/projects/{bank_project_id}/data-bank/sync", json_body={})
+        check_upload(
+            f"/api/projects/{bank_project_id}/data-bank/upload",
+            files={"file": ("smoke-bank.txt", b"Art City Data Bank smoke brief\n", "text/plain")},
+            data={"name": "Smoke bank brief", "tags": "smoke,data-bank"},
+        )
+    bb = client.post(
+        "/api/studio/bank-building/generate",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"notes": "smoke suite bank building still", "prefer_external": True},
+    )
+    results.append(
+        {
+            "method": "POST",
+            "path": "/api/studio/bank-building/generate",
+            "code": bb.status_code,
+            "pass": bb.status_code in {200, 201},
+            "err": "" if bb.status_code in {200, 201} else bb.text[:160],
+        }
+    )
+    if bb.status_code in {200, 201} and bb.json().get("media_url"):
+        check("GET", bb.json()["media_url"], auth=False, ok={200})
+
     # Pad with /health to reach exactly TARGET
     while len(results) < TARGET:
         check("GET", "/health", auth=False, ok={200})

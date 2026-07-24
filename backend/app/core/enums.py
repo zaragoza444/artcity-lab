@@ -135,3 +135,65 @@ RIGHTS_APPROVE_ROLES = PRIVILEGED_ROLES
 TRAINING_ROLES = PRIVILEGED_ROLES | {UserRole.AI_OPERATOR}
 MODEL_PROMOTE_ROLES = PRIVILEGED_ROLES
 ROUTE_CHANGE_ROLES = {UserRole.SUPER_ADMIN, UserRole.ADMINISTRATOR}
+
+# Art City Edit — platform admins who may approve external access
+EDIT_APPROVAL_ROLES = {UserRole.SUPER_ADMIN, UserRole.ADMINISTRATOR}
+EDIT_BILLING_ROLES = {UserRole.SUPER_ADMIN, UserRole.ADMINISTRATOR}
+
+
+class EditAccountState(str, Enum):
+    REGISTERED_UNVERIFIED = "registered_unverified"
+    PENDING_PROFILE = "pending_profile"
+    PENDING_ART_CITY_REVIEW = "pending_art_city_review"
+    MORE_INFORMATION_REQUIRED = "more_information_required"
+    APPROVED_PENDING_BILLING = "approved_pending_billing"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    REJECTED = "rejected"
+    PAST_DUE = "past_due"
+    CANCELLED = "cancelled"
+    TERMINATED = "terminated"
+
+
+class EditWorkspaceRole(str, Enum):
+    OWNER = "owner"
+    ADMIN = "admin"
+    EDITOR = "editor"
+    REVIEWER = "reviewer"
+    VIEWER = "viewer"
+    EXTERNAL = "external"
+
+
+class EditProjectStatus(str, Enum):
+    DRAFT = "draft"
+    UPLOADING = "uploading"
+    VALIDATING = "validating"
+    ANALYSING = "analysing"
+    CANDIDATES_READY = "candidates_ready"
+    EDITING = "editing"
+    RENDERING = "rendering"
+    QC_REVIEW = "qc_review"
+    HUMAN_REVIEW = "human_review"
+    APPROVED = "approved"
+    EXPORTED = "exported"
+    PUBLISHED = "published"
+    ARCHIVED = "archived"
+    FAILED = "failed"
+
+
+class EditJobStatus(str, Enum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    TIMED_OUT = "timed_out"
+    BLOCKED_BY_ENTITLEMENT = "blocked_by_entitlement"
+
+
+class EditVersionReviewStatus(str, Enum):
+    DRAFT = "draft"
+    READY_FOR_REVIEW = "ready_for_review"
+    CHANGES_REQUESTED = "changes_requested"
+    APPROVED = "approved"
+    SUPERSEDED = "superseded"

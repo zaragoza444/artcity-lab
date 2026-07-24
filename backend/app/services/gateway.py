@@ -177,7 +177,21 @@ def _materialize_output(db: Session, job: GenerationJob, result, params: dict) -
         brand = str(params.get("brand") or "Art City")
         campaign = str(params.get("campaign") or title)
         cta = str(params.get("cta") or "Art City Studios")
-        if duration >= 6 or params.get("advertising"):
+        # Prefer real provider output (OpenAI/FAL) — only synthesize when missing.
+        if result.output_bytes and result.filename:
+            visual_name = result.filename
+            visual_data = result.output_bytes
+            visual_ct = result.content_type or "video/mp4"
+            if getattr(result, "sidecar_bytes", None) and getattr(result, "sidecar_filename", None):
+                bed_name = result.sidecar_filename
+                bed_data = result.sidecar_bytes
+                bed_ct = result.sidecar_content_type or "audio/wav"
+            else:
+                _, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
+                bed_name = bed.filename
+                bed_data = bed.data
+                bed_ct = bed.content_type
+        elif duration >= 6 or params.get("advertising"):
             visual, bed = media_factory.make_cinematic_video(
                 prompt,
                 aspect=aspect,
@@ -186,22 +200,17 @@ def _materialize_output(db: Session, job: GenerationJob, result, params: dict) -
                 campaign=campaign,
                 cta=cta,
             )
-        else:
-            visual, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
-        # Prefer provider visual bytes when present (Art City video worker).
-        if result.output_bytes and result.filename:
-            visual_name = result.filename
-            visual_data = result.output_bytes
-            visual_ct = result.content_type or visual.content_type
-        else:
             visual_name = visual.filename
             visual_data = visual.data
             visual_ct = visual.content_type
-        if getattr(result, "sidecar_bytes", None) and getattr(result, "sidecar_filename", None):
-            bed_name = result.sidecar_filename
-            bed_data = result.sidecar_bytes
-            bed_ct = result.sidecar_content_type or bed.content_type
+            bed_name = bed.filename
+            bed_data = bed.data
+            bed_ct = bed.content_type
         else:
+            visual, bed = media_factory.make_video_proxy(prompt, duration_seconds=duration)
+            visual_name = visual.filename
+            visual_data = visual.data
+            visual_ct = visual.content_type
             bed_name = bed.filename
             bed_data = bed.data
             bed_ct = bed.content_type
@@ -221,6 +230,7 @@ def _materialize_output(db: Session, job: GenerationJob, result, params: dict) -
                 "audio_key": audio_key,
                 "provider_job_id": result.provider_job_id,
                 "cinematic": duration >= 8,
+                "external": bool(result.output_bytes and str(result.provider_job_id or "").startswith("ext-")),
             },
         )
         db.add(
