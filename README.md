@@ -154,7 +154,7 @@ venv\Scripts\activate
 python -m app.worker
 ```
 
-Default admin (after seed): `admin@artcity.ai` / `ArtCityAdmin!2026` — change immediately.
+Default admin (after seed): set `DEFAULT_ADMIN_EMAIL` / `DEFAULT_ADMIN_PASSWORD` in the environment — do not commit credentials.
 
 ## Ownership principle
 

@@ -30,10 +30,10 @@ Most endpoints require a Bearer JWT.
 **Public (no auth):** `GET /`, `GET /health`, `POST /api/auth/login`, `POST /api/auth/refresh`  
 **Media file GETs** (`/api/media/...`, `/api/assets/file/...`, cinema zip/manifest binary GETs under protected routers) — cinema/publishing routes require auth; studio media file routes are currently open for preview embedding.
 
-Default seeded admin (change immediately):
+Default seeded admin (change immediately via env `DEFAULT_ADMIN_EMAIL` / `DEFAULT_ADMIN_PASSWORD`):
 
-- Email: `admin@artcity.ai`
-- Password: `ArtCityAdmin!2026`
+- Email: value of `DEFAULT_ADMIN_EMAIL`
+- Password: value of `DEFAULT_ADMIN_PASSWORD` (never commit real passwords to git)
 
 ### Roles
 
@@ -56,7 +56,7 @@ Privileged actions (datasets upload, rights approve, training, model promote) re
 # Login
 curl -s -X POST "$BASE/api/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@artcity.ai","password":"ArtCityAdmin!2026"}'
+  -d "{\"email\":\"$DEFAULT_ADMIN_EMAIL\",\"password\":\"$DEFAULT_ADMIN_PASSWORD\"}"
 
 # Use token
 export TOKEN=...
