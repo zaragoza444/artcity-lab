@@ -42,6 +42,7 @@ def main() -> int:
         "/edit",
         "/dashboard",
         "/hub",
+        "/vertical-drama",
     ):
         ok(f"UI GET {path}", app.get(path).status_code)
 
@@ -350,6 +351,104 @@ def main() -> int:
                 "Hub UI script",
                 app.get(f"/hub/{project_id}/script").status_code,
             )
+
+    ok("VD features", client.get("/api/v1/vertical-drama/features", headers=admin_headers).status_code)
+    vd = client.post(
+        "/api/v1/vertical-drama/projects",
+        headers=admin_headers,
+        json={
+            "title": f"Golden A {suffix}",
+            "logline": "دڵخواز نهێنی خێزان دەدۆزێتەوە.",
+            "source_type": "generate",
+            "primary_locale": "ckb-IQ",
+            "content_languages": ["ckb-IQ", "en"],
+            "seed_golden_a": True,
+        },
+    )
+    ok("VD create golden A", vd.status_code, vd.text[:120])
+    if vd.status_code in {200, 201}:
+        vdid = vd.json()["id"]
+        ok("VD UI", app.get("/vertical-drama").status_code)
+        ok("VD UI project", app.get(f"/vertical-drama/{vdid}").status_code)
+        bible = client.post(
+            f"/api/v1/vertical-drama/projects/{vdid}/story-bible",
+            headers=admin_headers,
+            json={"sections_json": {"world": "سلێمانی", "tone": "drama", "language": "ckb-IQ"}},
+        )
+        ok("VD story bible", bible.status_code)
+        if bible.status_code in {200, 201}:
+            vid = (bible.json().get("version") or {}).get("id") or bible.json().get("current_version_id")
+            if vid:
+                ok(
+                    "VD bible lock",
+                    client.post(f"/api/v1/vertical-drama/story-bibles/{vid}/approve", headers=admin_headers).status_code,
+                )
+        season = client.post(
+            f"/api/v1/vertical-drama/projects/{vdid}/seasons",
+            headers=admin_headers,
+            json={"title": "Season 1", "target_episode_count": 2, "target_episode_seconds": 60},
+        )
+        ok("VD season grid", season.status_code)
+        if season.status_code in {200, 201}:
+            eps = season.json().get("episodes") or []
+            assert_true("VD two episodes", len(eps) >= 2, str(len(eps)))
+            eid = eps[0]["id"]
+            for st in ("drafted", "reviewed", "approved"):
+                pr = client.patch(
+                    f"/api/v1/vertical-drama/episodes/{eid}",
+                    headers=admin_headers,
+                    json={"status": st},
+                )
+                ok(f"VD episode {st}", pr.status_code)
+            sp = client.post(
+                f"/api/v1/vertical-drama/episodes/{eid}/screenplay",
+                headers=admin_headers,
+                json={
+                    "title": "EP1",
+                    "elements": [
+                        {"element_type": "scene_heading", "display_text": "INT. قاوەخانە - ڕۆژ"},
+                        {"element_type": "action", "display_text": "دڵخواز دێتە ژوورەوە."},
+                    ],
+                },
+            )
+            ok("VD screenplay", sp.status_code)
+            dc = client.post(f"/api/v1/vertical-drama/episodes/{eid}/decoupage", headers=admin_headers)
+            ok("VD decoupage", dc.status_code, dc.text[:80])
+            shots = (dc.json() or {}).get("shots") or []
+            qc_fail = client.post(f"/api/v1/vertical-drama/episodes/{eid}/qc-runs", headers=admin_headers)
+            ok("VD QC before media", qc_fail.status_code)
+            if qc_fail.status_code == 200:
+                assert_true("VD QC fails without takes", qc_fail.json().get("passed") is False, str(qc_fail.json()))
+            if shots:
+                gen = client.post(
+                    f"/api/v1/vertical-drama/shots/{shots[0]['id']}/generations",
+                    headers=admin_headers,
+                    json={"capability": "image"},
+                )
+                ok("VD generate shot", gen.status_code)
+                for sh in shots[1:]:
+                    client.post(
+                        f"/api/v1/vertical-drama/shots/{sh['id']}/generations",
+                        headers=admin_headers,
+                        json={"capability": "image"},
+                    )
+            loc = client.post(
+                f"/api/v1/vertical-drama/episodes/{eid}/localize",
+                headers=admin_headers,
+                json={"language": "en", "kind": "subtitle", "body": "Mother waits."},
+            )
+            ok("VD localize", loc.status_code)
+            asm = client.post(f"/api/v1/vertical-drama/episodes/{eid}/assembly", headers=admin_headers)
+            ok("VD assembly", asm.status_code)
+            qc = client.post(f"/api/v1/vertical-drama/episodes/{eid}/qc-runs", headers=admin_headers)
+            ok("VD QC", qc.status_code)
+            if qc.status_code == 200:
+                assert_true("VD QC passed after generates", bool(qc.json().get("passed")), str(qc.json()))
+            pkg = client.post(
+                f"/api/v1/vertical-drama/episodes/{eid}/delivery-packages",
+                headers=admin_headers,
+            )
+            ok("VD delivery", pkg.status_code, pkg.text[:100])
 
     return _finish(rows)
 

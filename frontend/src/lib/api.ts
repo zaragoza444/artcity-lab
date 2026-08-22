@@ -1,6 +1,75 @@
-import { getAccessToken } from "@/lib/auth";
+import {
+  clearSession,
+  emitSessionExpired,
+  getAccessToken,
+  getRefreshToken,
+  setSession,
+} from "@/lib/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export type TokenResponse = {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  role: string;
+  email: string;
+  full_name: string;
+  user_id: string;
+  phone_number?: string | null;
+  email_verified?: boolean;
+  phone_verified?: boolean;
+};
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+function isAuthPublicPath(path: string): boolean {
+  return (
+    path.startsWith("/api/auth/login") ||
+    path.startsWith("/api/auth/signup") ||
+    path.startsWith("/api/auth/refresh") ||
+    path.startsWith("/api/auth/verify-email") ||
+    path.startsWith("/api/auth/verify-phone") ||
+    path.startsWith("/api/auth/token")
+  );
+}
+
+/** Refresh access token using stored refresh token. Returns true when a new session is stored. */
+export async function refreshAccessSession(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return false;
+    try {
+      const res = await fetch(`${API_URL}/api/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        clearSession();
+        return false;
+      }
+      const data = (await res.json()) as TokenResponse;
+      if (!data.access_token || !data.refresh_token) {
+        clearSession();
+        return false;
+      }
+      setSession(data);
+      return true;
+    } catch {
+      clearSession();
+      return false;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
+}
 
 export type Project = {
   id: string;
@@ -177,7 +246,7 @@ function formatApiError(status: number, text: string): string {
   return text || `Request failed: ${status}`;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
   const token = getAccessToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -190,6 +259,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers,
     cache: "no-store",
   });
+
+  if (res.status === 401 && !retried && !isAuthPublicPath(path)) {
+    const refreshed = await refreshAccessSession();
+    if (refreshed) {
+      return request<T>(path, init, true);
+    }
+    clearSession();
+    emitSessionExpired();
+    const text = await res.text();
+    throw new Error(formatApiError(401, text || '{"detail":"Not authenticated"}'));
+  }
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(formatApiError(res.status, text));
@@ -197,19 +278,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
-
-export type TokenResponse = {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  role: string;
-  email: string;
-  full_name: string;
-  user_id: string;
-  phone_number?: string | null;
-  email_verified?: boolean;
-  phone_verified?: boolean;
-};
 
 export type Dataset = {
   id: string;
@@ -1427,4 +1495,70 @@ export const hubApi = {
     request<{ id: string; resource_type: string; resource_id: string; reason: string }[]>(
       `/api/v1/hub/projects/${projectId}/stale`,
     ),
+};
+
+export type VdProject = {
+  id: string;
+  vd_project_id: string;
+  project_id: string;
+  title: string;
+  logline?: string | null;
+  primary_locale: string;
+  status: string;
+  ip_title?: { id: string; title: string; status: string } | null;
+};
+
+export const vdApi = {
+  features: () => request<{ enabled: boolean }>(`/api/v1/vertical-drama/features`),
+  list: () => request<VdProject[]>(`/api/v1/vertical-drama/projects`),
+  create: (body: object) =>
+    request<VdProject>(`/api/v1/vertical-drama/projects`, { method: "POST", body: JSON.stringify(body) }),
+  get: (vdId: string) => request<VdProject>(`/api/v1/vertical-drama/projects/${vdId}`),
+  byPlatform: (projectId: string) =>
+    request<VdProject>(`/api/v1/vertical-drama/projects/by-platform/${projectId}`),
+  rights: (vdId: string) => request<Record<string, unknown>[]>(`/api/v1/vertical-drama/projects/${vdId}/rights`),
+  addRights: (vdId: string, body: object) =>
+    request(`/api/v1/vertical-drama/projects/${vdId}/rights`, { method: "POST", body: JSON.stringify(body) }),
+  contributors: (vdId: string) => request<Record<string, unknown>[]>(`/api/v1/vertical-drama/projects/${vdId}/contributors`),
+  addContributor: (vdId: string, body: object) =>
+    request(`/api/v1/vertical-drama/projects/${vdId}/contributors`, { method: "POST", body: JSON.stringify(body) }),
+  provenance: (vdId: string) => request<Record<string, unknown>[]>(`/api/v1/vertical-drama/projects/${vdId}/provenance`),
+  characters: (vdId: string) => request<Record<string, unknown>[]>(`/api/v1/vertical-drama/projects/${vdId}/characters`),
+  addCharacter: (vdId: string, body: object) =>
+    request(`/api/v1/vertical-drama/projects/${vdId}/characters`, { method: "POST", body: JSON.stringify(body) }),
+  locations: (vdId: string) => request<Record<string, unknown>[]>(`/api/v1/vertical-drama/projects/${vdId}/locations`),
+  addLocation: (vdId: string, body: object) =>
+    request(`/api/v1/vertical-drama/projects/${vdId}/locations`, { method: "POST", body: JSON.stringify(body) }),
+  props: (vdId: string) => request<Record<string, unknown>[]>(`/api/v1/vertical-drama/projects/${vdId}/props`),
+  canon: (vdId: string) => request<Record<string, unknown>[]>(`/api/v1/vertical-drama/projects/${vdId}/canon`),
+  addCanon: (vdId: string, body: object) =>
+    request(`/api/v1/vertical-drama/projects/${vdId}/canon`, { method: "POST", body: JSON.stringify(body) }),
+  approveCanon: (id: string) => request(`/api/v1/vertical-drama/canon/${id}/approve`, { method: "POST" }),
+  bible: (vdId: string) => request<Record<string, unknown>>(`/api/v1/vertical-drama/projects/${vdId}/story-bible`),
+  saveBible: (vdId: string, sections_json: object) =>
+    request(`/api/v1/vertical-drama/projects/${vdId}/story-bible`, {
+      method: "POST",
+      body: JSON.stringify({ sections_json }),
+    }),
+  approveBible: (versionId: string) =>
+    request(`/api/v1/vertical-drama/story-bibles/${versionId}/approve`, { method: "POST" }),
+  seasons: (vdId: string) => request<Record<string, unknown>[]>(`/api/v1/vertical-drama/projects/${vdId}/seasons`),
+  createSeason: (vdId: string, body: object) =>
+    request(`/api/v1/vertical-drama/projects/${vdId}/seasons`, { method: "POST", body: JSON.stringify(body) }),
+  episode: (id: string) => request<Record<string, unknown>>(`/api/v1/vertical-drama/episodes/${id}`),
+  patchEpisode: (id: string, body: object) =>
+    request(`/api/v1/vertical-drama/episodes/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  saveScreenplay: (id: string, body: object) =>
+    request(`/api/v1/vertical-drama/episodes/${id}/screenplay`, { method: "POST", body: JSON.stringify(body) }),
+  decoupage: (id: string) =>
+    request(`/api/v1/vertical-drama/episodes/${id}/decoupage`, { method: "POST" }),
+  generateShot: (shotId: string) =>
+    request(`/api/v1/vertical-drama/shots/${shotId}/generations`, { method: "POST", body: JSON.stringify({}) }),
+  assemble: (id: string) => request(`/api/v1/vertical-drama/episodes/${id}/assembly`, { method: "POST" }),
+  qc: (id: string) => request(`/api/v1/vertical-drama/episodes/${id}/qc-runs`, { method: "POST" }),
+  localize: (id: string, body: object) =>
+    request(`/api/v1/vertical-drama/episodes/${id}/localize`, { method: "POST", body: JSON.stringify(body) }),
+  listLocalize: (id: string) => request(`/api/v1/vertical-drama/episodes/${id}/localize`),
+  delivery: (id: string) =>
+    request(`/api/v1/vertical-drama/episodes/${id}/delivery-packages`, { method: "POST" }),
 };

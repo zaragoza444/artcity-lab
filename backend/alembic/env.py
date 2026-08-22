@@ -9,6 +9,7 @@ import app.models  # noqa: F401 — register models
 import app.models_ai  # noqa: F401 — AI Core models
 import app.models_edit  # noqa: F401 — Art City Edit models
 import app.models_hub  # noqa: F401 — Production Hub models
+import app.models_vd  # noqa: F401 — Vertical Drama IP Factory
 
 config = context.config
 if config.config_file_name is not None:

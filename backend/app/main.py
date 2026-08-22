@@ -11,6 +11,7 @@ from app.api.evaluations import router as evaluations_router
 from app.api.gateway import router as gateway_router
 from app.api.health import router as health_router
 from app.api.hub import router as hub_router
+from app.api.vertical_drama import router as vertical_drama_router
 from app.api.knowledge import router as knowledge_router
 from app.api.projects import router as projects_router
 from app.api.publishing import router as publishing_router
@@ -47,6 +48,10 @@ tags_metadata = [
     {
         "name": "production-hub",
         "description": "Art City Production Hub — AC Script, breakdown, handoff to Cinema/Studio/Edit",
+    },
+    {
+        "name": "vertical-drama",
+        "description": "AC Vertical Drama IP Factory — governed IP, bible, episodes, shots, QC, delivery",
     },
     {"name": "publishing", "description": "Masters packaging and channel release"},
     {"name": "data-lab", "description": "Dataset ingest and annotation workspace"},
@@ -87,6 +92,7 @@ app.include_router(data_bank_router)
 app.include_router(cinema_router)
 app.include_router(edit_router)
 app.include_router(hub_router)
+app.include_router(vertical_drama_router)
 app.include_router(publishing_router)
 
 
@@ -101,6 +107,7 @@ def root() -> dict[str, str]:
         "health": "/health",
         "gateway": "/api/v1/ai",
         "hub": "/api/v1/hub",
+        "vertical_drama": "/api/v1/vertical-drama",
         "api_guide": "docs/API.md",
     }
 

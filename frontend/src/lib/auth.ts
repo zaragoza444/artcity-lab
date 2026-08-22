@@ -2,6 +2,9 @@ const TOKEN_KEY = "artcity_access_token";
 const REFRESH_KEY = "artcity_refresh_token";
 const USER_KEY = "artcity_user";
 
+export const SESSION_UPDATED_EVENT = "artcity:session-updated";
+export const SESSION_EXPIRED_EVENT = "artcity:session-expired";
+
 export type AuthUser = {
   user_id: string;
   email: string;
@@ -47,12 +50,20 @@ export function setSession(tokens: {
       email: tokens.email,
       full_name: tokens.full_name,
       role: tokens.role,
-    })
+    }),
   );
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(SESSION_UPDATED_EVENT));
+  }
 }
 
 export function clearSession() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_KEY);
   localStorage.removeItem(USER_KEY);
+}
+
+export function emitSessionExpired() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
 }

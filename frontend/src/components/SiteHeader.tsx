@@ -14,6 +14,7 @@ const primary = [
   { href: "/advertising", label: "Advertising" },
   { href: "/cinema", label: "Cinema" },
   { href: "/studio", label: "Studio" },
+  { href: "/vertical-drama", label: "Vertical Drama" },
   { href: "/hub", label: "Hub" },
   { href: "/data-bank", label: "Data Bank" },
   { href: "/edit", label: "Edit" },
@@ -45,6 +46,8 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
         ? "studio"
         : pathname.startsWith("/edit")
           ? "edit"
+          : pathname.startsWith("/vertical-drama")
+            ? "vertical"
           : pathname.startsWith("/hub")
             ? "hub"
             : "platform";
@@ -75,7 +78,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
                         : "text-[var(--mist)] hover:text-[var(--paper)]"
                     }`}
                   >
-                    {link.href === "/hub" ? t("hub.title") : link.label}
+                    {link.href === "/hub" ? t("hub.title") : link.href === "/vertical-drama" ? t("vd.title") : link.label}
                   </Link>
                 );
               })}

@@ -41,5 +41,9 @@
   "breakdown.category": "Category",
   "breakdown.status": "Status",
   "breakdown.approve": "Approve",
-  "breakdown.reject": "Reject"
+  "breakdown.reject": "Reject",
+  "vd.title": "AC Vertical Drama",
+  "vd.subtitle": "Create a series. Build an IP. Produce episode by episode.",
+  "vd.newProject": "New IP project",
+  "vd.goldenA": "Seed Golden Project A (Sorani)"
 }

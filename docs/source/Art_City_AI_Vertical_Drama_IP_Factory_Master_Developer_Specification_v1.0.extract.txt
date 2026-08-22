@@ -1,0 +1,1473 @@
+ART CITY AI
+VERTICAL DRAMA
+IP FACTORY
+Master Production & Development Specification
+AI-native vertical series creation • IP development • production • localization • delivery • performance learning
+Version 1.0 | 21 August 2026
+Prepared as direct developer handoff for Art City AI
+English + Kurdish Sorani (Central Kurdish / ckb-IQ) + Arabic-ready
+پشتیوانیی تەواوی زمانی کوردیی سۆرانی و نووسینی ڕاست بۆ چەپ
+Document Control
+Contents
+1. Executive Directive and Product Decision
+2. Separation Strategy: Separate Domain, Shared Core
+3. Product Definition and Target Users
+4. Scope, Modes and Non-Goals
+5. End-to-End Factory Workflow
+6. Domain Architecture and Canonical IDs
+7. Navigation, UX and Project Structure
+8. IP Vault and Rights/Provenance Registry
+9. Concept and IP Development Engine
+10. Story Bible and Canon Engine
+11. Season Architecture Engine
+12. Episode Factory and Screenplay Engine
+13. Hook, Pacing and Cliffhanger Engine
+14. Scene, Découpage and Shot Engine
+15. Character/Face Consistency System
+16. World, Location, Wardrobe and Prop Continuity
+17. Visual Style Lock and Reference System
+18. AI Casting, Voice and Dialogue Production
+19. Video Generation and Shot Production
+20. Audio, Music and Sound Design
+21. Assembly, Edit and Versioning
+22. Localization, Dubbing and Cultural Adaptation
+23. Review, Approval and Canon Locking
+24. Vertical Mastering and QC
+25. Delivery/Publishing Package Builder
+26. Analytics and Performance Learning Loop
+27. AI Agents and Orchestration Rules
+28. AI Router and Provider Abstraction
+29. Job Queue, State Machine and Reliability
+30. Data Model and Suggested Database Tables
+31. API Surface
+32. Domain Events and Dependency Propagation
+33. Frontend Structure and Components
+34. Backend Structure
+35. Integration With Existing Art City AI Modules
+36. Kurdish Sorani / RTL Requirements
+37. Roles, Permissions and Approval Matrix
+38. Subscription, Entitlements, Credits and Cost Ledger
+39. Security, Privacy, Rights and AI Provenance
+40. Admin and Operations Console
+41. Observability, Metrics and Cost Controls
+42. Testing Strategy and Golden Test Projects
+43. Acceptance Criteria / Release Gate
+44. Phased Development Plan
+45. Developer Start Checklist
+46. Risks and Critical Decisions
+Appendix A–H. Schemas, APIs, States and Example Contracts
+1. Executive Directive and Product Decision
+Art City AI Vertical Drama IP Factory is a specialized production operating environment for developing, producing, localizing, mastering and commercializing short-form episodic vertical drama IP. It must not be implemented as a single “generate video” page. The product is a persistent story-and-production system in which characters, canon, episodes, shots, assets, rights, versions, approvals, costs and performance data remain connected over time.
+The product must create persistent IP, not disposable generations.
+AI proposes and accelerates; human users approve canon, rights, episode lock and final masters.
+Every expensive generation must be job-tracked, costed, versioned and associated with a Project/Series/Episode/Shot.
+Character, voice, wardrobe, location and style consistency are core product functions, not optional prompt tips.
+The system must support AI-native, hybrid live-action and conventional-production-assisted vertical drama.
+Kurdish Sorani is a first-class writing, UI, subtitle, dubbing and metadata language.
+Provider/model names must be abstracted behind Art City model/workflow labels and the Art City AI Router.
+1.1 Recommended product position
+Public/product name: Art City AI Vertical Drama IP Factory. Short UI label: AC Vertical Drama. Product promise: “Create a series. Build an IP. Produce episode by episode.” The word “IP” should remain visible because the differentiation is not merely fast vertical video generation; it is persistent franchise development and controlled production.
+1.2 The key architecture answer
+2. Separation Strategy: Separate Domain, Shared Core
+The product should be “separate where specialization creates value, shared where duplication creates risk.” Vertical drama requires season/episode/canon/continuity logic that does not belong inside the generic Studio interface. At the same time, duplicating user accounts, projects, assets, AI credentials, billing and QC would create data fragmentation and unnecessary engineering cost.
+2.1 Shared platform services
+Authentication, organizations/workspaces, users, teams and invitations.
+Canonical Project service and project_id.
+Asset Library / Data Bank, object storage, previews, versions and lineage.
+Art City AI Router, Provider Registry, Model Registry and job/cost ledger.
+Subscriptions, credits, plan entitlements, usage limits and Art City approval/permission gates.
+Localization framework and ckb-IQ/RTL infrastructure.
+Notification center, audit timeline, comments/review and approval primitives.
+Art City Studio image/video/voice/music asset generation.
+Art City Cinema cinematic sequence/campaign generation where appropriate.
+Art City Edit assembly, timeline, repurposing, captioning and finishing.
+Production Hub Script/Storyboard/Budget/Call Sheet objects when a drama uses conventional/hybrid production.
+QC, Mastering, Delivery and global search.
+2.2 Vertical-drama-owned domain services
+IP/Franchise registry and story canon.
+Series, season, episode and serial-narrative architecture.
+Episode beat templates, hooks, cliffhangers and continuity checks.
+Character identity locks and long-running appearance/wardrobe variants.
+World/location continuity and reusable production “locks.”
+Episode factory/orchestration state machine.
+Vertical-drama-specific shot planning and safe-zone composition metadata.
+Episode-to-episode localization/remake lineage.
+Performance analytics mapped back to episode beats, scenes and versions.
+Rights/provenance contributions associated with a persistent IP title.
+2.3 Recommended code boundary
+frontend/app/[locale]/vertical-drama/
+frontend/app/[locale]/projects/[projectId]/vertical-drama/
+
+backend/app/domains/vertical_drama/
+    api/
+    models/
+    schemas/
+    repositories/
+    services/
+    orchestration/
+    prompts/
+    policies/
+    events/
+    tests/
+
+Shared services remain outside this domain:
+backend/app/core/auth/
+backend/app/core/projects/
+backend/app/core/assets/
+backend/app/core/ai_router/
+backend/app/core/billing/
+backend/app/core/audit/
+backend/app/core/localization/
+backend/app/core/review/
+backend/app/core/qc/
+backend/app/core/delivery/
+3. Product Definition and Target Users
+The product serves creators and production companies that need serial short-form drama output at a cadence and volume that conventional one-off generation tools do not manage well. It should support professional production control without forcing every user into film-industry complexity on day one.
+3.1 Supported content structures
+Anthology series with separate episode stories.
+Continuous serialized drama with season-long arc.
+Limited series.
+Multi-season franchise.
+AI-native fiction.
+Animation / stylized drama.
+Hybrid AI + live action.
+User-owned adaptation/remake, only after rights declaration and rights record.
+Localized versions of an existing Art City-managed IP.
+4. Scope, Modes and Non-Goals
+4.1 Four production modes
+4.2 Product defaults, not hard-coded limits
+4.3 Explicit non-goals for MVP
+Building a full consumer streaming/payment app for viewers inside this module.
+Replacing Art City Edit with a complete professional nonlinear editor.
+Automatic legal determination of copyright ownership or infringement.
+Automatic public publishing to every platform without authorized APIs and user permission.
+Fully autonomous showrunning with no human canon/rights/final-master approval.
+Hard-wiring the product to one image/video/voice provider.
+Guaranteeing “viral” performance from AI scoring.
+5. End-to-End Factory Workflow
+PROJECT
+  ↓
+CREATE / REGISTER IP
+  ↓
+CONCEPT → LOGLINE → GENRE/TONE → AUDIENCE/TERRITORY
+  ↓
+STORY BIBLE + CHARACTER BIBLE + WORLD BIBLE + VISUAL BIBLE
+  ↓
+SEASON ARC → EPISODE GRID → BEATS → HOOK/CLIFFHANGER PLAN
+  ↓
+EPISODE SCRIPT → SCENES → DÉCOUPAGE / SHOTS
+  ↓
+IDENTITY / WORLD / STYLE LOCKS
+  ↓
+IMAGE / VIDEO / VOICE / MUSIC / SFX GENERATION
+  ↓
+ASSEMBLY → EDIT → SUBTITLES / DUB → REVIEW → LOCK
+  ↓
+VERTICAL MASTER → QC → DELIVERY PACKAGE
+  ↓
+PUBLISH / HANDOFF → ANALYTICS IMPORT
+  ↓
+PERFORMANCE INSIGHTS → FUTURE EPISODE RECOMMENDATIONS
+
+At every approval gate: version + user + timestamp + lineage + cost + rights state.
+5.1 Recommended state machine
+6. Domain Architecture and Canonical IDs
+Project is the platform container; IP is the franchise/story ownership container; Series/Season/Episode are the serial narrative containers. Do not use Project and Series interchangeably. One Project may contain one principal IP title in MVP; the data model should still permit multiple related series/spin-offs under one IP later.
+7. Navigation, UX and Project Structure
+7.1 Global product card
+Add “Vertical Drama” as a visible top-level create/product option alongside Cinema, Studio, Edit and Production Hub. Entry should create or select a shared Project, then open the Vertical Drama workspace.
+Global navigation
+Dashboard
+Projects
+Create
+  ├─ Cinema
+  ├─ Studio
+  ├─ Vertical Drama
+  └─ Upload / Edit
+Development
+Pre-Production
+Production
+Post-Production
+Review
+Assets / Data Bank
+QC
+Delivery
+AI Copilot
+7.2 Vertical Drama project navigation
+/projects/{projectId}/vertical-drama/
+  overview/
+  ip-vault/
+  concept/
+  story-bible/
+  characters/
+  world/
+  visual-bible/
+  seasons/
+  seasons/{seasonId}/arc/
+  episodes/
+  episodes/{episodeId}/script/
+  episodes/{episodeId}/beats/
+  episodes/{episodeId}/shots/
+  episodes/{episodeId}/production/
+  episodes/{episodeId}/edit/
+  episodes/{episodeId}/localization/
+  episodes/{episodeId}/review/
+  episodes/{episodeId}/qc/
+  delivery/
+  analytics/
+  assets/
+  activity/
+  settings/
+7.3 Vertical Drama dashboard
+8. IP Vault and Rights / Provenance Registry
+The IP Vault is the strategic differentiator. It should provide production governance, not pretend to be a government copyright registry. It records what Art City/customer claims or owns, what source material was used, which human creators contributed, what AI systems assisted, and which licenses/territories/terms apply. Legal ownership questions still require appropriate human/legal review.
+8.1 IP Title fields
+IPTitle {
+  id, workspace_id, project_id,
+  title_display, title_alt[], slug,
+  logline, synopsis,
+  genre[], tone[], audience_tags[],
+  original_language, target_territories[],
+  creator_users[], contributor_ids[],
+  owner_entity, ownership_basis,
+  source_material_type, source_material_reference,
+  rights_status, rights_notes,
+  trademark_status_optional,
+  canonical_story_bible_version_id,
+  canonical_visual_bible_version_id,
+  status, created_at, updated_at
+}
+8.2 Rights record
+8.3 Human contribution ledger
+For each major creative object, log material human contributions independently of AI generation logs. This supports internal provenance, future rights evidence and transparent collaboration. Do not collapse every contribution into “AI generated.”
+Original concept authored/edited by.
+Story bible authored/edited/approved by.
+Character design direction and selected references.
+Episode script human revisions and lock approver.
+Shot selection and visual direction decisions.
+Edit decisions, dialogue performance direction and final approval.
+Translations, adaptations and cultural edits.
+Music/composer/performer contributions and licenses.
+9. Concept and IP Development Engine
+9.1 Entry modes
+Start from one-sentence idea.
+Start from genre + audience + territory.
+Start from logline/synopsis/treatment.
+Import user-owned screenplay/novel/story/treatment after source-rights declaration.
+Adapt an existing Art City IP with authorization.
+Create a spin-off from an existing IP/character.
+Create a localized/remake version from a cleared source series.
+9.2 Guided concept generation
+IDEA
+ → 3–10 concept alternatives
+ → user selects/combines
+ → LOGLINE
+ → CENTRAL CONFLICT
+ → PROTAGONIST GOAL / STAKES
+ → SERIES ENGINE (why the story can sustain many episodes)
+ → GENRE / TONE / RATING TARGET
+ → AUDIENCE / TERRITORY / LANGUAGE
+ → FORMAT TARGET
+ → IP DEVELOPMENT APPROVAL
+9.3 Structured concept output
+{
+  "title_candidates": [],
+  "logline": "...",
+  "premise": "...",
+  "protagonist_goal": "...",
+  "central_conflict": "...",
+  "stakes": "...",
+  "series_engine": "...",
+  "genre": [],
+  "tone": [],
+  "target_audience": [],
+  "target_rating": "...",
+  "original_language": "ckb-IQ",
+  "target_episode_seconds": 90,
+  "target_episode_count": 60,
+  "production_mode": "AI_NATIVE",
+  "assumptions": []
+}
+10. Story Bible and Canon Engine
+The Story Bible is the canonical narrative source of truth. The model may suggest changes, but downstream episode generation must always read an approved bible version unless the user deliberately chooses an experimental branch.
+10.1 Canon fact model
+CanonFact {
+  id, ip_id, category,
+  subject_type, subject_id,
+  fact_text,
+  valid_from_episode,
+  valid_to_episode_optional,
+  secrecy_level,
+  source_bible_version_id,
+  status: PROPOSED | CANON | RETCONNED,
+  approved_by, approved_at
+}
+10.2 Canon conflict checker
+Run before episode script approval and before generating expensive production assets.
+Check character age/relationship/status, injuries, possessions, location rules, timeline, revealed secrets and prior episode outcomes.
+Return specific conflicting facts and source episode/bible references.
+Do not auto-correct locked scripts; create proposed fixes and require selection.
+Retcons must create explicit canonical change records rather than silently overwriting history.
+11. Season Architecture Engine
+A season should be planned as structured narrative data before mass episode generation. The system may permit “fast mode,” but even fast mode should create an inspectable episode grid and dependency graph.
+11.1 Season arc object
+Season {
+  id, series_id, season_number, title,
+  target_episode_count, target_episode_seconds,
+  opening_state, midpoint_state, climax_state, ending_state,
+  primary_arc, secondary_arcs[],
+  character_arc_ids[],
+  mystery/payoff_plan[],
+  episode_grid_version_id,
+  status, approved_by, approved_at
+}
+11.2 Episode grid columns
+11.3 Batch generation safety
+Do not generate 80 final scripts in one opaque call. Generate structured episode outlines in batches, validate continuity, allow user approval, then expand selected/approved outlines into scripts. This lowers hallucinated canon drift and prevents expensive downstream rework.
+12. Episode Factory and Screenplay Engine
+12.1 Episode creation pipeline
+EPISODE GRID ROW
+ → EPISODE OBJECT
+ → BEAT SHEET
+ → SCENE OUTLINE
+ → DIALOGUE / ACTION DRAFT
+ → TIMING ESTIMATE
+ → CONTINUITY CHECK
+ → HOOK/CLIFFHANGER CHECK
+ → HUMAN REVIEW
+ → SCRIPT LOCK
+ → SHOT / PRODUCTION PIPELINE
+12.2 Episode object
+Episode {
+  id, season_id, episode_number,
+  title, logline, synopsis,
+  target_runtime_seconds,
+  hook_beat_id, cliffhanger_beat_id,
+  beat_ids[], scene_ids[],
+  script_version_id,
+  canon_snapshot_version_id,
+  production_mode,
+  language,
+  status,
+  locked_at, locked_by,
+  master_asset_id,
+  delivery_status
+}
+12.3 Screenplay integration
+Reuse AC Script semantics and editor infrastructure where possible. Vertical Drama owns the serial context and episode pipeline; AC Script remains the professional structured writing component. Episode scripts should map into the same Scene/Character/Location objects used by the Production Hub to preserve interoperability.
+Scene heading, action, character, dialogue, parenthetical, transition, shot and notes remain structured types.
+Per-episode screenplay templates can optimize for short runtime without inventing a second text model.
+Kurdish/English/Arabic mixed-direction text must use the same ckb-IQ/RTL infrastructure as AC Script.
+Script lock creates immutable version metadata; later changes create a new version and mark dependent shots/assets stale.
+13. Hook, Pacing and Cliffhanger Engine
+This engine is an editorial assistant, not a “virality guarantee.” It analyzes whether the episode delivers its configured narrative template and offers alternatives. Users can disable or customize it by genre and broadcaster/platform policy.
+13.1 Beat roles
+13.2 Editorial checks
+Runtime allocation per beat.
+Time to first conflict/question.
+Exposition density.
+Repeated information across adjacent episodes.
+Continuity required to understand opening.
+Cliffhanger repetition pattern (avoid identical trick every episode).
+Character agency versus passive exposition.
+Dialogue length relative to target runtime.
+Potential content/rating conflicts.
+13.3 Output rule
+Return findings as structured notes with severity, evidence/beat reference and suggested alternatives. Never silently rewrite a locked episode.
+14. Scene, Découpage and Shot Engine
+Reuse the AC Storyboard/découpage infrastructure but add vertical-drama composition metadata and identity/style-lock references. Every generated shot must be tied to an approved scene and shot plan or explicitly marked as exploratory.
+Shot {
+  id, episode_id, scene_id, shot_number,
+  purpose, description,
+  framing, angle, movement,
+  duration_estimate_seconds,
+  aspect_ratio: "9:16",
+  safe_zone_profile_id,
+  subject_character_variant_ids[],
+  location_variant_id,
+  wardrobe_variant_ids[], prop_ids[],
+  style_lock_id,
+  continuity_requirements[],
+  dialogue_cue_ids[],
+  generation_strategy,
+  prompt_spec_id,
+  status
+}
+14.1 Vertical composition requirements
+Subject placement optimized for 9:16 rather than cropping 16:9 masters.
+Configurable text/UI safe zones for delivery platforms; profiles are admin-managed and versioned.
+Close/medium framing templates for dialogue, with deliberate wide shots rather than accidental empty space.
+Face/eye-line continuity metadata between reverse angles.
+Motion paths and camera movements evaluated for vertical frame boundaries.
+Generate alternate 16:9/1:1 only as derivatives when needed; 9:16 is the creative master for Vertical Drama projects.
+15. Character / Face Consistency System
+Character consistency is a release-critical capability. Prompt-only character names are not sufficient. The platform must maintain canonical identity references, approved appearance variants and provider-specific implementation adapters.
+15.1 Character DNA
+15.2 Appearance variants
+A character may change over story time. Create explicit variants such as “Episode 01 baseline,” “after injury,” “wedding wardrobe,” “10 years earlier,” rather than editing the canonical character invisibly. Each shot references one or more CharacterAppearanceVariant IDs.
+15.3 Real-person likeness rule
+If a character is based on a real actor/person or uses uploaded likeness/voice material, require a rights/consent declaration and link the relevant release/license record. The system should support a policy flag that prevents generation when required rights status is not cleared.
+16. World, Location, Wardrobe and Prop Continuity
+16.1 Continuity ledger
+ContinuityEvent {
+  id, episode_id, scene_id, shot_id_optional,
+  entity_type, entity_id,
+  event_type: ENTER | EXIT | CHANGE | DAMAGE | REVEAL | TRANSFER | OTHER,
+  before_state, after_state,
+  canon_effect,
+  source_version_id,
+  approved_by
+}
+17. Visual Style Lock and Reference System
+A Style Lock is an Art City abstraction that records creative intent separately from provider-specific prompt syntax. The same style should be reproducible across multiple providers/workflows without storing only a single raw prompt.
+StyleLock {
+  id, ip_id, name,
+  medium, realism_level,
+  palette_description,
+  lighting_rules,
+  lens/composition_language,
+  texture/grain_rules,
+  camera_motion_rules,
+  production_design_rules,
+  negative_rules[],
+  reference_asset_ids[],
+  provider_adapters: {...},
+  version, status, approved_by
+}
+17.1 Visual Bible approval
+Generate exploratory look frames before episode production.
+Select and lock approved character/world/style references.
+Do not allow bulk episode generation to start if mandatory identity/style locks are missing.
+Any change to a locked Style Lock produces a new version and marks affected pending shots for review.
+18. AI Casting, Voice and Dialogue Production
+Voice is part of character identity. Separate fictional Character, performer/cast record and generated VoiceProfile. This supports real actors, synthetic voices, dubbing and recasting without destroying character canon.
+18.1 Voice rules
+Never expose provider voice IDs as the only canonical identifier.
+Require explicit rights/consent when cloning or imitating a real person’s voice.
+Keep original dialogue and each translated/dubbed version separately.
+Support pronunciation dictionaries for Kurdish names, locations and culturally specific terms.
+Allow user to select one approved voice take per cue and preserve alternates.
+19. Video Generation and Shot Production
+19.1 Generation strategies
+19.2 Normalized generation request
+GenerationRequest {
+  workspace_id, project_id, ip_id, episode_id, scene_id, shot_id,
+  task: "video.generate",
+  artcity_workflow_key,
+  prompt_spec_id,
+  reference_asset_ids[],
+  character_variant_ids[],
+  location_variant_id,
+  style_lock_id,
+  duration_seconds,
+  aspect_ratio,
+  fps_target,
+  quality_tier,
+  max_cost_usd_optional,
+  user_id,
+  idempotency_key
+}
+19.3 Shot generation UX
+Generate 1–4 candidates depending on plan/credits.
+Show estimated cost before execution when practical.
+Queue state: QUEUED / RUNNING / SUCCEEDED / FAILED / CANCELLED.
+Candidate comparison with prompt/reference/model/cost metadata.
+Select → approve → attach as shot asset.
+Rejected candidates remain in lineage/audit per retention policy but are not treated as canon.
+Regenerate must create a new Generation record; never overwrite prior result.
+20. Audio, Music and Sound Design
+Audio should be generated/managed as separate tracks so localization and later mastering are possible. A flattened video with permanently baked dialogue/music is acceptable only as a user-selected low-control mode.
+20.1 Music safety and rights
+Generated or licensed music must retain source/provider/license terms in the rights/provenance ledger. The platform must not label music “copyright free” merely because an AI model generated it. Delivery readiness should show missing/unclear music rights as a blocker or warning according to policy.
+21. Assembly, Edit and Versioning
+Vertical Drama should orchestrate episode assembly but should reuse Art City Edit for timeline operations and finishing. The Vertical Drama module owns episode/shot order, selected takes and narrative status; Edit owns timeline-level manipulation, captions, color/finishing and export operations.
+21.1 Episode timeline handoff
+Vertical Drama Episode
+  selected ShotAssets + DialogueTakes + Music/SFX cues
+        ↓
+Create/Edit Timeline in Art City Edit
+        ↓
+rough_cut_v1 → review notes → cut_v2 → picture_lock
+        ↓
+return timeline_id + approved picture asset/version to Episode
+21.2 Version rules
+Every episode cut has an immutable version identifier.
+Review comments bind to version + timecode/frame.
+Picture lock is a controlled approval state, not a filename convention.
+A post-lock change creates a new cut version and invalidates downstream QC/master status until re-approved.
+Never delete approved masters automatically when a new version is created.
+22. Localization, Dubbing and Cultural Adaptation
+Localization is more than translation. The system must support direct translation, dubbed version, subtitle version and licensed cultural remake as distinct derivative types with lineage back to the source episode/IP.
+22.1 Kurdish Sorani requirements
+ckb-IQ as explicit locale; not generic “ku”.
+Correct RTL subtitles and UI.
+Mixed Kurdish/English names and numbers must not visually reorder.
+Pronunciation dictionaries for TTS/dubbing.
+Human linguistic approval before master delivery.
+Preserve original authored Kurdish text; search normalization is separate.
+Support parallel original/translation script view.
+23. Review, Approval and Canon Locking
+23.1 Canon locking rule
+24. Vertical Mastering and QC
+24.1 Objective technical checks
+Aspect ratio and dimensions match delivery profile.
+Frame rate/container/codec/profile.
+Duration and expected lead/trail.
+Black/freeze/corrupt-frame heuristics where supported.
+Audio presence, channel configuration, sample rate and loudness/true peak targets.
+A/V sync where measurable.
+Subtitle cue timing, overlap, reading speed, line limits and RTL render validation.
+No missing required stems, textless elements, artwork or metadata.
+File checksum and manifest.
+24.2 Vertical-drama editorial/continuity warnings
+Character identity mismatch relative to approved references.
+Wardrobe/prop/location state mismatch.
+Dialogue mismatch with locked script.
+Unexpected shot orientation/cropping.
+Unsafe UI/text area relative to selected platform profile.
+Episode numbering/title mismatch.
+Missing cliffhanger only when the series template requires one.
+Potential duplicated/generated frame or obvious generation artifact heuristics.
+Objective checks may block automatically; heuristic AI findings should be warnings requiring human review unless Art City explicitly configures a deterministic rule.
+25. Delivery / Publishing Package Builder
+Delivery profiles must be configuration-driven because platform requirements change. Do not hard-code TikTok/Instagram/YouTube/dedicated microdrama specifications into business logic. Admin should be able to create/update delivery profiles with version history.
+25.1 Delivery readiness
+Show a readiness percentage only as a summary. Always display concrete missing/failed requirements. A score must never hide a blocker such as missing master, failed audio layout, missing rights, rejected subtitles or unresolved QC.
+26. Analytics and Performance Learning Loop
+Analytics turns the factory into a learning system, but it must not rewrite existing canon automatically. Performance data may come from connected platform APIs, CSV import or manual entry depending on authorization and availability.
+26.1 Performance analyst output
+Identify patterns with confidence/limitations, not causal certainty.
+Compare episodes within the same series and comparable cohorts.
+Suggest future episode pacing/hook experiments.
+Never alter locked episodes automatically.
+Keep a record of recommendation → user decision → later outcome for learning.
+Do not build manipulative dark-pattern viewer mechanics into the production tool.
+27. AI Agents and Orchestration Rules
+“Agents” should be implemented as specialized orchestration roles over structured state, not as independent chatbots with uncontrolled memory. Every agent reads approved/current domain objects, writes a proposed structured result, and passes through validation/approval rules.
+27.1 Agent constraints
+All agent inputs include explicit workspace/project/IP/season/episode context.
+All structured outputs validated by JSON Schema/Pydantic.
+Prompt templates are versioned and administrator-controlled.
+Agents cannot approve their own output unless a product policy explicitly defines a low-risk auto-approval path.
+Agents never bypass rights status, locked canon or spending limits.
+Use retrieval from Art City’s canonical objects; do not rely on conversational memory for production truth.
+28. AI Router and Provider Abstraction
+Vertical Drama must consume the shared Art City AI Router defined for the wider platform. Product code calls Art City tasks/workflows; provider adapters translate those requests to fal.ai, private GPU, LLM or CPU implementation. This prevents vendor lock-in and allows cost/quality routing.
+AIProvider
+  generate_text()
+  generate_structured()
+  generate_image()
+  generate_video()
+  edit_image()
+  edit_video()
+  generate_audio()
+  transcribe()
+  lip_sync()
+  upscale()
+  check_status()
+  cancel_job()
+  estimate_cost()
+  health_check()
+
+Vertical Drama calls:
+  ai_router.execute(task, workflow_key, normalized_request)
+NOT:
+  fal_client.some_model(...)
+  runpod_endpoint(...)
+  provider-specific code in React components
+28.1 Workload placement
+28.2 Model Registry
+Admin must map Art City workflow keys to eligible providers/models, quality tier, VRAM requirement, cost basis, health, fallback and allowed plans. Never expose infrastructure complexity to normal users unless Art City chooses to show an “Advanced model” selector.
+29. Job Queue, State Machine and Reliability
+Use Redis-backed durable job orchestration/worker system or equivalent.
+Every expensive AI operation is asynchronous and resumable.
+Browser refresh must not lose job state.
+Use idempotency keys to prevent double-generation/double-charge.
+Separate normalized ProductJob from ProviderJob so provider retry/fallback does not create duplicate user-visible work.
+Support cancellation when provider allows; billing follows actual provider policy.
+Store error category, provider error, retry count, fallback decision and final status.
+Limit parallel generation by plan/workspace/project to control spend.
+Bulk season production is a parent BatchJob containing per-shot/per-cue child jobs.
+Do not mark an episode complete merely because all provider jobs returned; require selection/approval/master states.
+29.1 Job states
+CREATED → VALIDATING → ESTIMATED → QUEUED → DISPATCHED → RUNNING → POSTPROCESSING → SUCCEEDED
+                                             ↘ RETRY_WAIT ↗
+                                             ↘ FAILED / CANCELLED
+30. Data Model and Suggested Database Tables
+Use PostgreSQL. The exact ORM is implementation choice, but the relationships and tenant boundaries below should remain. Every domain table must contain or be securely joinable to workspace_id/project_id for authorization and cost attribution.
+30.1 Critical database rules
+Foreign keys wherever practical; do not rely on arbitrary JSON for core relationships.
+JSONB is acceptable for provider-specific settings, flexible metadata and snapshot payloads, but not as a substitute for canonical entities.
+Approved versions are immutable; edits create new version rows.
+Soft-delete/archive production objects when history must be retained.
+All money uses Decimal/numeric, never binary float.
+Store timestamps in UTC; render in user/project timezone.
+Store locale/language as BCP 47 or controlled language tag fields.
+Normalize search indexes without destructively modifying display text.
+31. API Surface
+Use versioned internal/public API routes. The following is a minimum conceptual surface; naming may be adjusted to existing Art City conventions.
+31.1 API requirements
+RBAC/tenant authorization server-side on every route.
+Idempotency header for generation/charge-producing POST operations.
+Structured validation errors with localization keys.
+Optimistic locking/version field for concurrent draft edits where appropriate.
+Pagination/filter/search conventions shared with Art City core.
+No provider API keys or provider request payloads exposed to frontend clients.
+Signed/time-limited asset URLs for private media.
+32. Domain Events and Dependency Propagation
+The platform should respond to approved changes through domain events and stale-dependency flags instead of silently overwriting downstream work.
+32.1 Stale dependency UX
+Show: “Episode 12 script changed after storyboard approval. Affected: 4 shots, 3 dialogue cues, 1 subtitle draft.” Provide Review Changes and Update Selected actions. Do not regenerate automatically without user decision if it creates cost or replaces approved creative work.
+33. Frontend Structure and Components
+frontend/app/[locale]/projects/[projectId]/vertical-drama/
+  layout.tsx
+  overview/page.tsx
+  ip-vault/page.tsx
+  concept/page.tsx
+  story-bible/page.tsx
+  characters/page.tsx
+  world/page.tsx
+  visual-bible/page.tsx
+  seasons/page.tsx
+  seasons/[seasonId]/arc/page.tsx
+  episodes/page.tsx
+  episodes/[episodeId]/script/page.tsx
+  episodes/[episodeId]/beats/page.tsx
+  episodes/[episodeId]/shots/page.tsx
+  episodes/[episodeId]/production/page.tsx
+  episodes/[episodeId]/edit/page.tsx
+  episodes/[episodeId]/localization/page.tsx
+  episodes/[episodeId]/review/page.tsx
+  episodes/[episodeId]/qc/page.tsx
+  delivery/page.tsx
+  analytics/page.tsx
+  assets/page.tsx
+  activity/page.tsx
+  settings/page.tsx
+33.1 Reusable components
+IPStatusBar
+RightsBadge
+CanonVersionSelector
+StoryBibleEditor
+CharacterBibleCard
+CharacterReferenceGrid
+AppearanceVariantPicker
+WorldBiblePanel
+StyleLockPicker
+SeasonArcBoard
+EpisodeGrid
+BeatTimeline
+HookCliffhangerInspector
+ContinuityConflictPanel
+EpisodeScreenplayEditor (reuse AC Script)
+ShotCard / VerticalFramePreview
+GenerationCandidateCompare
+AIJobStatus
+CostEstimateBadge
+VoiceTakePicker
+LocalizationCompare
+EpisodeTimelineHandoff
+ApprovalBar
+StaleDependencyBanner
+QCFindingsPanel
+DeliveryReadiness
+PerformanceChartCards
+AuditTimeline
+33.2 UX modes
+34. Backend Structure
+backend/app/domains/vertical_drama/
+├── api/
+│   ├── ip.py
+│   ├── rights.py
+│   ├── bibles.py
+│   ├── characters.py
+│   ├── series.py
+│   ├── seasons.py
+│   ├── episodes.py
+│   ├── beats.py
+│   ├── continuity.py
+│   ├── shots.py
+│   ├── voices.py
+│   ├── localization.py
+│   ├── analytics.py
+│   └── dashboard.py
+├── models/
+├── schemas/
+├── repositories/
+├── services/
+│   ├── ip_service.py
+│   ├── bible_service.py
+│   ├── season_service.py
+│   ├── episode_service.py
+│   ├── canon_service.py
+│   ├── continuity_service.py
+│   ├── visual_lock_service.py
+│   ├── shot_service.py
+│   ├── voice_service.py
+│   ├── localization_service.py
+│   ├── master_service.py
+│   └── analytics_service.py
+├── orchestration/
+│   ├── concept_workflow.py
+│   ├── season_workflow.py
+│   ├── episode_workflow.py
+│   ├── production_workflow.py
+│   └── localization_workflow.py
+├── prompts/
+├── policies/
+├── events/
+└── tests/
+
+Shared dependencies:
+core.projects, core.assets, core.ai_router, core.billing,
+core.review, core.audit, core.qc, core.delivery, core.localization
+34.1 Service design rule
+Keep orchestration/business logic in services/domain workflows, not in API route handlers or React components. Provider-specific logic belongs in shared AI provider adapters. This makes the Vertical Drama domain testable without live AI calls.
+35. Integration With Existing Art City AI Modules
+36. Kurdish Sorani / RTL Requirements
+36.1 Example bilingual metadata
+ناوی زنجیرە: دوا شازادەی کوردستان
+Series title (Latin/English variant): The Last Prince of Kurdistan
+دیمەن ١٢ — دەرەوە، شەو — قەڵای هەولێر
+37. Roles, Permissions and Approval Matrix
+37.1 Permission examples
+vertical_drama.ip.create
+vertical_drama.ip.rights.manage
+vertical_drama.bible.edit
+vertical_drama.bible.approve
+vertical_drama.season.approve
+vertical_drama.episode.script.edit
+vertical_drama.episode.script.lock
+vertical_drama.shot.generate
+vertical_drama.shot.approve
+vertical_drama.master.approve
+vertical_drama.delivery.create
+vertical_drama.analytics.view
+vertical_drama.cost.override
+38. Subscription, Entitlements, Credits and Cost Ledger
+Vertical Drama must plug into the existing Art City subscription/permission model. Feature access and spending limits should be configurable by plan/workspace without code deployment. External users may require Art City approval before high-cost or rights-sensitive features are enabled, according to platform policy.
+38.1 Cost guardrails
+Project/season monthly budget cap.
+Per-job max cost.
+Bulk batch preflight estimate.
+Pause batch if actual cost exceeds threshold.
+Plan-based quality tier/routing.
+Admin ability to disable expensive workflow/provider.
+No double charge on retries caused by Art City system failure where policy allows.
+Cost shown per successful selected/mastered episode for management analytics.
+39. Security, Privacy, Rights and AI Provenance
+Workspace/tenant isolation on every database query and asset lookup.
+Signed short-lived private asset URLs; no public bucket paths for private scripts/character refs.
+Provider API keys/secrets server-side only and encrypted/secret-managed.
+Audit sensitive actions: rights clearance, bible lock, script lock, spend override, master approval, delivery, delete/archive.
+Configurable prompt/media retention and provider data handling policy.
+Do not train Art City/customer models on customer scripts/assets unless explicit policy/contract/consent allows it.
+User content rights declaration on upload/adaptation/remake flows.
+Likeness/voice consent linkage when real people are used.
+AI-generated content lineage: provider/model/workflow version, prompt template version, source/reference asset IDs, generation time, selected/rejected state.
+Admin moderation/content-policy layer before dispatch to external providers when required.
+Private legal/right documents should have stricter permission scope than general creative assets.
+39.1 Provenance record
+ProvenanceRecord {
+  object_type, object_id,
+  origin: HUMAN | AI_ASSISTED | AI_GENERATED | IMPORTED | LICENSED,
+  user_id,
+  source_asset_ids[],
+  source_object_ids[],
+  provider, model, workflow_version,
+  prompt_template_version,
+  generation_id_optional,
+  human_revision_summary_optional,
+  rights_record_ids[],
+  created_at
+}
+40. Admin and Operations Console
+41. Observability, Metrics and Cost Controls
+API latency/error rate by endpoint.
+AI job latency/success/failure/cancel rate by workflow/provider/model.
+Generation acceptance rate (selected candidates ÷ generated candidates).
+Cost per generation, selected shot, mastered episode, minute and season.
+Queue depth/wait time and private GPU utilization.
+Provider fallback frequency and reason.
+Continuity conflict count and resolution rate.
+Average revisions per script/shot/episode.
+Time from episode planned → script locked → master approved.
+QC failures by rule.
+Delivery failure/retry by destination profile.
+Sorani-specific regression/error metrics where feasible.
+Logs must not contain raw confidential scripts, prompts, dialogue, private URLs or access tokens by default. Store identifiers and structured diagnostic metadata; enable privileged content debugging only through explicit controlled mechanisms.
+42. Testing Strategy and Golden Test Projects
+42.1 Automated tests
+Unit tests for state transitions, permissions, canon conflict rules, money/cost calculation, localization and delivery readiness.
+Schema validation tests for every structured AI output.
+Repository tests enforcing workspace isolation.
+Integration tests with mocked AI providers for generation/retry/fallback/idempotency.
+Contract tests for provider adapters.
+RTL component tests and mixed-direction text fixtures.
+Golden screenshot/render tests for vertical frame UI and Sorani subtitles.
+Load tests for batch season queues and websocket/polling status updates.
+Migration tests for versioned bibles/scripts/canon.
+Security tests for signed asset URLs, cross-tenant access and role escalation.
+42.2 Minimum golden test projects
+43. Acceptance Criteria / Release Gate
+AC-VD-001  A user signs in once and creates a Vertical Drama Project using the existing Art City workspace/account.
+AC-VD-002  Creating Vertical Drama does not create a duplicate Project, Asset store or billing account.
+AC-VD-003  User can create/register an IP record and attach at least one rights/contribution record.
+AC-VD-004  User can create and approve a Story Bible version.
+AC-VD-005  User can create canonical characters and approved visual references/appearance variants.
+AC-VD-006  User can create a season and generate/edit/approve an episode grid.
+AC-VD-007  User can create an episode beat sheet, screenplay draft and lock the script.
+AC-VD-008  Continuity checker identifies at least configured fact/state conflicts and links evidence.
+AC-VD-009  User can generate/edit a shot plan and link vertical composition + style/character references.
+AC-VD-010  AI shot generation runs through the Art City AI Router and records provider/model/cost/lineage.
+AC-VD-011  User can compare generated candidates and select/approve one without overwriting others.
+AC-VD-012  Dialogue cues can generate/attach voice takes with language and rights metadata.
+AC-VD-013  User can hand selected episode assets to Art City Edit and receive a timeline/version reference back.
+AC-VD-014  Picture lock and master approval are immutable states that create new versions after changes.
+AC-VD-015  Sorani ckb-IQ works across story bible, characters, scripts, episode metadata, UI and subtitle/export flow.
+AC-VD-016  Mixed RTL/LTR technical values render correctly.
+AC-VD-017  Localization variant preserves source lineage and separate approvals.
+AC-VD-018  QC distinguishes objective failures from heuristic warnings.
+AC-VD-019  Delivery profile lists missing requirements and builds a manifest/checksum package when ready.
+AC-VD-020  Rights state can block delivery when policy requires.
+AC-VD-021  Every expensive job is idempotent, job-tracked and cost-attributed.
+AC-VD-022  Bulk generation survives browser refresh and partial provider failures.
+AC-VD-023  Cross-tenant access tests fail correctly.
+AC-VD-024  Admin can change workflow/provider routing and pricing configuration without product code deployment.
+AC-VD-025  Analytics can import at least CSV/manual performance metrics and map them to episodes.
+AC-VD-026  Performance recommendations never modify locked canon automatically.
+44. Phased Development Plan
+The complete architecture should be agreed now, but code should be released in controlled phases. Avoid attempting every advanced feature in the first deploy; preserve schemas and interfaces so later phases do not require a rewrite.
+44.1 MVP definition
+45. Developer Start Checklist
+☐ Create vertical_drama domain namespace and routes inside existing Art City codebase.
+☐ Confirm shared Project/Workspace/Asset/Auth/Billing/AI Router interfaces; prohibit shadow copies.
+☐ Add product entitlement vertical_drama.enabled and plan-level generation limits.
+☐ Create DB migrations for IP, rights, contribution, series, season, episode, beat, bible/canon, character variants, style locks and shot references.
+☐ Implement ckb-IQ locale/RTL test harness before complex UI work.
+☐ Build IP Vault + Story Bible + Character/World/Style Lock MVP.
+☐ Integrate AC Script for Episode ScriptVersion/Scene semantics.
+☐ Implement season episode-grid generator as schema-validated structured AI output.
+☐ Implement canon snapshot + continuity checker before bulk script generation.
+☐ Implement Vertical Shot schema and AC Storyboard/decoupage reuse.
+☐ Add Art City AI Router workflow keys for character refs, storyboard frames, video generation, voice and localization.
+☐ Implement job/cost/idempotency contract before batch generation UI.
+☐ Implement candidate selection and immutable generation lineage.
+☐ Implement Art City Edit timeline handoff contract.
+☐ Implement review/approval and stale-dependency events.
+☐ Implement basic vertical QC/delivery profile.
+☐ Run Sorani golden project end-to-end before public launch.
+☐ Run cross-tenant, spend-limit and provider-failure tests.
+☐ Document all APIs, schemas, migrations and admin configuration.
+☐ Keep source repository, deployment config and documentation under Art City-controlled accounts.
+46. Risks and Critical Decisions
+46.1 Decisions developers should not invent
+Final subscription/credit pricing.
+Maximum per-user/project spend thresholds.
+Which external video/image/voice models are commercially enabled.
+Which rights states are hard blockers versus warnings.
+Whether public publishing connectors are included in initial release.
+Default content/rating policy for Art City-hosted customers.
+Retention periods for rejected generations and source media.
+Whether Art City offers private/enterprise IP-isolated deployments later.
+Appendix A — Core JSON Contract: Episode Production Snapshot
+{
+  "project_id": "AC-PROD-2026-0001",
+  "ip_id": "AC-IP-2026-0001",
+  "series_id": "SER-...",
+  "season_id": "SEA-...",
+  "episode_id": "EP-...",
+  "episode_number": 12,
+  "canon_snapshot_version_id": "BIBLE-V7",
+  "script_version_id": "SCRIPT-V3-LOCKED",
+  "style_lock_id": "STYLE-V2",
+  "character_variants": ["CHARV-ARA-E12", "CHARV-DILAN-BASE"],
+  "shots": ["SHOT-..."],
+  "dialogue_cues": ["CUE-..."],
+  "selected_asset_ids": [],
+  "timeline_id": null,
+  "picture_lock_version_id": null,
+  "master_id": null,
+  "rights_status": "CLEARED",
+  "production_status": "PRODUCING"
+}
+Appendix B — Structured AI Output Contract
+Every AI response that changes production data must use a defined schema. Free-form prose can be displayed as assistant commentary, but it must not be persisted as canonical production state without transformation/validation.
+class EpisodeGridItem(BaseModel):
+    episode_number: int
+    working_title: str
+    opening_hook: str
+    episode_goal: str
+    a_story: str
+    b_story: str | None
+    revelation: str | None
+    character_turn: str | None
+    cliffhanger: str | None
+    continuity_dependencies: list[str]
+    proposed_new_canon: list[str]
+    production_complexity: Literal['LOW','MEDIUM','HIGH']
+    assumptions: list[str]
+
+class EpisodeGridResult(BaseModel):
+    season_id: UUID
+    bible_version_id: UUID
+    items: list[EpisodeGridItem]
+    warnings: list[str]
+Appendix C — Minimal FastAPI Generation Contract
+@router.post('/shots/{shot_id}/generate')
+async def generate_shot(
+    shot_id: UUID,
+    req: ShotGenerateRequest,
+    user=Depends(require_permission('vertical_drama.shot.generate')),
+):
+    shot = await shot_service.get_authorized(shot_id, user)
+    await rights_policy.assert_generation_allowed(shot)
+    await budget_policy.assert_within_limit(shot.project_id, req.max_cost_usd)
+
+    normalized = await production_service.build_generation_request(
+        shot=shot,
+        user=user,
+        request=req,
+    )
+    job = await ai_router.queue(normalized, idempotency_key=req.idempotency_key)
+    return JobResponse.model_validate(job)
+Appendix D — Suggested Internal Workflow Keys
+Appendix E — Domain Event Examples
+VerticalDrama.ScriptLocked {
+  project_id, ip_id, season_id, episode_id,
+  old_script_version_id,
+  new_script_version_id,
+  changed_scene_ids[],
+  actor_user_id,
+  occurred_at
+}
+
+VerticalDrama.PictureLockChanged {
+  episode_id,
+  old_picture_version_id,
+  new_picture_version_id,
+  affected_localization_ids[],
+  affected_qc_run_ids[],
+  affected_delivery_package_ids[]
+}
+Appendix F — Prompt Engineering Rules
+Prompt templates are server-side and versioned.
+Use explicit locale/output_language.
+Inject only necessary approved canon/context, not the entire workspace indiscriminately.
+Use IDs/reference labels so generated output can map back to canonical objects.
+Require structured output schemas for production data.
+Separate creative instruction from safety/rights/provider constraints.
+Never ask the model to calculate authoritative budget or rights status.
+Store prompt_template_version and input-object hashes in job lineage.
+Use Sorani examples in ckb-IQ templates and regression-test them.
+Do not place provider secrets or private signed URLs into model prompts unless technically required and approved.
+Appendix G — Definition of Done for a Mastered Episode
+IP and rights policy allow production/delivery.
+Story Bible/canon snapshot identified.
+Episode script version locked.
+All final shots selected/approved.
+Dialogue/music/SFX sources and rights/provenance recorded.
+Picture lock approved.
+Required localization tracks approved.
+Master assembled from approved components.
+QC passed or authorized documented override exists.
+Episode metadata/number/title/language correct.
+Manifest/checksum generated.
+Master marked immutable with version and approver.
+Delivery package created only from approved master.
+Appendix H — Final Developer Directive
+Recommended internal launch sequence: first make one 10-episode Sorani test IP work end-to-end with story bible, character locks, episode continuity, generated shots, Edit handoff and final vertical masters. After that golden path is stable, scale to 30–80 episode factories and multi-language/remake workflows.
+END OF SPECIFICATION
+
+--- TABLE 1 ---
+PRIMARY ARCHITECTURE DECISION Build Art City AI Vertical Drama IP Factory as a separate top-level product domain inside the existing Art City AI platform. It gets its own navigation, routes, workflows, domain objects and specialist AI orchestration, while sharing Art City authentication, Workspace/Project IDs, Asset Library, AI Router, billing/credits, permissions, localization, storage, Studio, Cinema, Edit, Production Hub, Review, QC and Delivery. Do not create a second isolated platform or duplicate core services.
+
+--- TABLE 2 ---
+Item | Specification
+Product | Art City AI Vertical Drama IP Factory
+Short product label | AC Vertical Drama
+Internal domain key | vertical_drama
+Document version | 1.0
+Date | 21 August 2026
+Build relationship | New top-level module inside the existing Art City AI ecosystem
+Primary user interface | Web first; responsive tablet/mobile review and production controls
+Core locales | en, ckb-IQ, ar-IQ; architecture language-agnostic
+Canonical format | 9:16 vertical-first, with configurable platform delivery profiles
+Backend assumption | FastAPI + PostgreSQL + Redis/job workers + object storage
+AI execution | Art City AI Router → fal.ai / private GPU / LLM / CPU according to policy
+Integration | Project, Assets, Studio, Cinema, Edit, Pre-Production, Review, QC, Delivery
+Security model | Multi-tenant workspace isolation + RBAC + audit + signed private assets
+Status | Code-ready master scope; phased implementation recommended
+
+--- TABLE 3 ---
+NON-NEGOTIABLE OUTCOME A user should be able to start with one idea and finish with a controlled series package: owned/declared IP record → story bible → season arc → episode scripts → approved characters/world/style → shot plan → generated or hybrid media → edited masters → localization → QC → delivery packages → analytics. Every step must remain traceable to the same Project and IP record.
+
+--- TABLE 4 ---
+Question | Decision
+Should it be separate from Cinema/Studio/Edit? | Yes in product navigation, domain logic, workflows and data objects.
+Should it be a separate account/platform? | No. Reuse Art City authentication, Workspace, subscription/permission and Project context.
+Separate database? | No initially. Use the same PostgreSQL cluster with clear vertical_drama domain tables/schema and tenant filters.
+Separate AI infrastructure? | No. All AI requests pass through the shared Art City AI Router/provider abstraction.
+Separate asset storage? | No. Use the shared Asset Library/object storage and lineage/version services.
+Separate deployment? | Not required for MVP. Prefer a modular monolith/service boundary that can be extracted later.
+Own URL area? | Yes: /vertical-drama and /projects/{projectId}/vertical-drama/...
+Own product card? | Yes. It must be visible beside Cinema, Studio, Edit and Production Hub.
+
+--- TABLE 5 ---
+DO NOT Do not create a second “vertical drama user” table, second billing ledger, second file store, second AI provider integration or shadow project record. Vertical Drama must reference shared core objects by canonical IDs.
+
+--- TABLE 6 ---
+User | Primary need | Recommended workspace mode
+Independent creator | Turn a concept into a repeatable short drama series | Guided / Fast Factory
+Producer / studio | Control IP, cost, consistency, approvals and team workflow | Professional Factory
+Writer / showrunner | Develop story bible, season arc, episodes and canon | Development
+AI production team | Generate consistent characters, shots, voices and scenes | AI Native Production
+Live-action producer | Use scripts/storyboards/callsheets but shoot actors/cameras | Hybrid / Live Action
+Broadcaster / OTT / brand | Commission/manage multiple series and approvals | Enterprise / Multi-series
+Localization team | Adapt one series into other languages/markets | Localization / Remake
+
+--- TABLE 7 ---
+Mode | Description | Uses
+AI Native | Most picture/voice/audio assets are AI-generated and assembled in Art City. | Fast serialized fiction, stylized drama, proof-of-concept.
+Hybrid | AI handles development/previsualization and selected assets; real actors/footage remain central. | Professional productions reducing prep/post cost.
+Live Action Assist | The system develops IP, scripts, storyboards, budgets/schedule/callsheets and later ingests dailies. | Conventional production optimized for vertical.
+Localization / Remake | Creates language/territory variants while maintaining rights and lineage. | Arabic/Kurdish/English/Turkish/Persian versions and licensed remakes.
+
+--- TABLE 8 ---
+Setting | Suggested default | Rule
+Canvas | 9:16 | Store aspect_ratio as project/episode delivery setting.
+Master size | 1080×1920 | Allow higher source generations and alternate outputs.
+Episode duration | 60–120 seconds | User/template configurable; never enforce as universal market rule.
+Season size | 30–80 episodes | Template configurable; support shorter/longer seasons.
+Frame rate | 24 / 25 / 30 fps | Delivery profile decides.
+Hook window | First 1–5 seconds | Narrative template metadata; not a destructive edit rule.
+Cliffhanger | Recommended near end | Can be disabled for anthology/comedy/kids formats.
+
+--- TABLE 9 ---
+Level | States
+IP | DRAFT → IN_DEVELOPMENT → BIBLE_APPROVED → ACTIVE → ON_HOLD → ARCHIVED
+Season | DRAFT → ARC_REVIEW → ARC_APPROVED → PRODUCING → COMPLETE → ARCHIVED
+Episode | PLANNED → WRITING → SCRIPT_REVIEW → SCRIPT_LOCKED → PRODUCING → EDITING → REVIEW → MASTERED → DELIVERED
+Shot | PLANNED → READY → GENERATING / SHOOTING → SELECTED → APPROVED → SUPERSEDED
+Master | ASSEMBLING → READY_FOR_QC → QC_FAILED / QC_PASSED → APPROVED_MASTER → DELIVERED
+Rights | UNKNOWN → DECLARED → REVIEW_REQUIRED → CLEARED → RESTRICTED → EXPIRED
+
+--- TABLE 10 ---
+Object | Suggested ID | Purpose
+Workspace | UUID | Tenant/security boundary.
+Project | AC-PROD-YYYY-NNNN or UUID | Shared Art City project context.
+IP Title | AC-IP-YYYY-NNNN | Franchise/IP registry record.
+Series | SER-UUID | Series manifestation under an IP.
+Season | SEA-UUID | Season arc and episode container.
+Episode | EP-UUID | Episode narrative/production object.
+Scene | SCN-UUID | Script/production scene.
+Beat | BEAT-UUID | Narrative beat in an episode.
+Shot | SHOT-UUID | Planned/generated/filmed shot.
+Character | CHAR-UUID | Canonical fictional character.
+Appearance Variant | CHARV-UUID | Age/look/wardrobe/story-state variant.
+World/Location | LOC-UUID | Canonical reusable story location.
+Style Lock | STYLE-UUID | Visual rules/reference package.
+Voice Profile | VOICE-UUID | Character voice/casting configuration.
+Generation | GEN-UUID | One provider/model generation request/result.
+Asset | Shared Asset UUID | Canonical stored media/document object.
+Episode Master | MASTER-UUID | Immutable approved episode output.
+Rights Record | RIGHT-UUID | Ownership/license/territory/term record.
+Contribution | CONTRIB-UUID | Human/AI authorship/provenance event.
+Localization Variant | LOCVAR-UUID | Language/territory derivative linked to source.
+
+--- TABLE 11 ---
+Card | What it shows
+IP Status | Rights state, bible lock, active season, authorship/provenance health.
+Season Progress | Episodes planned / scripted / producing / mastered / delivered.
+Continuity Health | Unresolved character/world/wardrobe/canon conflicts.
+Production Queue | Queued/running/failed AI jobs and projected costs.
+Cost | Season budget, AI spend, average cost per mastered episode.
+Review | Pending script, shot, voice, edit and master approvals.
+Delivery | Profiles ready / missing deliverables / QC failures.
+Performance | Episode completion/retention metrics when imported/connected.
+
+--- TABLE 12 ---
+Field | Requirement
+right_type | copyright_claim, adaptation, remake, music, performer, likeness, voice, location, artwork, archive, other
+owner/licensor | Entity/person name plus optional contact/reference.
+basis | original creation, assignment, license, commissioned work, user declaration, other.
+territory | World or explicit territory list.
+term | Start/end or perpetual where legally/contractually valid.
+media | Vertical drama, social, OTT, theatrical, TV, advertising, etc.
+exclusivity | exclusive / non-exclusive / unknown.
+evidence assets | Contracts, releases, licenses, source receipts, approvals.
+status | UNKNOWN / DECLARED / REVIEW_REQUIRED / CLEARED / RESTRICTED / EXPIRED.
+approved_by | Authorized reviewer + time.
+
+--- TABLE 13 ---
+RULE AI output must be schema-validated before persistence. The user must explicitly approve the selected concept before it becomes the basis for the Story Bible.
+
+--- TABLE 14 ---
+Bible section | Required structured content
+Premise | Logline, theme, central conflict, stakes, promise of the series.
+World rules | Era, geography, institutions, technology/magic rules if applicable, cultural constraints.
+Characters | Goals, fears, secrets, relationships, speaking style, arcs, forbidden contradictions.
+Backstory | Timeline and established past events.
+Canon facts | Facts that episodes must not contradict.
+Open mysteries | Unrevealed facts and allowed future answers.
+Tone | Drama/comedy/darkness/romance/violence boundaries.
+Format rules | Episode duration, beat structure, cliffhanger policy, recap/intro policy.
+Content policy | Rating target, disallowed content for this IP, brand/broadcaster requirements.
+Visual anchors | References to approved visual bible/style locks.
+Language | Original dialogue language and localization rules.
+
+--- TABLE 15 ---
+Column | Purpose
+Episode # | Canonical order.
+Working title | Internal/consumer title.
+Opening hook | Immediate attention beat.
+Episode goal | What changes in this episode.
+A-story | Principal dramatic action.
+B-story | Optional secondary story.
+Revelation | Information gained/lost.
+Character turn | Relationship/emotional movement.
+Cliffhanger | End pressure/question/reversal.
+Continuity dependencies | Objects/facts from prior episodes.
+New canon | Facts created if episode is approved.
+Production complexity | LOW/MEDIUM/HIGH plus reasons.
+Estimated AI cost | Estimate before production; not binding.
+Status | Planning/writing/locked/producing/etc.
+
+--- TABLE 16 ---
+Role | Description
+HOOK | Opening image/action/line/question designed to create immediate narrative interest.
+ORIENTATION | Minimum context needed to understand the moment.
+ESCALATION | Conflict, pressure or complication increases.
+TURN | New information, decision or reversal changes the direction.
+PAYOFF | Episode fulfills a promised beat or partial resolution.
+CLIFFHANGER | New unresolved pressure, reveal, danger, decision or emotional reversal at the end.
+
+--- TABLE 17 ---
+Category | Stored fields
+Identity | Name, age range, gender/presentation as story requires, ethnicity/cultural identity only when creatively necessary and user-authored, role.
+Physical description | Face shape, hair, eyes, body/build, distinguishing marks, non-sensitive visual descriptors.
+Style | Wardrobe baseline, grooming, makeup, accessories.
+Performance | Typical expression range, posture, energy, character voice description.
+References | Approved reference assets, front/3-quarter/profile, full-body, expression sheets.
+Generation adapters | Provider-specific reference IDs, LoRA/embedding/model config where allowed.
+Restrictions | Do-not-change attributes and scene-specific continuity constraints.
+
+--- TABLE 18 ---
+Registry | Key behavior
+World Bible | Time period, geography, cultural rules, architecture, technology and recurring visual motifs.
+Location | Canonical description, reference assets, layout, day/night variants, weather/state variants.
+Wardrobe | Character + outfit + episode/scene validity range + reference assets.
+Props | Owner, appearance, state/damage, last seen, story significance.
+Vehicles | Model/look, owner, damage/state, location continuity.
+Hair/Makeup | Character look state, episode/scene validity, continuity images.
+
+--- TABLE 19 ---
+Object | Core fields
+CastAssignment | character_id, performer_user/contact, language, territory, contract/release reference, start/end, status.
+VoiceProfile | character_id, language, voice description, provider/workflow ID, stability settings, reference rights record, approved samples.
+DialogueCue | episode/scene, character, text, language, performance note, timing target, source script version.
+VoiceTake | cue, provider/performer, generation/recording ID, asset, duration, selected/approved state.
+
+--- TABLE 20 ---
+Strategy | Use
+TEXT_TO_VIDEO | Exploratory or stylized shots with no strict reference dependency.
+IMAGE_TO_VIDEO | Preferred when character/location/style reference frame is approved.
+REFERENCE_TO_VIDEO | Provider workflow supporting multiple identity/style refs.
+VIDEO_TO_VIDEO | Transform or stylize source footage with rights.
+LIVE_ACTION_INGEST | Link filmed take from Production Hub rather than AI generation.
+COMPOSITE | Generated foreground/background/VFX elements assembled in Edit.
+
+--- TABLE 21 ---
+Track | Requirements
+Dialogue | Per-language cue/take links; selected takes; optional real-actor recordings.
+Music | Original/licensed/generated source, cue sheet metadata, rights record, episode/scene usage.
+SFX | Cue list and source/generation lineage.
+Ambience | Location/world-aware background sound.
+Mix | Stereo master minimum; M&E option for localization; loudness target profile.
+Stems | Dialogue/music/effects stems when workflow/provider supports them.
+
+--- TABLE 22 ---
+Variant type | Behavior
+SUBTITLE | Original picture/audio plus timed text in target language.
+DUB | Original picture with target-language dialogue/voice track; optional lip-sync generation.
+TEXT_LOCALIZED | On-screen text/title cards replaced while picture remains largely same.
+CULTURAL_ADAPTATION | Script names/settings/dialogue/props may change within the same licensed IP.
+REMAKE | New production derived from source IP under explicit rights record; separate Series/Season/Episode lineage.
+
+--- TABLE 23 ---
+Approval gate | Who may approve | Downstream effect
+IP concept | Producer/showrunner/IP manager | Enables bible development.
+Story Bible | Showrunner/producer | Becomes canon snapshot for season planning.
+Visual Bible | Director/producer | Enables production identity/style lock.
+Season arc | Showrunner/producer | Enables episode scripting in approved order.
+Episode script lock | Writer/showrunner/producer by policy | Enables expensive shot/audio/video production.
+Shot selection | Director/editor/producer | Marks candidate as production-selected.
+Episode picture lock | Editor/director/producer | Enables final audio/localization/mastering.
+Localization approval | Language reviewer/producer | Eligible for target-language master.
+QC pass override | Authorized QC/producer only | Creates audit record; profile decides if override allowed.
+Master approval | Producer/delivery manager | Immutable approved master.
+
+--- TABLE 24 ---
+CORE RULE Approved canon must never be silently changed by AI suggestions, analytics, translations or provider reruns. Changes create a new version/retcon proposal and explicitly identify affected downstream episodes/assets.
+
+--- TABLE 25 ---
+Package component | Examples
+Picture | Approved vertical master; optional clean/textless version.
+Audio | Full mix, M&E, dub tracks, stems if required.
+Timed text | SRT/VTT/TTML or profile-specific format.
+Metadata | IP/series/season/episode IDs, title, synopsis, language, rating, cast/credits.
+Artwork | Poster, cover, vertical key art, thumbnail, episode still.
+Rights | Internal clearance status/required documents; do not expose private contracts unless package calls for them.
+Manifest | File names, checksums, versions, language and technical data.
+Social derivative | Caption/title/hashtags only when user requests; platform connector uses authorized API.
+
+--- TABLE 26 ---
+Metric family | Examples
+Reach | Views/impressions, unique viewers where available.
+Opening | 1s/3s hold, swipe-away/skip where available.
+Retention | Average view duration, 25/50/75/100% completion.
+Engagement | Likes, comments, shares, saves.
+Serial conversion | Episode N → N+1 continuation, profile/follow conversion.
+Monetization | Unlock/purchase/subscription attribution where supplied by destination platform.
+Creative mapping | Metrics by episode, beat type, hook type, cliffhanger type, character presence, duration band.
+Production economics | Cost per episode, cost per minute, cost per completed view where meaningful.
+
+--- TABLE 27 ---
+Agent / engine | Responsibility | Writes
+Showrunner | Maintains story intent and continuity across season. | Arc proposals, continuity notes, canon change proposals.
+Story Architect | Concept, bible, character arcs, episode grid. | Structured development objects.
+Episode Writer | Beat sheet, scene outline, screenplay draft. | Episode/ScriptVersion drafts.
+Continuity Supervisor | Detects canon and state conflicts. | Conflict findings; never silent edits.
+Vertical Director | Découpage, framing, shot purpose, vertical composition. | ShotPlan/PromptSpec proposals.
+Visual Director | Character/world/style references and locks. | Style/Appearance/Location proposals.
+Voice Director | Dialogue performance, voice consistency, pronunciations. | Voice takes/profile settings.
+Localization Director | Translation/dubbing/adaptation with canon constraints. | LocalizationVariant drafts.
+QC Analyst | Technical/continuity heuristic checks. | QC findings.
+Performance Analyst | Maps analytics to future creative recommendations. | Recommendation objects.
+
+--- TABLE 28 ---
+Workload | Default policy
+Story development / scripts / continuity | LLM provider through Router; provider configurable.
+Standard character/reference images | Private GPU/open models where quality is sufficient; fal.ai premium fallback.
+Premium video generation | fal.ai/provider-hosted premium models when required.
+Self-hostable repetitive image/edit/upscale workflows | Private GPU when enabled and cost-effective.
+FFmpeg assembly/mux/proxy/checksum | CPU/backend services.
+Transcription / open speech models | Private GPU when available; provider fallback.
+Budgeting/arithmetic/rights states | Deterministic backend/database; AI may suggest, never calculate authoritative totals.
+
+--- TABLE 29 ---
+Table / aggregate | Key relationships
+vd_ip_titles | workspace_id, project_id, canonical bible/style versions.
+vd_rights_records | ip_id and optional entity/asset scope.
+vd_contributions | ip_id + object_type/object_id + human/AI provenance.
+vd_series | ip_id.
+vd_seasons | series_id.
+vd_season_arc_versions | season_id.
+vd_episodes | season_id + script/master refs.
+vd_episode_beats | episode_id.
+vd_story_bible_versions | ip_id.
+vd_canon_facts | ip_id + source version/episode.
+vd_characters | ip_id.
+vd_character_variants | character_id.
+vd_locations | ip_id.
+vd_location_variants | location_id.
+vd_wardrobe_variants | character_id + validity range.
+vd_props | ip_id.
+vd_style_locks | ip_id.
+vd_voice_profiles | character_id + language.
+vd_dialogue_cues | episode/scene/character.
+vd_voice_takes | dialogue_cue + asset/generation.
+vd_shots | episode/scene.
+vd_prompt_specs | shot/task + style/identity references.
+ai_jobs | shared core; references vd object IDs.
+assets | shared core.
+review_items/comments | shared core.
+qc_runs/qc_findings | shared core.
+delivery_packages | shared core or vertical-drama profile link.
+vd_localization_variants | source episode/series + target locale/territory.
+vd_performance_snapshots | episode + source platform + time window.
+vd_recommendations | analytics input + future episode/season scope.
+
+--- TABLE 30 ---
+Method | Endpoint | Purpose
+POST | /api/v1/projects/{project_id}/vertical-drama/ip | Create/register IP.
+GET | /api/v1/vertical-drama/ip/{ip_id} | Read IP.
+PATCH | /api/v1/vertical-drama/ip/{ip_id} | Edit allowed draft fields.
+POST | /api/v1/vertical-drama/ip/{ip_id}/rights | Add rights record.
+POST | /api/v1/vertical-drama/ip/{ip_id}/bible/generate | Generate bible proposal.
+POST | /api/v1/vertical-drama/ip/{ip_id}/bible/{version_id}/approve | Approve bible version.
+POST | /api/v1/vertical-drama/ip/{ip_id}/characters | Create character.
+POST | /api/v1/vertical-drama/characters/{id}/references/generate | Generate character references.
+POST | /api/v1/vertical-drama/ip/{ip_id}/style-locks | Create style lock.
+POST | /api/v1/vertical-drama/series | Create series.
+POST | /api/v1/vertical-drama/seasons | Create season.
+POST | /api/v1/vertical-drama/seasons/{id}/episode-grid/generate | Generate episode grid proposal.
+POST | /api/v1/vertical-drama/episodes | Create episode.
+POST | /api/v1/vertical-drama/episodes/{id}/beats/generate | Generate beat sheet.
+POST | /api/v1/vertical-drama/episodes/{id}/script/generate | Generate script draft.
+POST | /api/v1/vertical-drama/episodes/{id}/script/{version}/lock | Lock script.
+POST | /api/v1/vertical-drama/episodes/{id}/continuity/check | Run canon/continuity check.
+POST | /api/v1/vertical-drama/scenes/{id}/decoupage | Generate shot plan.
+POST | /api/v1/vertical-drama/shots/{id}/generate | Queue shot generation.
+POST | /api/v1/vertical-drama/shots/{id}/select | Select candidate asset.
+POST | /api/v1/vertical-drama/dialogue/{cue_id}/generate | Generate voice takes.
+POST | /api/v1/vertical-drama/episodes/{id}/assemble | Create/update Art City Edit timeline.
+POST | /api/v1/vertical-drama/episodes/{id}/localize | Create localization variant.
+POST | /api/v1/vertical-drama/episodes/{id}/qc | Run QC.
+POST | /api/v1/vertical-drama/episodes/{id}/master | Build master candidate.
+POST | /api/v1/vertical-drama/episodes/{id}/deliveries | Create delivery package.
+POST | /api/v1/vertical-drama/episodes/{id}/analytics/import | Import performance data.
+GET | /api/v1/vertical-drama/dashboard | Workspace/project dashboard data.
+
+--- TABLE 31 ---
+Event | Potential downstream invalidation
+STORY_BIBLE_APPROVED | Season arcs/episodes created from older bible become review-required.
+CANON_FACT_CHANGED | Future episode scripts, continuity reports.
+CHARACTER_VARIANT_CHANGED | Pending storyboards/shots/voice/wardrobe refs.
+STYLE_LOCK_CHANGED | Pending/generated shots requiring visual re-review.
+SCRIPT_LOCKED_NEW_VERSION | Shot plans, dialogue cues, edit timelines, subtitles.
+SHOT_SELECTION_CHANGED | Episode edit/timeline/master/QC.
+PICTURE_LOCK_CHANGED | Audio, localization, subtitles, mastering, QC, delivery.
+LOCALIZATION_CHANGED | Target-language master/QC/delivery only.
+RIGHTS_STATUS_RESTRICTED | Block affected generation/publishing/delivery according to policy.
+
+--- TABLE 32 ---
+Mode | UI behavior
+Guided | Wizard-like progression; hides advanced production settings.
+Professional | Full season grid, versioning, locks, queues and cost controls.
+On-set/Hybrid | Touch-friendly episode/scene/shot/continuity controls and dailies handoff.
+Review | Minimal player + comments + approve/request changes.
+Admin | Provider/workflow/cost/policy settings separated from production UI.
+
+--- TABLE 33 ---
+Module | Vertical Drama integration
+Projects | Same project_id/workspace_id and global dashboard context.
+AC Script / Development | Episode screenplay editor, ScriptVersion, Scene and Character links.
+AC Storyboard | Découpage/shot planning and storyboard frames; Vertical Drama adds episode/canon/style context.
+AC Budget | Optional per-season/episode hybrid/live-action budgets; AI generation spend remains cost ledger.
+AC Call / Schedule | Used for hybrid/live-action vertical productions.
+Studio | Generate/modify character sheets, props, locations, posters, individual video/audio/image assets.
+Cinema | Generate larger cinematic sequences or campaign-level creative when appropriate; not required for every episode.
+Edit | Episode timeline, assembly, reframing, captions, color/finishing and derivatives.
+Asset Library | Single source of stored media/documents and rights metadata.
+Review | Shared comments/approvals/version comparison.
+QC | Shared technical QC plus Vertical Drama heuristic continuity checks.
+Delivery | Shared profile-driven packaging with vertical-drama metadata.
+AI Copilot | Can answer “Which episodes are blocked?”, “What canon conflicts exist?”, “How much did Season 1 cost?” using project context.
+
+--- TABLE 34 ---
+NON-NEGOTIABLE Kurdish Sorani must be implemented as a first-class locale (ckb-IQ), not as an after-launch translation. The entire IP development and episode-production workflow must work with Kurdish titles, scripts, dialogue, metadata, subtitles, filenames and exports.
+
+--- TABLE 35 ---
+Requirement | Implementation
+Locale | Use ckb-IQ in user/project/content locale fields.
+Direction | RTL at correct layout root; local LTR islands for timecode, URLs, model keys, file names, lens/fps values.
+Unicode | UTF-8 end-to-end; preserve authored display text.
+Search | Derived normalized search aliases for common Arabic/Kurdish letter variants; do not overwrite stored names.
+Screenplay | Structured elements; mixed INT./EXT., numbers and Kurdish scene text must render correctly.
+Tables/grids | Descriptive cells RTL; numeric/cost/timecode columns may remain LTR.
+Subtitles | Correct shaping, punctuation, line breaks, cue timing and preview.
+TTS/dubbing | Pronunciation dictionary for Kurdish names/places.
+Exports | PDF/DOCX/CSV/metadata must preserve Kurdish glyph joining and RTL.
+UI strings | All externalized localization keys; no hard-coded English in ckb-IQ UI except approved brand/industry tokens.
+
+--- TABLE 36 ---
+Role | Typical permissions
+Workspace Owner | All settings, billing, policy, export/delete, role assignment.
+Executive Producer / Producer | IP/season/episode approvals, spend limits, delivery, rights review according to policy.
+Showrunner | Story bible, season arc, scripts, canon and continuity approvals.
+Writer | Draft concept/bible/scripts; cannot lock/retcon unless granted.
+Director | Visual bible, shot plans, selections, picture review.
+AI Artist / Operator | Generate assets within assigned episodes/limits; cannot approve rights or master.
+Editor | Edit timelines, versions, picture-lock proposal.
+Localization Lead | Translations/dubs/localization approval for assigned languages.
+QC Reviewer | Run/review QC, configured overrides.
+Rights/IP Manager | Rights records, evidence, clearance state; no creative overwrite.
+Viewer/Client | Review/comment only, optional approval scope.
+
+--- TABLE 37 ---
+Cost event | Record
+Text generation | tokens/units, provider/model, internal cost, user credit charge.
+Image generation | candidates, resolution, steps/workflow, provider cost.
+Video generation | duration/resolution/model/provider billed units and actual/estimated cost.
+Voice/audio | duration/characters/provider billed units.
+Private GPU | active seconds/minutes, worker/GPU class, allocation basis.
+CPU processing | optional internal cost estimate for margin accounting.
+Storage/egress | optional project-level internal economics.
+Failed jobs | provider charge if any; user charge/refund policy explicit.
+
+--- TABLE 38 ---
+Admin area | Capabilities
+Product Entitlements | Enable plans/features, approval gates, quotas.
+Model Registry | Art City workflow labels, providers/models, quality tiers, fallbacks.
+Provider Registry | Keys/credentials references, status, regions, policy, pricing basis.
+Pricing Ledger | Dated model/GPU/credit prices; never hard-code current prices in product logic.
+Prompt Registry | Versioned system prompts/templates/examples per locale.
+Delivery Profiles | Codec/resolution/duration/metadata/subtitle rules per destination.
+Content Policies | Allowed/rating/provider restrictions.
+Localization | UI strings, terminology, Kurdish dictionary/pronunciations.
+Rights Policies | Which states block generation/master/delivery.
+Job Operations | Queue, retry, cancel, provider failure/fallback.
+Cost Dashboard | Spend by workspace/project/series/episode/provider/model and gross-margin proxy.
+Audit | Sensitive actions and admin access.
+
+--- TABLE 39 ---
+Project | Purpose
+Sorani serialized drama – 10 episodes | Full ckb-IQ story bible, dialogue, RTL UI, subtitles, Kurdish filenames, mixed English technical tokens.
+English romance/thriller – 10 episodes | Hook/cliffhanger/continuity and AI-native generation pipeline.
+Arabic localization variant | RTL subtitle/dub/localization lineage from an English or Sorani source.
+Hybrid live-action mini-series | Uses AC Script, storyboard, schedule/call sheet, dailies ingest and Art City Edit.
+Character transformation arc | Multiple approved appearance variants across episodes; verifies identity continuity.
+Provider failover test | Primary video provider fails; Router uses configured fallback without duplicate user charge or duplicate selected asset.
+
+--- TABLE 40 ---
+Phase | Primary deliverables | Release target
+Phase 0 – Foundation | Domain package/routes; shared Project/Asset/Router integration; ckb-IQ; entitlements; core tables; rights/provenance; job/cost ledger contracts. | Architecture ready
+Phase 1 – IP Development MVP | IP Vault, concept, story bible, characters, world, style lock, series/season/episode objects, episode grid. | Users can build a controlled IP/season.
+Phase 2 – Episode Writing & Continuity | Beat engine, AC Script integration, hook/cliffhanger inspector, canon conflict checker, script lock/version dependencies. | Users can lock production-ready episodes.
+Phase 3 – AI Production | Découpage/vertical shots, reference/identity locks, image/video generation, candidate selection, voice/dialogue, batch jobs. | Users can produce AI-native episodes.
+Phase 4 – Edit / Localization / Master | Art City Edit handoff, picture lock, subtitles/dub, QC, mastering, delivery profiles. | End-to-end mastered/delivered episode.
+Phase 5 – Analytics Learning | Performance import/connectors, beat mapping, future-episode recommendations, cost/performance analytics. | Factory learns from releases.
+Phase 6 – Scale / Enterprise | Multi-series slate dashboards, templates, remake workflows, advanced private GPU/LoRA, organization policies, API/partner delivery. | Studio/enterprise operation.
+
+--- TABLE 41 ---
+MVP RELEASE The first commercially usable MVP should include Phases 0–3 at minimum plus basic Edit/export handoff. Without IP/bible/continuity/identity locks, the product is only a vertical video generator and does not justify the “IP Factory” positioning.
+
+--- TABLE 42 ---
+Risk / decision | Why it matters | Mitigation / required decision
+Treating product as generator | No defensible workflow/IP value; continuity collapses. | Ship IP/bible/episode/canon/identity workflow as core.
+Character drift | Breaks audience trust and serial continuity. | Reference locks, appearance variants, provider adapters, QA.
+Provider lock-in | Prices/models/availability change. | Shared Router + provider abstraction + registry.
+AI cost explosion | Large seasons multiply failed candidates. | Preflight cost, batch caps, acceptance-rate metrics, private GPU where economic.
+Rights ambiguity | Can block distribution/partnerships. | IP Vault, source declaration, releases/licenses, human review.
+AI authorship uncertainty | Jurisdiction-specific protection may depend on human contribution. | Contribution ledger, human approvals/revisions; legal review outside product.
+Canon drift | Batch LLM generation invents contradictions. | Approved snapshots, structured canon facts, continuity checks.
+Over-automation | Mass generation before creative approval wastes money. | Approval gates before expensive stages.
+Kurdish treated late | RTL/script/TTS issues become architectural rework. | ckb-IQ from Phase 0 with golden fixtures.
+Analytics overclaim | Correlation can be misrepresented as creative certainty. | Confidence/limitations; experiment recommendations only.
+Separate platform duplication | Splits assets/accounts/billing and increases maintenance. | Separate domain, shared Art City core.
+Monolithic coupling | Future scale difficult if domain boundaries are unclear. | Modular package/interfaces/event contracts; extract services later only when justified.
+
+--- TABLE 43 ---
+Workflow key | Purpose
+vd.concept.generate | Structured concept alternatives.
+vd.bible.generate | Story Bible proposal.
+vd.season.arc.generate | Season arc.
+vd.season.episode_grid.generate | Episode grid.
+vd.episode.beats.generate | Beat sheet.
+vd.episode.script.generate | Episode screenplay draft.
+vd.continuity.check | Canon/continuity analysis.
+vd.character.reference.generate | Character/reference sheet.
+vd.location.reference.generate | World/location look frames.
+vd.storyboard.frame.generate | Storyboard frames.
+vd.shot.video.generate.standard | Standard vertical video generation.
+vd.shot.video.generate.premium | Premium vertical video generation.
+vd.voice.take.generate | Dialogue voice take.
+vd.localization.translate | Translation.
+vd.localization.dub | Dub/voice generation.
+vd.localization.lipsync | Optional lip-sync.
+vd.qc.continuity | Heuristic visual/narrative continuity checks.
+vd.analytics.recommend | Future-episode performance recommendations.
+
+--- TABLE 44 ---
+BUILD PRINCIPLE Art City AI Vertical Drama IP Factory is not a new island and not a feature hidden inside Studio. Build it as a first-class Art City AI product domain with its own serial storytelling and IP-control intelligence, connected to the same Project, Assets, AI Router, production modules, Edit, QC, Delivery, permissions and cost infrastructure.

@@ -41,5 +41,9 @@
   "breakdown.category": "پۆل",
   "breakdown.status": "دۆخ",
   "breakdown.approve": "پەسەندکردن",
-  "breakdown.reject": "ڕەتکردنەوە"
+  "breakdown.reject": "ڕەتکردنەوە",
+  "vd.title": "درامای ڤێرتیکاڵ",
+  "vd.subtitle": "زنجیرە دروست بکە. IP بنیات بنێ. ئەڵقە بە ئەڵقە بەرهەم بهێنە.",
+  "vd.newProject": "پڕۆژەی IPی نوێ",
+  "vd.goldenA": "تۆوی پڕۆژەی زێڕین A (سۆرانی)"
 }

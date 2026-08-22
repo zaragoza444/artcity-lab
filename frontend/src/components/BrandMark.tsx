@@ -6,6 +6,7 @@ const productLabel = {
   cinema: "Cinema",
   edit: "Edit",
   hub: "Production Hub",
+  vertical: "Vertical Drama",
 } as const;
 
 type BrandMarkProps = {

@@ -1,0 +1,390 @@
+ART CITY AI
+VERTICAL DRAMA IP FACTORY
+Developer Sprint Backlog & Implementation Handoff
+Companion to Master Developer Specification v1.0
+Execution Pack v1.0  |  22 August 2026
+Development directive
+Separate product domain. Shared Art City AI core. Build the IP system before scaling generation.
+1. Purpose and Implementation Directive
+This document converts the Art City AI Vertical Drama IP Factory master specification into an execution-ready engineering backlog. It is designed for direct use by the technical lead, backend, frontend, AI/ML, DevOps and QA teams. The goal is to remove interpretation from the first build cycle: ticket boundaries, dependencies, coding sequence, acceptance gates and release criteria are defined here.
+Do not build Vertical Drama as a generic prompt-to-video page.
+Do not fork the Art City AI platform or duplicate accounts, billing, storage, project ownership or provider integrations.
+Build a dedicated Vertical Drama domain with its own routes, services, tables and UI, linked to the canonical Art City AI project and asset systems.
+Treat Story Bible, Canon, Character DNA, Episode State and Provenance as first-class data, not text blobs.
+AI generation must remain provider-agnostic through the shared AI Router.
+Sorani Kurdish (ckb-IQ), English and Arabic must be supported from the beginning; RTL is not a post-launch patch.
+2. Architecture Freeze Before Coding
+The following decisions are frozen for the first implementation unless Art City product leadership explicitly changes them. Developers should not silently replace them with convenient alternatives.
+3. Delivery Team and Ticket Ownership
+One engineer may hold multiple codes on a small team. The codes identify responsibility, not headcount.
+4. Recommended Build Sequence and Release Train
+4.1 Critical path
+Shared project linkage → Vertical Drama domain schema → IP/Canon → Story Bible → Season/Episode versions → Scene/Shot model → AI jobs/assets → Assembly/QC → Delivery.
+Do not start batch video generation before Character DNA, shot identity, versioning, provenance and cost attribution are functional.
+Do not introduce analytics-driven rewriting until lock/version semantics are stable.
+5. Sprint 0 — Foundation, Domain Boundary and Contracts
+Sprint 0 exists to prevent the common failure mode where UI and model calls are built before the data model is stable. The output is a compilable, deployable skeleton with agreed contracts and no duplicated platform infrastructure.
+6. Sprint 1 — IP Vault, Canon and Governed Project Shell
+7. Sprint 2 — Story Bible, Season Architecture and Episode Factory
+8. Sprint 3 — Découpage, Character Consistency and AI Production Pipeline
+9. Sprint 4 — Assembly, Localization, QC and Delivery Backlog
+Sprint 4 is the first release-completion sprint. It may be scheduled immediately after Sprint 3, but the following tickets should be created now so Sprint 3 interfaces do not paint the system into a corner.
+10. Required API Contract Set
+The exact framework may remain FastAPI/Next.js as in the wider platform, but these resource contracts should exist before UI logic depends on local component state.
+10.1 Write request requirements
+Authenticated tenant/project context.
+Permission check on server.
+request_id/correlation_id.
+Expected version or If-Match/optimistic-lock value for mutable resources.
+Idempotency-Key on job-generating or expensive requests.
+Audit entry for approvals, locks, rights and destructive lifecycle changes.
+11. Database Migration Order
+Every migration must include indexes for tenant/project scope and foreign keys used by episode/shot retrieval. Use database constraints for invariants that must never be violated, not only service-layer checks.
+12. Recommended Code Structure
+backend/
+  app/vertical_drama/
+    api/
+    domain/
+      ip/
+      canon/
+      story_bible/
+      season/
+      episode/
+      screenplay/
+      production/
+      localization/
+      qc/
+      delivery/
+    services/
+    repositories/
+    schemas/
+    events/
+    workflows/
+    tests/
+
+frontend/
+  app/vertical-drama/
+    new/
+    [projectId]/
+      overview/
+      ip-vault/
+      story-bible/
+      characters/
+      season/
+      episodes/
+      production/
+      review/
+      delivery/
+  components/vertical-drama/
+  lib/vertical-drama/
+
+shared/
+  ai-router/
+  assets/
+  auth-rbac/
+  billing-credits/
+  projects/
+  audit/
+  observability/
+Rule: shared services may be imported through stable contracts. Vertical Drama domain code must not reach into another product module’s private tables or internal implementation.
+13. Required Domain Events and Dependency Rules
+14. AI Workflow Registry — Initial Keys
+Model/provider mappings must be managed in the shared registry/admin layer. Domain records should store the resolved provider/model used for a run, but business logic must request capabilities/workflows rather than vendor names.
+15. Frontend Build Order
+16. Kurdish Sorani / RTL Release Criteria
+Use Unicode UTF-8 end-to-end; never transliterate Sorani to store or process it internally.
+ckb-IQ content direction is RTL, but IDs, timecodes, file names, URLs and technical fields may remain LTR inside isolated UI containers.
+All multi-language content fields must store language code and content separately. Do not combine translations into one text column.
+Test punctuation, Arabic-Indic/Latin digits, quotation marks, parentheses, colon/timecode display and mixed English model names inside RTL text.
+Exported subtitles and metadata must preserve correct line order and encoding.
+AI prompts may use internal English instructions, but the requested content language and cultural context must be explicit and the output schema language-tagged.
+Golden tests must include Sorani character names, dialogue, long screenplay paragraphs and right-aligned form fields.
+17. Automated Test Matrix
+18. Definition of Done for Every Ticket
+Code merged after peer review and linked to ticket ID.
+API/schema change documented and contract tests updated.
+RBAC and tenant/project isolation considered for every server endpoint.
+Loading, empty, error, permission-denied and retry states implemented where relevant.
+Logs include request/job correlation identifiers; no secrets or raw sensitive tokens logged.
+User-facing text supports localization; no English-only hard-coded layout assumption.
+Unit/integration tests cover happy path plus at least one important failure path.
+No provider-specific AI call is added outside the shared AI Router/provider adapter layer.
+AI-derived records include provenance and cost/usage metadata when applicable.
+Database migration includes rollback or documented irreversible rationale.
+QA evidence attached and acceptance gate explicitly marked pass/fail.
+19. MVP Release Gate
+Do not call the module production-ready simply because it can generate clips. The MVP is ready when one governed IP can travel through the complete core lifecycle with traceability and human approval.
+20. Technical Risks Developers Must Escalate
+21. Technical Lead — First Repository Actions
+☐ Create one parent epic: AC AI — Vertical Drama IP Factory MVP.
+☐ Import Sprint 0 tickets first and freeze ADR/API/ID conventions before feature coding.
+☐ Create feature flag and staging-only product card.
+☐ Create migration branch and contract-schema package.
+☐ Create Vertical Drama backend/frontend module skeletons with CODEOWNERS.
+☐ Wire shared auth, project ownership, RBAC, audit, asset store and AI Router — do not clone them.
+☐ Create Golden Project A fixture in Sorani before Story/AI features expand.
+☐ Require every model workflow to emit validated structured JSON before persistence.
+☐ Require every expensive job to show estimated cost/guardrail before batch execution.
+☐ Hold an architecture review at the end of Sprint 0 and a release-gate review at the end of every subsequent sprint.
+22. Final Engineering Directive
+The first success metric is not “we generated a vertical video.” It is “we created a governed entertainment IP whose story, canon, characters, episodes and generated production assets remain consistent, versioned, auditable and reusable.” Once that foundation works, Art City AI can change or add generation models without rebuilding the product.
+
+--- TABLE 1 ---
+Decision | Frozen rule
+Product boundary | /vertical-drama is a dedicated product area under the existing Art City AI account and project shell.
+Project identity | Every Vertical Drama title references the shared project_id; Vertical Drama also owns a vd_project_id/domain aggregate ID.
+Asset identity | Generated/reference assets use the shared asset store and immutable asset IDs; Vertical Drama stores semantic links to those assets.
+AI providers | No provider-specific calls from UI or domain services. All inference goes through the AI Router/model registry.
+Canonical narrative data | Structured entities and versioned JSON are authoritative. Generated prose is a derivative representation.
+Canon changes | Approved canon changes emit domain events and mark dependent material stale; they do not silently rewrite approved episodes.
+Generation | All expensive generation is asynchronous, idempotent, retryable and cost-attributed.
+IP/provenance | Human authorship, source/reference origin, model/provider, prompts, seeds/parameters and output IDs are logged.
+Localization | Original-language content remains canonical; translated/adapted versions are linked variants.
+Deletion | Soft delete + audit trail for project-domain entities; hard deletion only through privileged data-retention workflow.
+
+--- TABLE 2 ---
+Code | Role | Primary responsibility
+TL | Technical Lead / Architect | Architecture freeze, review, merge gates, data-contract ownership
+BE | Backend Engineer | Domain services, REST APIs, job orchestration, permissions, audit
+FE | Frontend Engineer | Product shell, editors, grids, review UX, RTL, state handling
+AI | AI / Workflow Engineer | Structured generation, prompt contracts, model routing, evaluation
+DB | Backend/DB owner | Migrations, indexes, constraints, versioning, integrity
+OPS | DevOps / Platform | Queues, workers, object storage, secrets, observability, deployment
+QA | QA / Automation | API/UI tests, golden projects, regression and release evidence
+PD | Product/Creative owner | Acceptance of workflows, story logic, quality and terminology
+
+--- TABLE 3 ---
+Stage | Suggested cadence | Primary outcome | Exit gate
+Sprint 0 — Foundation & Contracts | 1 week | Freeze schemas/API contracts; establish module boundary, migrations, feature flag, queue conventions, observability and test harness. | No story generation until schema/API review passes.
+Sprint 1 — IP Vault, Canon & Project Shell | 2 weeks | Create IP/title registry, rights/provenance, characters, canon facts, visual references and Vertical Drama project UX. | A user can create a governed IP project and persist approved canon.
+Sprint 2 — Story, Season & Episode Factory | 2 weeks | Concept, Story Bible, season architecture, episode grid, screenplay, hook/pacing/cliffhanger, approval/versioning. | A project can produce and approve a complete structured text season without generating video.
+Sprint 3 — Découpage, AI Generation & Asset Pipeline | 3 weeks | Scenes/shots, character reference binding, AI Router workflows, job queue, image/video/voice generation, cost/provenance. | An approved episode can be converted into generated, traceable shot assets.
+Sprint 4 — Assembly, QC, Localization & Delivery | 2 weeks | Timeline handoff, subtitles/dubbing, QC, mastering, export packages, delivery readiness. | One mastered 9:16 episode and localized variant passes automated and human QC.
+Sprint 5 — Analytics, Optimization & Scale | 2 weeks | Performance ingestion, episode analytics, learning loop, batch controls, admin/provider operations. | Data can improve editorial recommendations without auto-altering locked canon.
+
+--- TABLE 4 ---
+ID | P | Owner | Ticket / Deliverable | Dependencies | Acceptance gate
+VDF-ARC-001 | P0 | TL | Create Vertical Drama bounded-context ADR and code ownership map. Define what remains shared vs domain-owned. | Master spec | ADR merged; folder/service ownership approved; no duplicate auth/billing/storage implementation.
+VDF-ARC-002 | P0 | TL/BE | Define aggregate IDs and resource naming: project_id, vd_project_id, ip_title_id, season_id, episode_id, scene_id, shot_id, version_id. | ARC-001 | IDs documented in OpenAPI/schema package; naming used consistently in migrations and events.
+VDF-DB-001 | P0 | DB | Create migration namespace and baseline Vertical Drama schema with audit columns, tenant/project ownership and soft-delete pattern. | ARC-002 | Upgrade/downgrade tested on clean DB and current staging snapshot.
+VDF-BE-001 | P0 | BE | Create /api/v1/vertical-drama router, service package and health/capability endpoint behind feature flag. | ARC-001 | Authenticated capability endpoint returns enabled entitlements; disabled flag returns controlled 404/403.
+VDF-FE-001 | P0 | FE | Add Vertical Drama product card and /vertical-drama route shell inside existing Art City AI navigation. | BE-001 | Uses existing auth/project selector; feature flag respected; responsive desktop/mobile shell.
+VDF-BE-002 | P0 | BE | Define canonical error envelope, optimistic-lock field, request_id and idempotency-key convention for write/generation APIs. | ARC-002 | Contract tests cover validation, conflict, permission and duplicate submission.
+VDF-OPS-001 | P0 | OPS | Provision Vertical Drama worker queue names, dead-letter handling, per-job correlation IDs and environment settings. | ARC-001 | Test job can enqueue, run, retry, fail to DLQ and expose trace ID.
+VDF-OBS-001 | P1 | OPS/BE | Add structured logs and metrics dimensions: tenant, project, workflow, provider, model, job, cost, latency, result. | OPS-001 | Staging dashboard can filter one synthetic job end-to-end.
+VDF-QA-001 | P0 | QA | Create API contract-test harness and one empty golden Vertical Drama project fixture. | DB-001, BE-001 | CI spins DB, applies migrations, creates project, runs contract smoke tests.
+VDF-SEC-001 | P0 | BE/TL | Map existing RBAC/entitlements to Vertical Drama actions; define creator, editor, approver, admin and viewer scopes. | ARC-001 | Permission matrix encoded and unit-tested; no endpoint relies only on frontend hiding.
+VDF-AI-001 | P0 | AI/TL | Define StructuredAIResponse contract (schema_version, content, warnings, provenance, token/cost usage, model metadata). | ARC-002 | JSON Schema validated in CI; one mock provider response passes and one malformed response fails.
+VDF-AI-002 | P1 | AI/BE | Register Vertical Drama workflow keys in shared AI Router without hard-wiring vendors. | AI-001 | Mock route resolves workflow → capability → model/provider with fallback metadata.
+
+--- TABLE 5 ---
+Gate | Evidence required | Pass condition
+G0.1 Architecture | ADR, folder tree, API namespace, ID dictionary | Technical lead and backend/frontend owners sign off.
+G0.2 Data | Baseline migration + rollback evidence | Clean install and upgrade both pass.
+G0.3 Platform | Route shell + auth + entitlement + queue smoke test | One authenticated project opens and one mock job completes.
+G0.4 Contract | OpenAPI + JSON schemas + contract tests | CI blocks incompatible contract changes.
+
+--- TABLE 6 ---
+ID | P | Owner | Ticket / Deliverable | Dependencies | Acceptance gate
+VDF-DB-101 | P0 | DB | Create vd_projects and ip_titles tables linked to shared project_id; include title, logline, source type, language, status, ownership and version fields. | DB-001 | FK/unique/index rules tested; project isolation verified.
+VDF-DB-102 | P0 | DB | Create rights_records, contributors and provenance_entries tables. | DB-101 | Multiple rights territories/windows/contributors attach to an IP title; immutable provenance entry IDs.
+VDF-DB-103 | P0 | DB | Create characters, character_variants, canon_facts, locations, props, wardrobe_items and reference_bindings. | DB-101 | All entities are version-addressable and project-scoped; referential constraints pass.
+VDF-BE-101 | P0 | BE | Implement Vertical Drama project and IP Title CRUD with audit and optimistic concurrency. | DB-101, SEC-001 | Create/read/update/archive APIs pass RBAC and conflict tests.
+VDF-BE-102 | P0 | BE | Implement rights, contributor and human-authorship ledger APIs. | DB-102 | Entries can be appended and inspected; provenance cannot be silently overwritten.
+VDF-BE-103 | P0 | BE | Implement canon repository and Canon Fact lifecycle: draft → approved/locked → superseded. | DB-103 | Locked facts require authorized supersede action and emit audit/event records.
+VDF-BE-104 | P1 | BE | Implement canon conflict checker service for contradictory character/world facts. | BE-103 | Known contradiction fixture returns structured severity, entities and evidence.
+VDF-FE-101 | P0 | FE | Build New Vertical Drama project wizard: existing idea / generate concept / import source, language, format and production mode. | BE-101 | Wizard creates project and returns to its dedicated dashboard; RTL verified.
+VDF-FE-102 | P0 | FE | Build IP Vault views for title metadata, rights, contributors and provenance. | BE-102 | User can inspect ownership/provenance without exposing raw backend-only fields.
+VDF-FE-103 | P0 | FE | Build Story World shell: Characters, Locations, Props, Wardrobe, References and Canon tabs. | BE-103 | CRUD works with loading/error/empty states; entity deep links persist.
+VDF-FE-104 | P1 | FE | Build Canon conflict UI with severity, conflicting values, source versions and explicit resolution action. | BE-104 | No automated overwrite; resolution requires user choice and permission.
+VDF-AI-101 | P1 | AI | Implement concept-generation structured output for title, logline, premise, genre, audience, hooks, character seeds and market/language notes. | AI-001, BE-101 | Output validates against schema; Sorani sample has correct RTL text and no mixed-field corruption.
+VDF-AI-102 | P1 | AI | Implement Story Bible draft workflow producing structured world, character and tone entities rather than one prose block. | DB-103, AI-101 | Draft can be reviewed entity-by-entity before approval into canon.
+VDF-QA-101 | P0 | QA | Golden Project A: original Sorani drama with 4 characters, 2 locations, rights record and 12 canon facts. | S1 core | Fixture reproducibly seeds; project access, RTL, locking and conflict tests pass.
+
+--- TABLE 7 ---
+Gate | Evidence required | Pass condition
+G1.1 IP governance | IP title, contributor and rights records | An auditor can answer who owns what, source, territory and contribution history.
+G1.2 Canon | Approved canon facts and conflict fixture | Contradiction is detected and cannot be silently merged.
+G1.3 UX | Project wizard + IP Vault + Story World | Desktop/mobile/RTL smoke tests pass.
+G1.4 Isolation | Two tenants/projects in integration test | No cross-project IDs or assets can be read or mutated.
+
+--- TABLE 8 ---
+ID | P | Owner | Ticket / Deliverable | Dependencies | Acceptance gate
+VDF-DB-201 | P0 | DB | Create story_bibles, seasons, season_versions, episodes, episode_versions and episode_beats tables with immutable version snapshots. | DB-103 | Approved version remains queryable after subsequent drafts; current pointer is explicit.
+VDF-DB-202 | P0 | DB | Create screenplay_documents, screenplay_scenes and narrative_dependencies tables. | DB-201 | Dependencies can link an episode version to canon/character/story-bible versions.
+VDF-BE-201 | P0 | BE | Implement Story Bible create/version/review/approve/lock APIs. | DB-201 | Approval creates immutable snapshot and records approver/time.
+VDF-BE-202 | P0 | BE | Implement Season Planner APIs and episode grid reorder/update operations with transaction safety. | DB-201 | Episode numbering/order remains consistent after inserts/moves; concurrent edit conflict tested.
+VDF-BE-203 | P0 | BE | Implement Episode Factory state machine: planned → drafted → reviewed → approved → production_ready → locked. | DB-201 | Invalid transitions are blocked; authorized rollback creates new version, not mutation.
+VDF-BE-204 | P1 | BE | Implement stale-dependency propagation when Story Bible/canon dependencies change. | DB-202, BE-103 | Dependent episode versions receive stale reason/event without auto-rewrite.
+VDF-AI-201 | P0 | AI | Season architecture workflow: season arc, turning points, character progression and episode grid generation. | AI-102, BE-201 | Output obeys requested episode count/range and references valid entity IDs.
+VDF-AI-202 | P0 | AI | Episode outline workflow with objective, obstacle, reveal, emotional turn, hook and cliffhanger fields. | AI-201 | Every generated episode includes structured opening hook and ending pressure; schema validation passes.
+VDF-AI-203 | P0 | AI | Screenplay workflow constrained by approved canon and episode outline; include dialogue, action and scene metadata. | AI-202, DB-202 | Generated screenplay cites dependency IDs; forbidden canon contradiction fixture produces warning/rejection path.
+VDF-AI-204 | P1 | AI | Hook/Pacing/Cliffhanger evaluator returning scores, reasons and actionable suggestions without rewriting automatically. | AI-202 | Evaluator can compare two episode versions and output deterministic structured rubric fields.
+VDF-FE-201 | P0 | FE | Build Story Bible structured editor with section-level approve/lock and version history. | BE-201 | Dirty state, autosave/manual save behavior and lock state are visually unambiguous.
+VDF-FE-202 | P0 | FE | Build Season Board / Episode Grid with fields for hook, key beat, reveal, cliffhanger, status and dependency warnings. | BE-202 | Supports reorder, filters and direct episode opening; no data loss on reorder.
+VDF-FE-203 | P0 | FE | Build Episode Workspace tabs: Outline, Screenplay, Beats, Canon Checks, Versions, Approvals. | BE-203, AI-203 | Approved content is visibly locked; version diff and restore-as-new-version work.
+VDF-FE-204 | P1 | FE | Build performance/editorial evaluator panel for hook/pacing/cliffhanger recommendations. | AI-204 | Suggestions are optional and never mutate approved text until accepted into a new draft.
+VDF-QA-201 | P0 | QA | Golden Project B: generate a 10-episode English season and a 10-episode Sorani season from locked story bibles. | S2 core | Counts, IDs, versioning, hooks/cliffhangers, lock and stale-dependency regression all pass.
+
+--- TABLE 9 ---
+Gate | Evidence required | Pass condition
+G2.1 Narrative structure | Approved Story Bible + season + episodes | All season/episode data is structured, versioned and traceable.
+G2.2 Editorial | Hook/cliffhanger evaluator evidence | Every episode has explicit opening and ending dramatic function.
+G2.3 Governance | Version + stale dependency tests | Approved text is never silently overwritten after canon changes.
+G2.4 Language | Sorani/English golden seasons | Unicode, RTL, search and persistence pass without corruption.
+
+--- TABLE 10 ---
+ID | P | Owner | Ticket / Deliverable | Dependencies | Acceptance gate
+VDF-DB-301 | P0 | DB | Create scenes, scene_versions, shots, shot_versions, shot_reference_bindings and continuity_state tables. | DB-202 | Each shot has stable ID, version, scene/episode parent, timing, framing and reference links.
+VDF-DB-302 | P0 | DB | Create generation_jobs, generation_attempts, generated_asset_links and cost_ledger entries referencing shared asset IDs. | OPS-001 | Every output is attributable to job, attempt, provider/model, project and cost.
+VDF-BE-301 | P0 | BE | Implement screenplay → scene/shot découpage API with batch persistence and version linkage. | DB-301 | Regeneration creates new shot versions; approved screenplay source ID remains recorded.
+VDF-BE-302 | P0 | BE/AI | Implement Character DNA/reference resolver that compiles approved face, body, wardrobe and style references for a shot. | DB-103, DB-301 | Resolver returns version-pinned reference set; missing locked references block production with actionable error.
+VDF-AI-301 | P0 | AI | Vertical découpage workflow optimized for 9:16 composition, close/mid framing, safe areas and shot duration. | AI-203, BE-301 | Generated shots contain structured framing, action, camera, duration and reference requirements.
+VDF-AI-302 | P0 | AI/BE | Implement normalized image/video generation request builder through shared AI Router. | AI-002, BE-302 | Request contains capability not vendor name; provider selection occurs only inside Router.
+VDF-BE-303 | P0 | BE | Implement async generation job endpoint with idempotency, progress, cancel, retry and failure reason. | DB-302, OPS-001, AI-302 | Duplicate idempotency key returns same job; retry creates attempt, not duplicate logical job.
+VDF-BE-304 | P0 | BE | Persist full generation provenance: workflow, prompt template/version, normalized inputs, model/provider, parameters, seed when available, timestamps, output asset IDs. | DB-302, BE-303 | Any generated shot can be reconstructed to its generation record and source versions.
+VDF-BE-305 | P0 | BE | Integrate shared asset storage for generated/reference assets with checksum and immutable asset linkage. | BE-303 | No binary generation output stored directly in Vertical Drama DB; checksums and ownership verified.
+VDF-AI-303 | P1 | AI | Implement voice casting/voice generation workflow with language, speaker, consent/licensing metadata and dialogue timing. | BE-303 | Voice output has speaker/entity link, language and provenance; real-person voice requires approved rights flag.
+VDF-AI-304 | P1 | AI | Implement shot quality evaluator: identity consistency, composition, obvious artifact, dialogue/visual match and continuity warning. | AI-302 | Returns structured QC score/warnings; evaluator never silently discards output.
+VDF-FE-301 | P0 | FE | Build Scene & Shot Board with vertical thumbnails, duration, status, references, generation state and version controls. | BE-301 | User can inspect episode → scene → shot hierarchy and open any generation attempt.
+VDF-FE-302 | P0 | FE | Build Character/Reference binding UI with locked Character DNA and per-shot approved variant selection. | BE-302 | User can see exactly which face/style/wardrobe references a shot will use before generation.
+VDF-FE-303 | P0 | FE | Build Generation Panel: capability/model mode, quality/cost preference, batch selection, estimate, run, progress, retry, compare and approve. | BE-303, BE-304 | Cost estimate/actual and provider/model metadata are visible; batch run cannot exceed configured guardrail without approval.
+VDF-OPS-301 | P0 | OPS | Configure worker concurrency, provider rate limits, backoff, timeout, circuit-breaker and queue priority for image/video/voice. | BE-303 | Synthetic provider failure demonstrates backoff and circuit-breaker; unrelated workflows remain available.
+VDF-QA-301 | P0 | QA | Golden Project C: take one approved episode through screenplay → shots → mock image/video/voice jobs → shared assets → provenance/cost. | S3 core | Every final asset has unbroken lineage and job/cost record; retry/cancel/failure tests pass.
+
+--- TABLE 11 ---
+Gate | Evidence required | Pass condition
+G3.1 Production model | Scene/shot hierarchy + stable IDs | Every generated media asset belongs to a versioned shot.
+G3.2 Identity | Character reference resolver + UI | Locked approved identity references are used or production is blocked.
+G3.3 Generation | Async router-based job flow | No direct provider call exists in frontend/domain code.
+G3.4 Provenance/cost | Trace one asset end-to-end | Source screenplay, shot, prompt/workflow, model/provider, attempt and cost are recoverable.
+G3.5 Reliability | Failure/retry/cancel tests | Idempotency and attempts work without duplicate billable logical jobs.
+
+--- TABLE 12 ---
+ID | P | Owner | Ticket / Deliverable | Dependencies | Acceptance gate
+VDF-DB-401 | P0 | DB | Create episode_assemblies, timeline_items, subtitle_tracks, dub_tracks, qc_runs, delivery_packages and delivery_assets. | DB-302 | All deliverables link to mastered episode version and shared asset IDs.
+VDF-BE-401 | P0 | BE | Build assembly manifest and handoff contract to Art City AI Edit. | BE-305 | Episode shot order, audio, captions and timing serialize deterministically.
+VDF-AI-401 | P1 | AI | Localization workflow for translation, cultural adaptation, subtitle timing and dub script versions. | AI-203 | Original text stays canonical; translated variants keep source version linkage.
+VDF-BE-402 | P0 | BE | Automated technical QC service for aspect ratio, resolution, duration, missing media, audio presence and caption bounds. | BE-401 | Known bad masters fail with machine-readable reasons.
+VDF-AI-402 | P1 | AI | Editorial/continuity QC workflow for character, wardrobe, prop, story and lip/dialogue anomalies. | AI-304 | Warnings link to shots/entities; approval remains human.
+VDF-FE-401 | P0 | FE | Mastering/QC workspace with pass/fail checks, issue assignment and final approval. | BE-402 | Cannot mark delivery-ready while blocking QC failures remain.
+VDF-BE-403 | P0 | BE | Delivery package builder for 9:16 master, caption/subtitle files, poster/thumbnail and metadata manifest. | BE-402 | Package is version-pinned and re-creatable; manifest contains checksums.
+VDF-QA-401 | P0 | QA | Golden Project D: mastered episode + Sorani/English localized variant + deliberately failing QC copy. | S4 core | Good package passes; bad package fails; all delivery assets are traceable.
+
+--- TABLE 13 ---
+Method | Endpoint | Purpose
+POST | /api/v1/vertical-drama/projects | Create governed Vertical Drama project linked to shared project.
+GET/PATCH | /api/v1/vertical-drama/projects/{vd_project_id} | Read/update project metadata with version conflict protection.
+POST/GET | /ip-titles/{id}/rights | Append/read rights records.
+POST/GET | /projects/{id}/canon | Create/read canon facts and status.
+POST | /canon/{id}/approve | Approve/lock canon fact.
+POST | /projects/{id}/story-bible:generate | Create asynchronous structured Story Bible draft.
+POST | /story-bibles/{id}:approve | Approve immutable Story Bible version.
+POST | /seasons/{id}/episodes:generate | Generate episode grid from approved season/story context.
+POST | /episodes/{id}/screenplay:generate | Generate structured screenplay draft.
+POST | /episodes/{id}/decoupage:generate | Generate scenes/shots from approved screenplay.
+POST | /shots/{id}/generations | Create idempotent media-generation job.
+GET | /generation-jobs/{job_id} | Read normalized job/progress/cost/result state.
+POST | /generation-jobs/{job_id}:cancel | Request cancellation when provider supports it.
+POST | /generation-jobs/{job_id}:retry | Create a new attempt under same logical generation.
+POST | /episodes/{id}/assembly | Create/update deterministic assembly manifest.
+POST | /episodes/{id}/qc-runs | Run technical/editorial QC.
+POST | /episodes/{id}/delivery-packages | Build version-pinned delivery package.
+
+--- TABLE 14 ---
+Migration | Entities | Reason for order
+M001 | vd_projects, ip_titles | Foundation domain identity
+M002 | contributors, rights_records, provenance_entries | IP governance
+M003 | characters, variants, canon_facts, locations, props, wardrobe, reference_bindings | Story world/canon
+M004 | story_bibles, seasons, episodes + version tables | Narrative architecture
+M005 | screenplay_documents, scenes/narrative_dependencies | Screenplay and dependency graph
+M006 | shots, shot_versions, continuity_state, shot_reference_bindings | Production graph
+M007 | generation_jobs, attempts, generated_asset_links, cost links | AI production/reliability
+M008 | assemblies, timeline_items, localization tracks | Post-production
+M009 | qc_runs, qc_issues, delivery_packages/assets | Release/QC
+M010 | analytics/performance tables | Post-MVP learning loop
+
+--- TABLE 15 ---
+Event | Required behavior
+vd.project.created | Initialize domain state and default workflow settings.
+vd.canon.approved | Re-evaluate dependent Story Bible/episode/shot versions.
+vd.canon.superseded | Mark affected dependencies stale; never rewrite locked versions.
+vd.story_bible.approved | Enable season planning against the exact approved version.
+vd.episode.approved | Enable production/découpage for that episode version.
+vd.screenplay.approved | Enable shot generation using exact screenplay version.
+vd.shots.generated | Enable media-generation readiness checks.
+vd.asset.generated | Persist lineage/cost and update shot status.
+vd.episode.mastered | Enable QC and localization/delivery workflows.
+vd.qc.passed | Enable delivery-ready transition.
+vd.delivery.ready | Freeze package manifest/checksums for export.
+
+--- TABLE 16 ---
+Workflow key | Capability | Output
+vd.concept.generate | LLM | Structured concept candidates
+vd.story_bible.generate | LLM | World/character/tone structured draft
+vd.canon.conflict_check | LLM/rules | Contradiction detection
+vd.season.architecture | LLM | Season arc + episode grid
+vd.episode.outline | LLM | Episode objective/beats/hook/cliffhanger
+vd.screenplay.generate | LLM | Scene/dialogue screenplay
+vd.episode.editorial_score | LLM/rules | Hook/pacing/cliffhanger rubric
+vd.decoupage.generate | LLM | 9:16 scene/shot breakdown
+vd.shot.image | image | Reference-constrained still/plate
+vd.shot.video | video | Reference-constrained video shot
+vd.dialogue.voice | speech | Voice generation/dubbing
+vd.localization.translate | LLM | Translation
+vd.localization.adapt | LLM | Cultural adaptation
+vd.qc.visual | vision | Visual/continuity review
+vd.qc.editorial | LLM/vision | Story/editorial warnings
+
+--- TABLE 17 ---
+Order | Surface | Must include
+1 | Product route shell | Navigation, project picker, entitlement, empty/loading/error/RTL states.
+2 | Project creation wizard | Idea/import/generate path; language and production mode.
+3 | IP Vault | Rights, contributors, provenance.
+4 | Story World | Characters, locations, wardrobe, props, references, canon.
+5 | Story Bible | Structured editor, version history, approve/lock.
+6 | Season Board | Episode grid and dramatic-function columns.
+7 | Episode Workspace | Outline, screenplay, beats, checks, approvals.
+8 | Scene/Shot Board | Découpage hierarchy and 9:16 visual planning.
+9 | Generation Panel | Reference binding, job controls, cost, compare/approve.
+10 | Assembly/QC/Delivery | Mastering, localization, blocking issues and package export.
+
+--- TABLE 18 ---
+Test layer | Minimum scope
+Unit | Canon lock/supersede; state transitions; cost math; permission policies; ID/reference resolvers.
+Schema/contract | OpenAPI examples; StructuredAIResponse; season/episode/shot output schemas; event payloads.
+Repository/DB | Tenant isolation; optimistic locks; soft deletes; uniqueness; rollback/upgrade migrations.
+API integration | Create project → canon → story → episode → shots → job → asset lineage.
+AI workflow | Schema validation, malformed output repair/reject, provider failure/fallback, language tagging.
+Job reliability | Idempotency, retry attempts, timeout, cancellation, DLQ, no double charge.
+Frontend E2E | Create Sorani project; lock canon; generate season; approve episode; launch mock generation; inspect provenance.
+Security | Cross-tenant ID access, privilege escalation, asset URL authorization, prompt/reference injection boundaries.
+Performance | Episode-grid retrieval, large season pagination, batch job enqueue, websocket/polling update load.
+Regression | Golden Projects A-D remain stable across model/provider configuration changes.
+
+--- TABLE 19 ---
+Gate | Release criterion | Priority
+R1 | User creates Vertical Drama project from existing Art City AI account/project context. | P0
+R2 | IP rights/contributor/provenance records exist and are inspectable. | P0
+R3 | Story Bible and Canon are structured, versioned, approvable and lockable. | P0
+R4 | Season and episodes can be generated/edited with explicit hooks and cliffhangers. | P0
+R5 | Approved episode becomes screenplay → scenes → shots with stable IDs. | P0
+R6 | Character/reference consistency is explicitly bound before generation. | P0
+R7 | Image/video/voice generation runs asynchronously through AI Router. | P0
+R8 | Each output has lineage, provider/model, parameters, attempts and cost. | P0
+R9 | Episode can be assembled/mastered to 9:16 and pass technical QC. | P0
+R10 | Sorani/RTL works across project, screenplay, episode and subtitle workflows. | P0
+R11 | One localized variant can be produced without overwriting original canon. | P1
+R12 | Delivery package is version-pinned with manifest/checksums. | P1
+R13 | Golden projects and security/tenant isolation tests pass in CI/staging. | P0
+
+--- TABLE 20 ---
+Risk | Why it matters | Mandatory response
+RISK-01 — Text blobs instead of domain data | Fast initially, disastrous for canon checks, localization, versioning and analytics. | Reject designs that store Story Bible/episode/character state as a single unstructured document.
+RISK-02 — Provider lock-in | Direct fal.ai or other provider calls inside product code will make migration/cost routing difficult. | All inference through AI Router and workflow keys.
+RISK-03 — Weak identity consistency | Video generation before reference-locking leads to changing faces, wardrobe and world continuity. | Block production when required Character DNA/reference bindings are missing.
+RISK-04 — Silent AI rewrites | Regeneration can destroy approved creative work. | Immutable versions + approval locks + explicit new draft.
+RISK-05 — Cost explosion | Batch video generation can create unexpected spend. | Estimate/guardrail/budget checks before enqueue; cost ledger after each attempt.
+RISK-06 — RTL added late | Core forms/grids/editors become costly to repair. | Sorani golden project from Sprint 1 onward.
+RISK-07 — Provenance gaps | Cannot prove origin, model use, or human contribution later. | Persist provenance at creation time, not as a future reporting feature.
+RISK-08 — Cross-product coupling | Direct access to Cinema/Edit private tables creates brittle dependencies. | Use shared services or explicit contracts/events.

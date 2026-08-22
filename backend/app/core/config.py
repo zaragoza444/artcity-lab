@@ -73,6 +73,8 @@ class Settings(BaseSettings):
     hub_feature_storyboard: bool = False
     hub_feature_budget: bool = False
     hub_feature_call: bool = False
+    # Vertical Drama IP Factory entitlement (env VD_FEATURE_ENABLED)
+    vd_feature_enabled: bool = True
     # Customer signup: expose email token + phone code in API until SMTP/SMS providers are wired
     signup_expose_codes: bool = True
     signup_require_phone: bool = True
