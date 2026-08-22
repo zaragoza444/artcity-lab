@@ -10,6 +10,7 @@ from app.api.edit import router as edit_router
 from app.api.evaluations import router as evaluations_router
 from app.api.gateway import router as gateway_router
 from app.api.health import router as health_router
+from app.api.hub import router as hub_router
 from app.api.knowledge import router as knowledge_router
 from app.api.projects import router as projects_router
 from app.api.publishing import router as publishing_router
@@ -42,6 +43,10 @@ tags_metadata = [
     {
         "name": "edit",
         "description": "Art City Edit — long-form repurposing, access approval, entitlements, timelines, multi-ratio export",
+    },
+    {
+        "name": "production-hub",
+        "description": "Art City Production Hub — AC Script, breakdown, handoff to Cinema/Studio/Edit",
     },
     {"name": "publishing", "description": "Masters packaging and channel release"},
     {"name": "data-lab", "description": "Dataset ingest and annotation workspace"},
@@ -81,6 +86,7 @@ app.include_router(studio_router)
 app.include_router(data_bank_router)
 app.include_router(cinema_router)
 app.include_router(edit_router)
+app.include_router(hub_router)
 app.include_router(publishing_router)
 
 
@@ -94,6 +100,7 @@ def root() -> dict[str, str]:
         "openapi": "/openapi.json",
         "health": "/health",
         "gateway": "/api/v1/ai",
+        "hub": "/api/v1/hub",
         "api_guide": "docs/API.md",
     }
 

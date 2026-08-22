@@ -138,6 +138,9 @@ export default function ProjectDetailPage() {
                 <Link href={`/studio/${project.id}`} className="ac-btn ac-btn-secondary">
                   Studio
                 </Link>
+                <Link href={`/hub/${project.id}/script`} className="ac-btn ac-btn-secondary">
+                  Hub Script
+                </Link>
                 <Link href={`/projects/${project.id}/data-bank`} className="ac-btn ac-btn-secondary">
                   Data Bank
                 </Link>

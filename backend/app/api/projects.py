@@ -33,6 +33,11 @@ def create_project(payload: ProjectCreate, user: CurrentUser, db: Session = Depe
         name=payload.name,
         description=payload.description,
         budget_limit=payload.budget_limit,
+        primary_locale=payload.primary_locale or "en",
+        content_languages=payload.content_languages or [payload.primary_locale or "en"],
+        timezone=payload.timezone or "Asia/Baghdad",
+        currency=payload.currency or "USD",
+        production_status=payload.production_status or "pre_production",
     )
     db.add(project)
     db.commit()

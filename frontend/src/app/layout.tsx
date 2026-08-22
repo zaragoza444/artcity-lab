@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Figtree, Literata, Syne } from "next/font/google";
+import { Figtree, Literata, Noto_Sans_Arabic, Syne } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
@@ -19,6 +19,12 @@ const literata = Literata({
   variable: "--font-literata",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+});
+
+const notoArabic = Noto_Sans_Arabic({
+  variable: "--font-kurdish",
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -41,7 +47,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${syne.variable} ${figtree.variable} ${literata.variable} antialiased`}>
+      <body
+        className={`${syne.variable} ${figtree.variable} ${literata.variable} ${notoArabic.variable} antialiased`}
+      >
         <div className="ac-shell">
           <div className="ac-grain" aria-hidden />
           <div className="ac-vignette" aria-hidden />

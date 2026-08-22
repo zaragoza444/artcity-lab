@@ -6,6 +6,7 @@ import { ApiDocsLink } from "@/components/ApiDocsLink";
 import { ApiStatus } from "@/components/ApiStatus";
 import { BrandMark } from "@/components/BrandMark";
 import { useAuth } from "@/components/AuthProvider";
+import { useLocale } from "@/components/LocaleProvider";
 
 const primary = [
   { href: "/dashboard", label: "Dashboard" },
@@ -13,6 +14,7 @@ const primary = [
   { href: "/advertising", label: "Advertising" },
   { href: "/cinema", label: "Cinema" },
   { href: "/studio", label: "Studio" },
+  { href: "/hub", label: "Hub" },
   { href: "/data-bank", label: "Data Bank" },
   { href: "/edit", label: "Edit" },
   { href: "/publish", label: "Publish" },
@@ -35,6 +37,7 @@ const core = [
 export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { locale, setLocale, t } = useLocale();
   const product =
     pathname.startsWith("/cinema")
       ? "cinema"
@@ -42,7 +45,9 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
         ? "studio"
         : pathname.startsWith("/edit")
           ? "edit"
-          : "platform";
+          : pathname.startsWith("/hub")
+            ? "hub"
+            : "platform";
 
   return (
     <header
@@ -70,13 +75,22 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
                         : "text-[var(--mist)] hover:text-[var(--paper)]"
                     }`}
                   >
-                    {link.label}
+                    {link.href === "/hub" ? t("hub.title") : link.label}
                   </Link>
                 );
               })}
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as "en" | "ckb-IQ")}
+              className="hidden border border-[var(--line)] bg-transparent px-2 py-1 text-[0.65rem] uppercase tracking-[0.1em] text-[var(--paper-dim)] sm:block"
+              aria-label="UI language"
+            >
+              <option value="en">{t("locale.en")}</option>
+              <option value="ckb-IQ">{t("locale.ckb")}</option>
+            </select>
             {user ? (
               <button
                 type="button"

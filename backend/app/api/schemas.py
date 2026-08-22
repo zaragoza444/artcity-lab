@@ -4,10 +4,32 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+class ProjectOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    description: Optional[str]
+    status: str
+    budget_limit: Optional[float]
+    primary_locale: Optional[str] = "en"
+    content_languages: Optional[list] = None
+    timezone: Optional[str] = "Asia/Baghdad"
+    currency: Optional[str] = "USD"
+    production_status: Optional[str] = "pre_production"
+    created_at: datetime
+    updated_at: datetime
+
+
 class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     budget_limit: Optional[float] = None
+    primary_locale: Optional[str] = "en"
+    content_languages: Optional[list[str]] = None
+    timezone: Optional[str] = "Asia/Baghdad"
+    currency: Optional[str] = "USD"
+    production_status: Optional[str] = "pre_production"
 
     @field_validator("name", mode="before")
     @classmethod
@@ -22,18 +44,11 @@ class ProjectUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
     budget_limit: Optional[float] = None
-
-
-class ProjectOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    name: str
-    description: Optional[str]
-    status: str
-    budget_limit: Optional[float]
-    created_at: datetime
-    updated_at: datetime
+    primary_locale: Optional[str] = None
+    content_languages: Optional[list[str]] = None
+    timezone: Optional[str] = None
+    currency: Optional[str] = None
+    production_status: Optional[str] = None
 
 
 class CharacterCreate(BaseModel):

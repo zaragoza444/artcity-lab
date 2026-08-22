@@ -1,16 +1,17 @@
 import Link from "next/link";
 
-type BrandMarkProps = {
-  href?: string;
-  product?: "studio" | "cinema" | "edit" | "platform";
-};
-
 const productLabel = {
   platform: "AI Platform",
   studio: "Studio",
   cinema: "Cinema",
   edit: "Edit",
+  hub: "Production Hub",
 } as const;
+
+type BrandMarkProps = {
+  href?: string;
+  product?: keyof typeof productLabel;
+};
 
 export function BrandMark({ href = "/", product = "platform" }: BrandMarkProps) {
   return (

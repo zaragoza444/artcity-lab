@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     edit_feature_publishing: bool = False
     edit_feature_trend_intelligence: bool = False
     edit_feature_multi_cam: bool = False
+    # Production Hub module entitlements (enable without redeploy via env)
+    hub_feature_script: bool = True
+    hub_feature_storyboard: bool = False
+    hub_feature_budget: bool = False
+    hub_feature_call: bool = False
     # Customer signup: expose email token + phone code in API until SMTP/SMS providers are wired
     signup_expose_codes: bool = True
     signup_require_phone: bool = True

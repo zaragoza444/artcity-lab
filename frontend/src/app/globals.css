@@ -22,6 +22,7 @@
   --font-display: var(--font-syne), ui-sans-serif, sans-serif;
   --font-body: var(--font-literata), ui-serif, Georgia, serif;
   --font-ui: var(--font-figtree), ui-sans-serif, sans-serif;
+  --font-ckb: var(--font-kurdish), var(--font-figtree), ui-sans-serif, sans-serif;
   --radius: 1px;
   --max: 72rem;
   --header-h: 4.5rem;
@@ -47,6 +48,10 @@ body {
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+body[data-locale="ckb-IQ"] {
+  font-family: var(--font-ckb);
 }
 
 a {

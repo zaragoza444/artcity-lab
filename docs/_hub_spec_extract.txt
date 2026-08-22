@@ -1,0 +1,1521 @@
+Normal | ART CITY AI
+Normal | COMPLETE PRODUCTION HUB
+Normal | Master Technical & Development Specification
+Normal | Unified Development • Pre-Production • Production • Post-Production • Mastering • QC • Delivery — integrated with Cinema • Studio • Edit
+Normal | English + Kurdish Sorani (Central Kurdish / ckb-IQ) First-Class Support
+Normal | پشتیوانیی تەواوی زمانی کوردیی سۆرانی و نووسینی ڕاست بۆ چەپ
+Normal | Version 2.0  •  20 August 2026
+Normal | Prepared as Master Build Scope for the Art City AI Development Team
+Normal | 1. Executive Summary
+Normal | This document is the master technical and development specification for the Art City AI Complete Production Hub. It expands the previously defined Pre-Production Suite into one unified filmmaking and media-production environment spanning development, pre-production, production, post-production, mastering, quality control and delivery. The existing Art City AI Cinema, Studio and Edit products remain first-class parts of the same ecosystem. All modules must share canonical project, scene, shot, take, asset, version, permission and audit data so that a project can move from first idea to approved delivery master without rebuilding its data in separate applications.
+Normal | The four visible functions to add are:
+Normal | 1. AC Script — AI script writing and professional screenplay editor.
+Normal | 2. AC Storyboard — AI storyboard generation plus cinematographic découpage/shot planning.
+Normal | 3. AC Budget — production breakdown and deterministic budget calculator/spreadsheet.
+Normal | 4. AC Call — shooting call sheet generation, distribution, confirmation and revision control.
+Normal | A shared Scene Breakdown + Production Schedule Core must sit underneath the four modules. It may initially remain an internal service, but it is required for accurate budgets, schedules and call sheets.
+Normal | 2. Product Positioning and Ecosystem Integration
+Normal | The target architecture positions Art City AI as a continuous filmmaking and production pipeline from idea development through pre-production, physical/virtual production, post-production, mastering, quality control and delivery. Cinema, Studio, Edit and the new Production Hub must operate as one ecosystem rather than disconnected products.
+Normal | 2.1 Existing products that must remain connected
+Normal | 2.2 One Project ID rule
+Normal | Every asset and operation across Cinema, Studio, Edit and Pre-Production must reference the same canonical project_id. No module may create a duplicate shadow project unless explicitly using a “Duplicate Project” operation.
+Normal | 3. Scope
+Normal | 3.1 In scope for the master Production Hub build
+Normal | • Project setup and multilingual production metadata.
+Normal | • Script creation, import, editing, AI-assisted rewriting, translation and version control.
+Normal | • Structured scene parsing and script breakdown.
+Normal | • Character, cast, location, prop, wardrobe, vehicle, VFX/SFX, stunt and production-element registries.
+Normal | • AI découpage and editable shot list.
+Normal | • AI storyboard generation with character/location consistency references.
+Normal | • Production budget calculator with versions, rate cards, scenarios and spreadsheet export.
+Normal | • Shooting schedule core sufficient to drive call sheets.
+Normal | • Call sheet generation, revisions, distribution and crew/cast confirmation.
+Normal | • Kurdish Sorani first-class UI, content, search, AI and export support.
+Normal | • Integration hooks into Cinema, Studio and Edit.
+Normal | • Role-based permissions, audit trails, subscriptions/credits and AI usage-cost logging.
+Normal | 3.2 Explicitly not the source of truth
+Normal | Generative AI must not be treated as authoritative for numeric arithmetic, legal compliance, current market rates, safety instructions, weather, medical/emergency information or final production approvals. The application database and deterministic services are the source of truth. AI proposes; authorized users approve.
+Normal | 4. Kurdish Sorani / Central Kurdish Requirements (Non-Negotiable)
+Normal | 4.1 Language and direction model
+Normal | 4.2 RTL component rules
+Normal | • Use CSS logical properties (margin-inline-start/end, padding-inline-start/end) instead of hard-coded left/right where possible.
+Normal | • Use dir="rtl" at the appropriate layout root, not on every child indiscriminately.
+Normal | • For mixed-direction tokens use <bdi>, Unicode bidi isolation or component-level dir="ltr" as appropriate.
+Normal | • Icons with semantic direction (chevrons, back/forward, timeline arrows) must mirror in RTL; non-directional icons must not.
+Normal | • Spreadsheet row headers, numeric columns and account codes can remain LTR while descriptive cells are RTL.
+Normal | • Modal placement, sidebars, drawers, tab order and keyboard navigation must feel native in RTL.
+Normal | • Do not infer language from direction. Arabic and Sorani are separate locales even though both are RTL.
+Normal | 4.3 Sorani screenplay formatting
+Normal | The screenplay editor must support Kurdish dialogue and action while preserving industry screenplay semantics. Formatting is stored structurally, not by relying on spaces or tabs.
+Normal | 4.4 Kurdish text normalization policy
+Normal | Maintain two values where necessary: display_text (exact authored form) and search_normalized (derived index form). The normalization layer may map common Arabic-script variants for search equivalence, remove optional tatweel and normalize Unicode composition. It must not silently rewrite a user’s stored character name, dialogue or legally meaningful text.
+Normal | 4.5 Localization keys
+Normal | All UI text must come from localization keys. Do not hard-code English strings inside React components.
+Normal | 4.6 Example Sorani UI terms
+Normal | 4.7 AI behavior for Sorani
+Normal | • Every AI text endpoint must accept language and output_language explicitly.
+Normal | • Do not automatically translate Kurdish character/location names unless the user asks.
+Normal | • Preserve Sorani punctuation, spelling and paragraph direction.
+Normal | • Support Kurdish-only, English-only and bilingual script projects.
+Normal | • Allow per-scene or per-dialogue translation while retaining the original as a parallel version.
+Normal | • If generating JSON, text direction must never change the JSON schema; values are Unicode strings.
+Normal | • Prompt templates should contain locale-aware instructions and examples tested with Sorani.
+Normal | • Run automated regression tests using real Sorani strings, mixed Kurdish-English text, numbers, punctuation and filenames.
+Normal | 5. Target System Architecture
+Normal | 5.1 Existing stack alignment
+Normal | The recommended implementation assumes the existing Art City AI architecture based on Next.js, FastAPI, PostgreSQL, Redis and MinIO/object storage. The pre-production suite should extend that stack instead of introducing an independent runtime unless a scaling requirement later justifies service extraction.
+Normal | 5.2 Source-of-truth principle
+Normal | 6. Canonical Project Model
+Normal | 6.1 Example project payload
+Normal | 7. Module 1 — AC Script
+Normal | 7.1 Goal
+Normal | AC Script is a professional, multilingual screenplay workspace with AI assistance. It must support screenplay semantics, structured scene data and versioning rather than functioning as a generic rich-text editor.
+Normal | 7.2 Entry modes
+Normal | • Start from idea
+Normal | • Start from logline
+Normal | • Start from synopsis
+Normal | • Start from treatment
+Normal | • Create from beat sheet
+Normal | • Upload/import an existing screenplay
+Normal | • Continue a script
+Normal | • Rewrite or polish a script
+Normal | • Adapt user-owned/source-cleared material
+Normal | • Translate an existing script
+Normal | • Create an episode, commercial, music video, documentary or social/AI drama
+Normal | 7.3 Guided generation pipeline
+Normal | Each stage must be independently editable and approvable. The user can skip stages, but the system should encourage controlled development rather than generating an entire feature screenplay in one opaque operation.
+Normal | 7.4 Screenplay element types
+Normal | 7.5 Character Bible object
+Normal | 7.6 AI editor commands
+Normal | • Rewrite / shorten / expand
+Normal | • Improve dialogue
+Normal | • Make dialogue more natural
+Normal | • Increase/decrease suspense
+Normal | • Increase/decrease comedy or darkness
+Normal | • Add conflict
+Normal | • Improve pacing
+Normal | • Generate alternative scene
+Normal | • Change location while preserving intent
+Normal | • Translate selected range
+Normal | • Convert dialogue to Sorani / English / Arabic
+Normal | • Maintain character voice
+Normal | • Reduce production complexity
+Normal | • “Make this scene cheaper to produce” with explicit assumptions
+Normal | 7.7 Scene object created by parser
+Normal | Recommendation: store script page length as eighths or another deterministic representation for scheduling, not only as floating-point values.
+Normal | 7.8 Version control
+Normal | • Draft 1 / Draft 2 / Revision A / Revision B / Shooting Script / Locked Script.
+Normal | • Never overwrite an approved/locked version.
+Normal | • Maintain scene-level change records.
+Normal | • Support compare/diff between versions.
+Normal | • Any downstream module that depends on changed scenes receives a stale/out-of-date flag until reviewed.
+Normal | • Locking a shooting script generates immutable revision metadata and an audit event.
+Normal | 7.9 Script import/export
+Normal | 8. Shared Scene Breakdown Core
+Normal | This internal service is the central production data extractor. Budget and Call Sheet accuracy depend on it. The breakdown must be editable by production staff; AI extraction is only an initial proposal.
+Normal | 8.1 Breakdown categories
+Normal | 8.2 Breakdown item schema
+Normal | 9. Module 2 — AC Storyboard + Découpage
+Normal | 9.1 Goal
+Normal | Convert a scene into an editable cinematic plan: shot list, framing, lens, camera movement, blocking, duration, sound/lighting notes and generated storyboard frames. Storyboards are production references, not merely concept art.
+Normal | 9.2 Découpage generation inputs
+Normal | • Scene text and dramatic intention
+Normal | • Characters present and blocking
+Normal | • Dialogue and action beats
+Normal | • Location geometry/references
+Normal | • Visual style and genre
+Normal | • Desired pacing
+Normal | • Camera package/lens constraints
+Normal | • Aspect ratio
+Normal | • Continuity constraints
+Normal | • Budget/production constraints
+Normal | • Director/DP custom instruction
+Normal | 9.3 Shot schema
+Normal | 9.4 Standard shot-size vocabulary
+Normal | 9.5 Camera movement vocabulary
+Normal | Static, pan, tilt, push-in, pull-out, dolly, track, truck, pedestal, crane, jib, handheld, Steadicam, gimbal, drone, arc, zoom, rack focus, whip pan and custom.
+Normal | 9.6 Character and location consistency locks
+Normal | 9.7 Storyboard frame operations
+Normal | • Generate
+Normal | • Regenerate while preserving selected locks
+Normal | • Change lens
+Normal | • Change shot size
+Normal | • Change camera angle
+Normal | • Change camera height
+Normal | • Change movement
+Normal | • Change character pose/expression
+Normal | • Change blocking
+Normal | • Change lighting/time-of-day
+Normal | • Change wardrobe state
+Normal | • Change background/reference
+Normal | • Replace only one frame
+Normal | • Drag/reorder shots
+Normal | • Duplicate shot
+Normal | • Mark approved/hold/rejected
+Normal | 9.8 Storyboard UI
+Normal | 9.9 Exports and handoff
+Normal | • Storyboard PDF
+Normal | • Contact sheet
+Normal | • Shot list XLSX/CSV
+Normal | • Director’s board
+Normal | • DP shot list
+Normal | • JSON/API data
+Normal | • Push approved visual references to Art City AI Cinema
+Normal | • Open selected frame/reference in Art City AI Studio
+Normal | • Push shot metadata and intended order to Art City AI Edit
+Normal | 10. Module 3 — AC Budget
+Normal | 10.1 Goal
+Normal | Create a professional production budget from structured breakdown data, schedule assumptions and rate cards. AI can recommend assumptions and identify cost drivers; all arithmetic must be deterministic and server-authoritative.
+Normal | 10.2 Budget modes
+Normal | • Quick Estimate
+Normal | • Preliminary / Investor Budget
+Normal | • Detailed Production Budget
+Normal | • Locked Approved Budget
+Normal | • Actual vs Budget (future/accounting integration-ready)
+Normal | 10.3 Generation flow
+Normal | 10.4 Recommended account groups
+Normal | 10.5 Budget line schema
+Normal | Use Decimal/NUMERIC database fields for money. Do not use binary floating-point for currency.
+Normal | 10.6 Calculation engine
+Normal | 10.7 Rate cards
+Normal | Rate cards are versioned, territory-aware and effective-date-aware. AI-generated market-rate guesses must be labeled ESTIMATE — VERIFY RATE until an authorized user confirms them.
+Normal | 10.8 Budget scenarios
+Normal | • Micro
+Normal | • Standard
+Normal | • Premium
+Normal | • Custom
+Normal | • Duplicate current budget as scenario
+Normal | • Compare two versions by department and total
+Normal | • Target reduction: e.g., reduce 15% and show operational consequences
+Normal | 10.9 AI production-cost intelligence
+Normal | AI may flag expensive scenes and propose production alternatives, but it must display the assumptions and never silently alter the approved script or budget. Example: “Scene 38 has 120 extras, rain, 4 picture vehicles and a night exterior; consider combining with Scene 42 or reducing extras.”
+Normal | 10.10 Spreadsheet UX
+Normal | • Keyboard-friendly data entry
+Normal | • Add/delete/duplicate/move row
+Normal | • Add department/account
+Normal | • Formula-derived totals
+Normal | • Attach quotation/PO/reference
+Normal | • Notes/comments
+Normal | • Approval and lock
+Normal | • Filter by department
+Normal | • Search by item
+Normal | • Multi-currency display with controlled base-currency conversion logic
+Normal | • RTL-friendly descriptive columns and LTR numeric columns
+Normal | • Export XLSX, CSV and PDF
+Normal | 11. Shared Production Schedule Core
+Normal | A scheduling service is required even if a full scheduling product is not exposed in v1. Call sheets must be generated from an approved shooting day, not from a free-form AI prompt.
+Normal | 11.1 Scheduling inputs
+Normal | • Scene page count and estimated shoot time
+Normal | • INT/EXT and day/night
+Normal | • Cast availability
+Normal | • Location availability
+Normal | • Location cluster/company move
+Normal | • Child/minor constraints entered by production
+Normal | • Equipment constraints
+Normal | • Stunt/VFX/SFX requirements
+Normal | • Travel/turnaround constraints
+Normal | • Director/producer priority and manual locks
+Normal | 11.2 Shooting day schema
+Normal | 11.3 Future optimizer queries
+Normal | • Minimize company moves
+Normal | • Minimize actor holding days
+Normal | • Group all scenes at one location
+Normal | • Reduce total shoot days
+Normal | • Respect fixed actor/location dates
+Normal | • Find schedule conflicts
+Normal | • Estimate cost delta between 20-day and 25-day schedules
+Normal | 12. Module 4 — AC Call
+Normal | 12.1 Goal
+Normal | Generate a production-ready daily call sheet from the approved schedule and breakdown data, with controlled revisions, distribution and confirmation tracking.
+Normal | 12.2 Call sheet sections
+Normal | 12.3 Call sheet status and revision logic
+Normal | • Draft
+Normal | • Pending approval
+Normal | • Approved
+Normal | • Published
+Normal | • Superseded
+Normal | • Final/archived
+Normal | Any published revision must create a new immutable version and visibly state that it supersedes the previous call sheet. Recipients must be re-notified where required.
+Normal | 12.4 Recipient status
+Normal | 12.5 Weather rule
+Normal | 12.6 Call sheet exports and delivery
+Normal | • Responsive web view
+Normal | • PDF
+Normal | • DOCX if required
+Normal | • Email distribution
+Normal | • Secure share link
+Normal | • Optional SMS/WhatsApp integration in a future connector layer
+Normal | • QR code to latest approved version
+Normal | • Localized Sorani/English output or bilingual template
+Normal | 13. Cross-Module Dependency and Change Intelligence
+Normal | The main differentiation of Art City AI should be dependency-aware production data. Changes should emit domain events and mark dependent artifacts as potentially stale.
+Normal | 13.1 Event examples
+Normal | 13.2 Stale-state handling
+Normal | Example: if a locked storyboard was based on Script Revision B and Script Revision C changes Scene 21, the storyboard remains viewable but receives OUT OF DATE — SCRIPT CHANGED. The user can compare, accept as still valid, or regenerate/update affected shots.
+Normal | 14. Integration with Art City AI Cinema, Studio and Edit
+Normal | 14.1 Cinema handoff
+Normal | • Send approved scene/script context to Cinema.
+Normal | • Send Character Lock and Location Lock references.
+Normal | • Send approved storyboard/shot sequence.
+Normal | • Send target aspect ratio, runtime and visual style.
+Normal | • Maintain originating project_id, scene_id and shot_id in generated Cinema assets.
+Normal | • Returned Cinema assets appear in the same project asset library and may be linked back to the originating shot.
+Normal | 14.2 Studio handoff
+Normal | • Open character/location/prop/wardrobe reference in Studio without re-upload.
+Normal | • Create or refine a reference asset and return the new version to Pre-Production.
+Normal | • Maintain asset lineage and version.
+Normal | • Allow “Set as Character Lock” or “Set as Location Lock” from approved Studio output.
+Normal | 14.3 Edit handoff
+Normal | • Export scene and shot metadata to Edit.
+Normal | • Expose intended sequence/order, shot IDs, dialogue references and continuity notes.
+Normal | • Allow uploaded production media to be tagged to project → shooting day → scene → shot → take.
+Normal | • Enable Edit to compare captured media against planned shot list in future.
+Normal | • Retain target deliverable ratios and campaign metadata already used by the Art City ecosystem.
+Normal | 14.4 Shared Asset Library
+Normal | All modules must consume a single versioned asset registry rather than copying files. Assets can be categorized as character reference, location reference, wardrobe, prop, storyboard frame, concept, production still, source footage, document or deliverable.
+Normal | 15. Recommended Product Navigation
+Normal | 15.1 Locale switch behavior
+Normal | The language switch should change interface language and direction without changing project content automatically. Project content language is independent from UI locale. Example: a producer may use the English UI while editing a Sorani screenplay, or use the Sorani UI while working on an English script.
+Normal | 16. Roles, Permissions and Approval
+Normal | 16.1 Permission model
+Normal | Implement granular server-side permissions such as project.read, script.edit, script.lock, storyboard.generate, budget.view, budget.edit, budget.lock, schedule.edit, callsheet.publish, ratecard.admin and project.manage_users. Hiding a button in the frontend is not authorization.
+Normal | 17. Subscription, Credits and Art City Authorization
+Normal | Pre-Production should use the existing Art City account/subscription/permission system. Access must be entitlement-based so Art City can enable modules per plan, workspace or individual customer agreement.
+Normal | Plan names/limits above are product-design placeholders. Actual commercial limits should be configured in entitlement data, not hard-coded in application logic.
+Normal | 18. Database Blueprint
+Normal | 18.1 Core tables
+Normal | 18.2 Important database rules
+Normal | • All tenant-owned records contain workspace_id and project_id where applicable.
+Normal | • Use UUID primary keys internally; human-readable codes may be separate.
+Normal | • Use NUMERIC/Decimal for money.
+Normal | • Use JSONB for flexible metadata only when the fields are not important relational/reporting dimensions.
+Normal | • Do not put large image/document binaries in PostgreSQL. Store object-storage keys and metadata.
+Normal | • Version immutable production documents rather than updating rows in place.
+Normal | • Record created_by, updated_by, created_at, updated_at on production records.
+Normal | • Use optimistic concurrency/version numbers for collaborative edits where appropriate.
+Normal | • Audit log must be append-only from the application perspective.
+Normal | 19. API Blueprint
+Normal | 19.1 API conventions
+Normal | • Version APIs (/api/v1).
+Normal | • Always enforce authorization in FastAPI dependencies/service layer.
+Normal | • Return machine-readable error codes plus localized display messages.
+Normal | • Use idempotency keys for publish/export/generation actions where duplicates are costly.
+Normal | • Long-running jobs return job_id and status endpoint/WebSocket/SSE updates.
+Normal | • Validate structured AI responses before persistence.
+Normal | • Use request locale for UI/error messaging, not for internal enum values.
+Normal | • Enums and API field names remain English/stable; localized labels are presentation-layer concerns.
+Normal | 20. Suggested Backend Structure
+Normal | 20.1 AI provider abstraction
+Normal | The application must select provider/model through configuration and policy. Do not hard-code business logic to one model vendor.
+Normal | 20.2 Structured AI output rule
+Normal | Validate with Pydantic/JSON Schema and reject/repair malformed responses before saving.
+Normal | 21. Suggested Frontend Structure
+Normal | 21.1 Reusable components
+Normal | • LocaleAwareField
+Normal | • DirectionAwareTextArea
+Normal | • ScreenplayEditor
+Normal | • SceneNavigator
+Normal | • CharacterPicker
+Normal | • LocationPicker
+Normal | • BreakdownPanel
+Normal | • ShotCard
+Normal | • StoryboardGrid
+Normal | • VisualLockPicker
+Normal | • BudgetGrid
+Normal | • MoneyInput
+Normal | • RateCardPicker
+Normal | • ScheduleBoard
+Normal | • CallSheetPreview
+Normal | • ApprovalBar
+Normal | • VersionSelector
+Normal | • StaleDependencyBanner
+Normal | • AssetPicker
+Normal | • AIJobStatus
+Normal | • AuditTimeline
+Normal | 21.2 Editing strategy
+Normal | The screenplay editor and budget grid are specialist controls. Do not build either as a basic textarea/table and expect AI to compensate. Use structured document state, keyboard behavior, autosave, undo/redo, version checkpoints and robust RTL/LTR handling.
+Normal | 22. AI Generation Audit and Cost Control
+Normal | 23. Security, Privacy and Data Ownership
+Normal | • Workspace/tenant isolation on every query.
+Normal | • Signed/time-limited object-storage URLs for private assets.
+Normal | • Server-side authorization for all production data and exports.
+Normal | • Encrypt secrets and external provider credentials.
+Normal | • Do not expose AI provider API keys to the browser.
+Normal | • Configurable data-retention policy for prompts/generations.
+Normal | • Audit sensitive actions: publish call sheet, change budget, lock script, change permissions, export.
+Normal | • Allow project deletion/archive according to Art City policy and contractual obligations.
+Normal | • Do not use customer scripts/assets for model training unless an explicit product/legal policy permits it and the customer has agreed.
+Normal | • Mark generated content lineage so users can distinguish authored, AI-suggested and approved production data.
+Normal | 24. Reliability and Background Jobs
+Normal | • Use Redis-backed job processing for storyboards, long script operations and document exports.
+Normal | • Jobs must be retryable and idempotent where possible.
+Normal | • UI must show queued/running/succeeded/failed/cancelled.
+Normal | • A browser refresh must not lose job state.
+Normal | • Prevent duplicate charge/generation when the user double-clicks.
+Normal | • Autosave textual/structured edits separately from expensive AI generation.
+Normal | • Use transactional boundaries when locking/publishing production versions.
+Normal | 25. Acceptance Criteria — Release Gate
+Normal | 25.1 Global / ecosystem
+Normal | • A user signs in once and can move among Pre-Production, Cinema, Studio and Edit within the same project.
+Normal | • All modules preserve project_id and workspace_id.
+Normal | • Entitlements can enable/disable Pre-Production modules without code deployment.
+Normal | • Assets created in Studio/Cinema can be linked in Pre-Production without duplicate upload.
+Normal | • Approved Pre-Production metadata is available to Edit through internal API/data layer.
+Normal | 25.2 Sorani / RTL
+Normal | • Full application shell mirrors correctly in ckb-IQ.
+Normal | • Kurdish text entry works in every form, screenplay element, breakdown item, budget description and call sheet.
+Normal | • Mixed Kurdish/English scene headings do not reorder incorrectly.
+Normal | • Character and location names round-trip through API/DB/export unchanged.
+Normal | • Search handles configured Kurdish/Arabic letter equivalences without destructive storage changes.
+Normal | • PDF/DOCX export shows joined Kurdish glyphs and correct RTL paragraphs/tables.
+Normal | • Budget numeric fields remain usable and correctly calculated under RTL.
+Normal | • All localization strings are externalized; no visible hard-coded English remains in ckb-IQ mode except approved industry terms/brand names.
+Normal | 25.3 AC Script
+Normal | • Create/import a script and edit screenplay semantic elements.
+Normal | • Generate a structured scene list.
+Normal | • Generate/edit breakdown and approve items.
+Normal | • Create new version, compare and lock.
+Normal | • Changed locked-script dependencies are flagged downstream.
+Normal | • Export a Sorani screenplay to PDF and DOCX without direction/glyph defects.
+Normal | 25.4 AC Storyboard
+Normal | • Generate editable découpage from a selected scene.
+Normal | • Store shots as structured records.
+Normal | • Generate one or multiple storyboard frames.
+Normal | • Regenerate one frame while retaining character/location lock references.
+Normal | • Reorder shots and retain stable IDs/revision history.
+Normal | • Export storyboard PDF and shot list XLSX/CSV.
+Normal | • Send approved references to Cinema/Studio with lineage.
+Normal | 25.5 AC Budget
+Normal | • Generate budget draft from breakdown/schedule assumptions.
+Normal | • All totals are deterministic and backend-authoritative.
+Normal | • Edit quantities/rates and see recalculated totals.
+Normal | • Create/compare/lock budget versions.
+Normal | • Use ckb-IQ UI while numeric calculations remain correct.
+Normal | • Export XLSX/PDF.
+Normal | • AI-estimated rates are clearly marked unverified until approved.
+Normal | 25.6 AC Call
+Normal | • Generate call sheet only from a shooting day/schedule context.
+Normal | • Populate scene and cast calls from canonical project data.
+Normal | • Weather values are from an external weather source with timestamp.
+Normal | • Publish a version and track recipients.
+Normal | • Create a revision that supersedes the old version.
+Normal | • Display latest version in Sorani, English or configured bilingual template.
+Normal | • PDF export is production-readable on desktop and mobile.
+Normal | 26. Testing Plan
+Normal | 26.1 Automated tests
+Normal | • Unit tests for budget formulas, page/eighth calculations and version rules.
+Normal | • API permission tests for every privileged endpoint.
+Normal | • Schema validation tests for AI structured outputs.
+Normal | • RTL snapshot/visual regression tests for key screens.
+Normal | • Sorani Unicode round-trip tests through DB/API/export.
+Normal | • Mixed bidi test strings including INT./EXT., 24mm, T2.8, emails, phone numbers and Kurdish names.
+Normal | • Dependency-event tests: script change → downstream stale flags.
+Normal | • Concurrency tests for autosave/version locking.
+Normal | • Job idempotency tests for storyboard/export generation.
+Normal | • Tenant-isolation tests.
+Normal | 26.2 Required Sorani QA dataset
+Normal | Maintain a small internal test project containing Sorani-only dialogue, bilingual dialogue, Kurdish names with ی/ک, punctuation, numbers, long paragraphs, right-to-left tables, mixed lens/technical notation, and exports. This project should run in every release regression.
+Normal | 27. Recommended Development Sequence
+Normal | 28. Do Not Build These as Four Independent AI Pages
+Normal | The durable design is a shared production graph: structured project → script → scenes → elements → shots → schedule → budget/call sheets → creation/editing. AI should operate on that graph, not replace it.
+Normal | 29. AC Producer Copilot — Recommended Cross-Module Layer
+Normal | After the four modules share structured data, add an “Ask AC Producer” side panel that performs project-aware queries and controlled actions.
+Normal | • Which scene costs the most?
+Normal | • Which actors have the most shooting days?
+Normal | • Show all night exteriors.
+Normal | • Show all scenes with children/minors.
+Normal | • Which scenes require VFX?
+Normal | • Can we group all Citadel scenes together?
+Normal | • What changes if Scene 71 is removed?
+Normal | • Reduce the draft budget by 15% and show the operational consequences.
+Normal | • Which storyboard shots are out of date after the latest script revision?
+Normal | • Generate a draft call sheet for tomorrow’s approved shooting day.
+Normal | The Copilot should query structured project services and pass compact verified context to the AI. Do not dump the entire project into a prompt for every question.
+Normal | 30. Developer Definition of Done
+Normal | • Feature has backend and frontend tests.
+Normal | • Feature has ckb-IQ and en localization strings.
+Normal | • Feature passes RTL visual QA.
+Normal | • Feature enforces server-side permissions.
+Normal | • AI actions record provider/model/cost/status.
+Normal | • Expensive actions are idempotent and job-tracked.
+Normal | • Production data is versioned where required.
+Normal | • Exports are visually verified for Kurdish and English.
+Normal | • Cross-module links retain project/scene/shot/asset lineage.
+Normal | • Audit log records privileged state changes.
+Normal | • No approved production artifact is silently overwritten by AI.
+Normal | 31. Pre-Production Foundation Vision
+Normal | With this implementation, Art City AI becomes a continuous production environment rather than a collection of AI utilities:
+Normal | Recommended product statement: “Art City AI — From Idea to Delivery.” The strategic value comes from continuity of data: every creative and production decision remains connected from screenplay through final edit.
+Normal | 32. Pre-Production Foundation Handoff Checklist
+Normal | ☐ Confirm the existing project/account/entitlement APIs that Pre-Production will extend.
+Normal | ☐ Add ckb-IQ localization and RTL infrastructure before building module UIs.
+Normal | ☐ Define canonical schemas for ScriptVersion, Scene, BreakdownItem, Character, Location and Asset.
+Normal | ☐ Implement domain events and stale-dependency flags.
+Normal | ☐ Build AC Script MVP with structured editor + scene parser.
+Normal | ☐ Build Breakdown Core and approval flow.
+Normal | ☐ Build shot/découpage schema and Storyboard MVP.
+Normal | ☐ Build deterministic budget engine and versioned budget grid.
+Normal | ☐ Build minimum viable shooting schedule core.
+Normal | ☐ Build call sheet version, publish and recipient-confirmation flow.
+Normal | ☐ Connect shared assets with Cinema and Studio; connect metadata handoff with Edit.
+Normal | ☐ Run English + Sorani regression project through the complete workflow before release.
+Normal | Appendix A — Example Bilingual Scene
+Normal | EXT. قەڵای هەولێر - NIGHT
+Normal | ئارا بە هێواشی بەرەو دەروازەکە دەڕوات. دەنگی با لە ناو کۆڵانە کۆنەکاندا دەبیسترێت.
+Normal | ئارا
+Normal | ئێمە ئامادەین؟
+Normal | کوردیا
+Normal | لە سەرەتاوە ئامادە بووین.
+Normal | Technical note: the editor must preserve the LTR token “EXT.” and “NIGHT” while the Kurdish location/action/dialogue remain RTL. Do not reorder the scene heading by string manipulation.
+Normal | Appendix B — Example Budget Formula Contract
+Normal | Appendix C — Minimal FastAPI Découpage Contract
+Normal | Appendix D — Suggested Internal Service Names
+Normal | END OF PRE-PRODUCTION FOUNDATION SECTION — COMPLETE HUB SPECIFICATION CONTINUES
+Normal | 33. Master Production Hub Scope and Operating Principle
+Normal | This section expands the earlier Pre-Production specification into the complete Art City AI Production Hub. Everything defined in Sections 1–32 remains part of the master scope unless explicitly superseded below.
+Normal | 33.1 Complete module map
+Normal | 33.2 Single production graph
+Normal | Stable IDs and lineage are mandatory. A media file imported during production must be traceable back to project → shooting day → scene → shot → take, and a final master must be traceable forward from those source records through edit, post, QC and delivery.
+Normal | 34. AC Production — Live Production Command Centre
+Normal | AC Production is the operational command centre used while the project is actively shooting. It converts the approved schedule, call sheet, shot list and breakdown into live status and feeds actual results back into the project graph.
+Normal | 34.1 Users
+Normal | • Producer / Executive Producer
+Normal | • Director
+Normal | • 1st Assistant Director
+Normal | • Production Manager / Coordinator
+Normal | • Script Supervisor
+Normal | • Director of Photography / Camera team
+Normal | • Sound team
+Normal | • DIT / Data Manager
+Normal | • Department heads with scoped permissions
+Normal | 34.2 Live dashboard
+Normal | 34.3 Scene state machine
+Normal | All state changes must be timestamped and attributed. AI may recommend a state or identify risk, but only authorized users may finalize production-status changes.
+Normal | 34.4 Production timeline events
+Normal | • Crew call actual
+Normal | • First setup ready
+Normal | • First shot
+Normal | • Meal start/end
+Normal | • Company move start/end
+Normal | • Scene start/end
+Normal | • Actor wrap
+Normal | • Camera wrap
+Normal | • Production wrap
+Normal | • Incident or delay event
+Normal | • Weather interruption
+Normal | • Equipment failure
+Normal | • Unplanned overtime trigger
+Normal | 35. AC Slate + Shot / Take Tracker
+Normal | This module bridges the planned shot list and the footage actually captured. It should be usable on tablet/phone on set and remain functional under unstable connectivity with offline queue/synchronization where practical.
+Normal | 35.1 Take schema
+Normal | 35.2 Take ratings
+Normal | • NG / False start
+Normal | • Technical issue
+Normal | • Performance hold
+Normal | • Good
+Normal | • Circle take
+Normal | • Director select
+Normal | • Editor select
+Normal | • Pickup required
+Normal | 35.3 AC Edit handoff
+Normal | AC Edit must receive shot/take metadata, select flags, scene/shot order, script references, continuity notes and linked proxy/original media. The editor should be able to filter instantly for Director Selects, Circle Takes, missing shots and pickups.
+Normal | 36. AC Continuity — Script Supervisor Workspace
+Normal | AC Continuity manages script changes and visual/action continuity during shooting. The data must be scene-aware and take-aware rather than stored as free-form daily notes only.
+Normal | 36.1 Continuity categories
+Normal | • Costume / wardrobe state
+Normal | • Hair and makeup
+Normal | • Props and prop position
+Normal | • Food/drink levels
+Normal | • Actor blocking and body/hand position
+Normal | • Eyelines and screen direction
+Normal | • Vehicle position/damage/state
+Normal | • Blood, dirt, wetness, injuries and practical effects
+Normal | • Dialogue changes / ad-libs
+Normal | • Action changes
+Normal | • Scene timing
+Normal | • Camera axis / coverage notes
+Normal | • Continuity reference photos
+Normal | 36.2 AI-assisted continuity
+Normal | AI may compare approved continuity reference images and metadata and flag possible mismatches. It must label findings as POSSIBLE CONTINUITY ISSUE and provide the source frames/records. Human confirmation is mandatory; the system must not silently alter continuity records.
+Normal | 37. Camera, Sound and Department Reports
+Normal | Production metadata must not depend on handwritten reports that are later retyped. Art City AI should provide structured digital reports with exportable PDF/CSV and links to media assets.
+Normal | 37.1 Camera report
+Normal | • Camera body / serial or unit ID
+Normal | • Card/reel/media ID
+Normal | • Clip filename
+Normal | • Scene / shot / take
+Normal | • FPS / shutter / resolution / codec
+Normal | • Lens / focal length / filtration
+Normal | • LUT / look reference
+Normal | • Timecode
+Normal | • Technical notes
+Normal | • Good/NG/Select status
+Normal | • Media offload and checksum state
+Normal | 37.2 Sound report
+Normal | • Recorder / media ID
+Normal | • Audio filename / roll
+Normal | • Scene / shot / take
+Normal | • Timecode
+Normal | • Track names and channel assignments
+Normal | • Sample rate / bit depth
+Normal | • Mic/source notes
+Normal | • Wild tracks / room tone
+Normal | • Technical/continuity notes
+Normal | • Sync status
+Normal | 37.3 Department quick reports
+Normal | Art, wardrobe, makeup, locations, VFX and SFX departments should have lightweight forms for scene completion, continuity state, consumed materials, special notes, damage/incident flags and next-day preparation.
+Normal | 38. AC Dailies + Media Ingest
+Normal | AC Dailies is the controlled bridge between set media and AC Edit. The ingest system must prioritize data integrity, provenance and speed. Generative AI is not authoritative for checksum or file-integrity validation.
+Normal | 38.1 Required ingest pipeline
+Normal | 38.2 Integrity requirements
+Normal | • Use cryptographic checksum verification for copy validation.
+Normal | • Record source card/media ID and destination object/storage key.
+Normal | • Never mark BACKED UP based only on upload completion; verification must succeed.
+Normal | • Track at least primary copy and backup-copy status as separate fields.
+Normal | • Prevent media deletion while retention/backup policy is unsatisfied unless privileged override is logged.
+Normal | • Store proxy as derivative of original asset, not as an unrelated upload.
+Normal | 38.3 Dailies review features
+Normal | • Secure streaming proxy
+Normal | • Burn-in overlays configurable by role
+Normal | • Scene/shot/take navigation
+Normal | • Favourites / Director Select
+Normal | • Frame/timecode comments
+Normal | • Private notes vs shared notes
+Normal | • Watermark per viewer when required
+Normal | • Download permission
+Normal | • Approval / hold / pickup flag
+Normal | 39. AC Media Asset Management (MAM)
+Normal | The Production Hub requires a versioned media and document registry. Object storage holds binaries; PostgreSQL holds authoritative metadata, relationships, versions, rights/status and checksums.
+Normal | 39.1 Asset types
+Normal | 39.2 Asset schema essentials
+Normal | 39.3 Naming convention
+Normal | Provide a configurable canonical naming policy. Example: PROJECT-SCENE-SHOT-TAKE-CAMERA-DATE-VERSION. The system must preserve the original filename separately and must not rely on filename parsing as the sole source of truth.
+Normal | 40. AC Daily Production Report (DPR)
+Normal | At wrap, Art City AI should generate a structured Daily Production Report from actual production events rather than asking the production office to rebuild the day manually.
+Normal | 40.1 DPR sections
+Normal | • Production day/date/location
+Normal | • Crew call / first shot / meal / last shot / wrap
+Normal | • Scenes scheduled / completed / partial / moved
+Normal | • Pages planned vs completed
+Normal | • Cast worked and wrap times
+Normal | • Extras and special participants
+Normal | • Equipment / vehicles / special resources
+Normal | • Weather summary from verified source
+Normal | • Incidents / delays / damage
+Normal | • Overtime
+Normal | • Media cards/rolls and ingest/backup summary
+Normal | • Notes for next shooting day
+Normal | • Authorized sign-off
+Normal | 40.2 Planned vs actual
+Normal | The example is illustrative only. Actual values are derived from project records. Cost impacts must use the deterministic budget/cost engine and configured rates.
+Normal | 41. Production Crew, Cast and Equipment Operations
+Normal | The hub needs production-specific people and equipment records to drive schedules, call sheets, permissions and on-set status. This is not a general corporate HR system.
+Normal | 41.1 Production participant object
+Normal | • Person / contact identity
+Normal | • Production role and department
+Normal | • Character/cast relationship if applicable
+Normal | • Project availability
+Normal | • Production day calls and actual work times
+Normal | • Production documents/releases status
+Normal | • Emergency contact visibility governed by permissions
+Normal | • Communication preference
+Normal | • Project-specific rate/reference only where authorized
+Normal | • Portal/account invitation status
+Normal | 41.2 Equipment operations
+Normal | Découpage/shot requirements should be able to generate a proposed equipment list. Department heads approve or adjust it; AI suggestions do not reserve equipment automatically.
+Normal | 42. AC Review — Frame-Accurate Review and Approval
+Normal | AC Review provides secure review, commenting and approval across dailies, rough cuts, VFX, color, sound, trailers and masters. This is a key collaboration layer across the entire Production Hub.
+Normal | 42.1 Core features
+Normal | • Frame/timecode-accurate comments
+Normal | • Threaded replies and @mentions
+Normal | • Annotations/drawings where technically supported
+Normal | • Version selector and side-by-side/overlay comparison where appropriate
+Normal | • Approval / changes requested / rejected / locked states
+Normal | • Private comments by permission
+Normal | • Secure external review link
+Normal | • Expiry, passcode and download controls
+Normal | • Viewer watermarking
+Normal | • Read/approval audit trail
+Normal | • Sorani RTL comments and bilingual review
+Normal | 42.2 Review state machine
+Normal | 43. AC Edit — Post-Production Core Integration
+Normal | AC Edit remains the principal editing layer. The Complete Production Hub must extend it with production-aware metadata, review/version workflow and downstream handoffs rather than replacing its existing editing functions.
+Normal | 43.1 Inputs AC Edit should receive automatically
+Normal | • Locked/active script version
+Normal | • Scene and shot IDs
+Normal | • Découpage/shot order
+Normal | • Director selects and circle takes
+Normal | • Camera/sound metadata
+Normal | • Continuity notes and script changes
+Normal | • Synced proxies and original-media lineage
+Normal | • Music/graphic/reference assets from Studio/Cinema
+Normal | • Deliverable aspect-ratio targets
+Normal | • Rights/status flags for restricted media
+Normal | 43.2 Edit version object
+Normal | 43.3 Picture lock rule
+Normal | PICTURE_LOCKED is a privileged state that creates an immutable version reference and triggers downstream readiness checks for VFX, color, sound, music, localization and mastering. Any subsequent picture change must create a new version and mark dependent post assets as potentially stale.
+Normal | 44. AC VFX — Shot Tracking and Review
+Normal | VFX management should be shot-centric and linked directly to the originating production shot and edit version.
+Normal | 44.1 VFX shot lifecycle
+Normal | 44.2 VFX shot fields
+Normal | • VFX shot code
+Normal | • Scene/shot/take linkage
+Normal | • Plate/source asset
+Normal | • Edit in/out/timecode reference
+Normal | • Task/type: cleanup, comp, key, tracking, CG, sky, screen, etc.
+Normal | • Vendor/artist assignment
+Normal | • Brief and reference files
+Normal | • Target resolution/color pipeline
+Normal | • Version history
+Normal | • Review comments
+Normal | • Status/deadline/priority
+Normal | • Final render asset and checksum
+Normal | Script Breakdown and Storyboard may flag potential VFX shots early, but VFX production records are created/approved by authorized users.
+Normal | 45. AC Color — Color Workflow Management
+Normal | The hub should manage color references, turnovers, versions and approvals while allowing grading work to occur in specialist tools. It does not need to recreate a professional grading engine unless that is an explicit separate product objective.
+Normal | 45.1 Required records
+Normal | • Camera color metadata / log/gamut
+Normal | • On-set LUT/look reference
+Normal | • Approved creative look references
+Normal | • Color turnover asset/version
+Normal | • Conform status
+Normal | • Grade version and reviewer
+Normal | • Display/master target (e.g., SDR/HDR when supported)
+Normal | • Review/approval status
+Normal | • Final graded master lineage
+Normal | 46. AC Sound Post — Dialogue, ADR, Foley, Music and Mix
+Normal | Sound post should be managed as structured deliverables and approvals with strong channel-layout metadata because sound configuration directly affects final delivery acceptance.
+Normal | 46.1 Sound workstreams
+Normal | 46.2 Channel-layout metadata
+Normal | QC must validate declared vs measured channel structure and flag suspicious content routing. The platform should never infer a passed delivery merely because a file has six channels.
+Normal | 47. AC Localization — Subtitles, Captions, Dubbing and Multilingual Masters
+Normal | Localization is a first-class post-production module, especially for Kurdish projects. Sorani support must include both the application interface and professional audiovisual text workflows.
+Normal | 47.1 Languages and scripts
+Normal | At minimum, the data model must be language-agnostic and support Kurdish Sorani (ckb), Kurdish Badini/Kurmanji where configured, English, Arabic, Turkish, Persian and additional languages without schema changes.
+Normal | 47.2 Subtitle/caption workflow
+Normal | 47.3 Required timed-text fields
+Normal | • Cue ID
+Normal | • Start/end timecode
+Normal | • Text
+Normal | • Language / locale
+Normal | • Speaker when required
+Normal | • Style/type: subtitle, SDH/CC, forced narrative
+Normal | • Line count / characters / reading-speed metrics
+Normal | • RTL/LTR direction metadata if needed for renderer
+Normal | • Review state
+Normal | • Source translation/version
+Normal | • Export format
+Normal | 47.4 Sorani-specific requirements
+Normal | • Correct RTL rendering and glyph shaping in preview/export
+Normal | • Mixed Kurdish/English names and numbers without visual reordering
+Normal | • Unicode normalization only for search/indexing; preserve authored display text
+Normal | • Kurdish punctuation and line-breaking regression tests
+Normal | • Bilingual subtitle comparison view
+Normal | • Human linguistic approval before final delivery status
+Normal | 47.5 Formats
+Normal | Support SRT and WebVTT at minimum, with extensible support for TTML/IMSC, STL, ASS/SSA and platform-specific XML where contractually required. Export adapters must be versioned and tested independently.
+Normal | 48. AC Mastering — Final Master Builder
+Normal | Mastering creates controlled, immutable final-output candidates from approved picture, sound, text and metadata components. It should be workflow-aware and template-driven.
+Normal | 48.1 Master components
+Normal | • Approved picture/version
+Normal | • Approved full mix
+Normal | • Stereo/5.1/etc. audio tracks as required
+Normal | • M&E
+Normal | • Subtitle/caption tracks
+Normal | • Textless elements where required
+Normal | • Credits/version information
+Normal | • Technical specification profile
+Normal | • Artwork/metadata references
+Normal | • Checksum and manifest
+Normal | 48.2 Master states
+Normal | An APPROVED_MASTER must be immutable. Corrections generate a new master version and preserve prior QC reports for auditability.
+Normal | 49. AC QC — Automated and Human Quality Control
+Normal | QC is both automated inspection and human approval. Automated checks must distinguish objective measured failures from heuristic warnings. The system should support delivery-profile-specific rule sets.
+Normal | 49.1 Video checks
+Normal | • Resolution/dimensions
+Normal | • Frame rate and cadence metadata
+Normal | • Codec/container/profile
+Normal | • Aspect ratio / active image
+Normal | • Duration
+Normal | • Black/freeze/flash heuristics
+Normal | • Dropped/corrupt frame detection where supported
+Normal | • Color-space/HDR metadata consistency where applicable
+Normal | • Bars/slate/leader rules per delivery profile
+Normal | 49.2 Audio checks
+Normal | • Expected track count and channel mapping
+Normal | • Sample rate / bit depth / codec
+Normal | • Silence/near-silence anomalies
+Normal | • Clipping / true peak
+Normal | • Integrated loudness against configured target
+Normal | • A/V sync checks where measurable
+Normal | • Language/role labeling
+Normal | • M&E presence and configuration
+Normal | 49.3 Subtitle checks
+Normal | • Cue timing / zero or negative duration
+Normal | • Overlap/collision rules
+Normal | • Reading-speed threshold
+Normal | • Line/character limits by profile
+Normal | • Out-of-bounds timing beyond program duration
+Normal | • Missing/duplicate cue IDs
+Normal | • RTL render validation for Sorani
+Normal | • Forced/SDH labeling consistency
+Normal | 49.4 QC result model
+Normal | 50. AC Delivery — Packaging, Readiness and Delivery Control
+Normal | Delivery turns approved masters and metadata into platform/cinema/broadcast/social packages. The engine must be profile-driven because requirements differ by client, platform, territory and contract.
+Normal | 50.1 Delivery Matrix
+Normal | 50.2 Delivery readiness score
+Normal | The UI may display a readiness percentage, but it must also list every missing/failed requirement. Example: 84% READY — missing Arabic subtitles, M&E QC, 2000×3000 artwork and approved music cue sheet.
+Normal | 50.3 Delivery attempt records
+Normal | • Recipient/platform/client
+Normal | • Profile/specification version
+Normal | • Package version and checksum
+Normal | • Method / endpoint / transfer reference
+Normal | • Submitted by / date
+Normal | • Status: prepared/sent/received/rejected/accepted
+Normal | • Rejection reason / QC feedback
+Normal | • Resubmission relationship
+Normal | • Receipt/confirmation evidence
+Normal | 50.4 Cinema / OTT / broadcast / social profiles
+Normal | Implement delivery as configurable profiles rather than hard-coded brand rules. Profiles should define required components, technical limits, naming patterns, metadata fields, package manifests and validation rules. Platform requirements change over time; administrators must be able to version profiles.
+Normal | 51. AC Rights, Releases and Production Documents
+Normal | Rights and releases are production-readiness and delivery-readiness dependencies. The hub should track evidence and status; it is not a substitute for legal advice or contract review.
+Normal | 51.1 Rights categories
+Normal | • Script/story rights
+Normal | • Writer/director/producer agreements
+Normal | • Cast release / performance rights
+Normal | • Extra/minor/guardian consent where applicable
+Normal | • Location release
+Normal | • Music composition/master rights
+Normal | • Archive footage / stock footage / still-image rights
+Normal | • Artwork/logo/trademark permission where applicable
+Normal | • Voice/likeness/AI-use permissions where applicable
+Normal | • Territory/platform/language/window restrictions
+Normal | 51.2 Rights object
+Normal | 51.3 Production forms
+Normal | • Cast/extra release
+Normal | • Location release
+Normal | • Crew deal memo/production acknowledgement
+Normal | • NDA/confidentiality document
+Normal | • Equipment checkout/return
+Normal | • Vehicle request/use form
+Normal | • Incident report
+Normal | • Expense/petty-cash reference if enabled in project
+Normal | • Production consent/authorization forms
+Normal | • Call-sheet acknowledgement
+Normal | E-signature support may be added through a pluggable signing provider. Signed-document immutability, audit timestamp and signer identity must be preserved.
+Normal | 52. Production and Post Readiness Scores
+Normal | Readiness is an executive decision-support layer over explicit project requirements. It must not hide blockers behind an averaged percentage.
+Normal | 52.1 Production Readiness
+Normal | 52.2 Post / Delivery Readiness
+Normal | 53. AC Production Copilot — Full Project Intelligence Layer
+Normal | The Copilot becomes the natural-language interface over structured production services. It must retrieve verified project data through permission-aware service calls and cite the records used in its answer inside the product UI.
+Normal | 53.1 Example questions
+Normal | • What are we shooting tomorrow?
+Normal | • Which actors have not confirmed tomorrow’s call?
+Normal | • Which scenes are behind schedule?
+Normal | • Which planned shots have no captured takes?
+Normal | • Show Director Selects from Scene 21.
+Normal | • Which media cards are not verified in two locations?
+Normal | • Which scenes have unresolved continuity warnings?
+Normal | • Which VFX shots are still in review?
+Normal | • What is blocking picture lock?
+Normal | • Which Sorani subtitles failed reading-speed or RTL QC?
+Normal | • Is the delivery package ready for the selected client profile?
+Normal | • What changed after Script Revision C?
+Normal | 53.2 Copilot action policy
+Normal | 53.3 Evidence model
+Normal | Copilot answers should reference internal record links (Scene 21, Call Sheet V3, QC Report #12, etc.) so a producer can inspect the underlying source. The model must not invent project status when a source record is absent.
+Normal | 54. Notifications, Approvals and Activity Centre
+Normal | A complete hub needs a unified notification and approval inbox across all modules.
+Normal | 54.1 Notification events
+Normal | • Script revision affects downstream artifacts
+Normal | • Storyboard/shot list ready for approval
+Normal | • Budget threshold/variance warning
+Normal | • Call sheet published/revised
+Normal | • Cast/crew confirmation missing
+Normal | • Schedule delay/overtime risk
+Normal | • Media backup incomplete
+Normal | • Continuity/VFX/post review comment assigned
+Normal | • Review approval/changes requested
+Normal | • QC failure
+Normal | • Rights document expiring/missing
+Normal | • Delivery accepted/rejected
+Normal | 54.2 Approval object
+Normal | Notifications must be localized by user locale (including ckb-IQ) and preserve the original project/asset names without forced translation.
+Normal | 55. Global Search and Production Knowledge Graph
+Normal | Search should work across project metadata, scripts, scenes, characters, locations, shots, takes, call sheets, comments, assets, rights, post tasks, QC reports and delivery records, subject to permissions.
+Normal | 55.1 Search modes
+Normal | • Exact ID/code search
+Normal | • Full-text keyword search
+Normal | • Sorani normalized search index
+Normal | • Filters by project/module/status/date/person/language
+Normal | • Semantic search over approved textual content where enabled
+Normal | • Natural-language project query through Copilot
+Normal | 55.2 Sorani search
+Normal | Store original text unchanged. Generate a separate search-normalized form for common Kurdish/Arabic Unicode variants according to the policy already defined in Section 4. Search results must display authored text, not the normalized index string.
+Normal | 56. Storage, Media Security and Access Architecture
+Normal | Production footage and unreleased scripts are high-value confidential assets. Security controls must be designed as core platform requirements.
+Normal | 56.1 Required controls
+Normal | • Workspace/tenant isolation
+Normal | • Project/role scoped permissions
+Normal | • Signed expiring media URLs
+Normal | • No public object-bucket access
+Normal | • Encryption in transit and at rest using deployment-standard controls
+Normal | • Server-side secrets management
+Normal | • Viewer watermarking for sensitive review assets
+Normal | • Audit download/share/publish actions
+Normal | • Optional IP/device/session controls for high-security workspaces
+Normal | • Retention/archival states
+Normal | • Soft-delete and privileged purge workflows
+Normal | • Backup and disaster-recovery policy
+Normal | 56.2 Media access tiers
+Normal | 57. Expanded Service Architecture
+Normal | The existing Next.js + FastAPI + PostgreSQL + Redis + MinIO/object-storage architecture remains suitable, but the service boundaries should now cover the complete production lifecycle.
+Normal | 57.1 Recommended application services
+Normal | 57.2 Event bus/domain events
+Normal | Use an internal domain-event mechanism so dependent services can react without hard-wiring every module to every other module. Events may be implemented with the current infrastructure initially, but the event contract should be explicit and versioned.
+Normal | 58. Expanded API Blueprint
+Normal | The existing API conventions in Section 19 remain mandatory. Add endpoints/services for the production and post-production scope.
+Normal | 58.1 Media APIs
+Normal | Large media must use multipart/direct-to-object-storage upload patterns with server-issued signed upload sessions rather than proxying multi-gigabyte files through ordinary application request bodies. Finalization must verify size/checksum and create the MediaAsset record transactionally.
+Normal | 58.2 WebSocket/SSE events
+Normal | • AI generation status
+Normal | • Media transcode/ingest progress
+Normal | • QC progress
+Normal | • Export/package build progress
+Normal | • Live production dashboard updates
+Normal | • Review comment/activity updates
+Normal | 59. Expanded Database Blueprint
+Normal | Add the following tables/entities to the existing Section 18 model. Naming may follow the project’s established conventions, but relationships and immutability rules are required.
+Normal | 59.1 Critical database rules
+Normal | • Use immutable version rows for approved scripts, call sheets, review versions, masters and delivery packages.
+Normal | • Store measured technical metadata separately from user-entered/declared metadata where possible.
+Normal | • Store checksums for media/master/delivery integrity.
+Normal | • Do not cascade-delete production lineage records silently.
+Normal | • Use explicit stale/superseded states for downstream artifacts after source changes.
+Normal | • Indexes must include project/status/date and common relational lookup paths.
+Normal | • Sorani text uses Unicode-capable storage and search normalization as a derived index.
+Normal | 60. Complete Frontend Navigation and Workspace UX
+Normal | The user should experience one project workspace with phase-oriented navigation. Cinema, Studio and Edit remain visible as native Art City AI creation/post tools, not external links.
+Normal | 60.1 Responsive requirements
+Normal | • Desktop: full project/navigation and dense production tables.
+Normal | • Tablet: on-set production dashboard, slate/takes, continuity, call sheet and dailies prioritized.
+Normal | • Phone: call-sheet view/confirmation, cast/crew call details, quick take/continuity status, notifications, secure review.
+Normal | • RTL: navigation, drawers, breadcrumbs and forms mirror correctly in ckb-IQ while technical codes/timecodes remain readable LTR.
+Normal | 61. Expanded Roles and Permissions
+Normal | Extend Section 16 with post and delivery roles. Permissions remain granular and server-enforced.
+Normal | 62. Cross-Phase State Machines and Dependency Rules
+Normal | The platform’s real advantage comes from knowing what becomes stale when a source changes.
+Normal | 62.1 Stale behavior
+Normal | Never delete or silently regenerate approved downstream work. Mark it OUT_OF_DATE / REVIEW_REQUIRED, show the source change, and let an authorized user choose regenerate, update manually, accept unchanged, or supersede.
+Normal | 63. Complete Release-Gate Acceptance Criteria
+Normal | All earlier acceptance criteria remain in force. The following criteria are added for the Complete Production Hub.
+Normal | 63.1 Production
+Normal | • Start an approved ShootingDay and see planned scenes/shots.
+Normal | • Record multiple takes against stable shot IDs.
+Normal | • Mark circle/director selects and expose them to AC Edit.
+Normal | • Create continuity records with images and take/scene linkage.
+Normal | • Create camera and sound reports.
+Normal | • Generate DPR from actual day events.
+Normal | • Show schedule variance without AI arithmetic.
+Normal | 63.2 Dailies / media
+Normal | • Create ingest session and verify checksum.
+Normal | • Track primary/backup status separately.
+Normal | • Generate and stream proxy derivative.
+Normal | • Link source media to scene/shot/take.
+Normal | • Open dailies review with Sorani/English comments.
+Normal | • Prevent “verified backup” status when checksum verification has failed or is missing.
+Normal | 63.3 Post and review
+Normal | • Create edit version and send it to review.
+Normal | • Frame/timecode comment survives new UI session and retains author/time.
+Normal | • Approval is tied to immutable version.
+Normal | • Picture lock emits dependency events.
+Normal | • Create VFX task/version and approve final.
+Normal | • Track color/audio/localization versions.
+Normal | 63.4 Sorani localization
+Normal | • Sorani subtitles render correctly RTL in web preview and export.
+Normal | • Mixed Kurdish-English names/numbers remain in intended visual order.
+Normal | • Timed-text QC correctly evaluates timings without corrupting RTL text.
+Normal | • Kurdish review comments, notifications and production documents export correctly.
+Normal | 63.5 Master/QC/delivery
+Normal | • Assemble immutable master candidate from approved components.
+Normal | • Run configured QC profile and persist findings/measurements.
+Normal | • Failed QC blocks delivery package approval unless authorized override policy explicitly permits it.
+Normal | • Build delivery package against a versioned delivery profile.
+Normal | • Readiness view lists exact missing requirements.
+Normal | • Record delivery submission and accepted/rejected outcome without overwriting prior attempts.
+Normal | 64. Complete Testing Strategy
+Normal | Testing must include deterministic domain logic, media integrity, RTL/UI visual regression, production concurrency and workflow state transitions.
+Normal | 64.1 Additional automated tests
+Normal | • Shot/take numbering and duplicate/slate collision rules
+Normal | • Offline/queued on-set updates reconciliation where implemented
+Normal | • Checksum and ingest-finalization tests
+Normal | • Media derivative lineage tests
+Normal | • Picture-lock → stale dependency tests
+Normal | • Review approval immutable-version tests
+Normal | • Subtitle timecode/readability/QC rules
+Normal | • Audio track/channel declaration validation
+Normal | • Master component/version integrity
+Normal | • QC profile version tests
+Normal | • Delivery package completeness rules
+Normal | • Permission tests for external reviewer and delivery roles
+Normal | • Large-upload signed-session expiry/retry behavior
+Normal | 64.2 End-to-end regression project
+Normal | Maintain one internal bilingual Sorani/English test production that progresses through: script → breakdown → storyboard → budget → schedule → call sheet → production day → takes/continuity → ingest/dailies → AC Edit → review → VFX/color/sound/localization → master → QC → delivery package. The test project must include mixed-direction scene headings, Kurdish subtitles, multiple audio layouts and at least one intentionally failing QC item.
+Normal | 64.3 Load and resilience
+Normal | • Concurrent on-set users updating production status
+Normal | • Large media ingest sessions
+Normal | • Many review comments on a long-form asset
+Normal | • Long-running QC/package jobs
+Normal | • Redis/job retry and idempotency
+Normal | • Object-storage temporary outage behavior
+Normal | • PostgreSQL fail/retry and transaction boundaries
+Normal | • Recovery after browser/app reconnect
+Normal | 65. One Master Build — Recommended Engineering Sequence
+Normal | The entire scope should be approved and architected now, but engineering should proceed in dependency order so teams can work concurrently against stable contracts.
+Normal | 66. Updated Developer Definition of Done
+Normal | • Implements required backend domain model and frontend workflow.
+Normal | • Uses canonical project/scene/shot/take/asset/version identifiers.
+Normal | • Has ckb-IQ + English localization strings and passes RTL visual QA.
+Normal | • Has server-side permissions and audit logging.
+Normal | • Has deterministic rules for calculations/status validation; AI is advisory unless explicitly authorized.
+Normal | • Has version/immutability behavior for approved artifacts.
+Normal | • Emits/consumes required domain events and stale flags.
+Normal | • Supports job idempotency/progress for long work.
+Normal | • Handles Sorani Unicode round-trip through DB/API/export.
+Normal | • Has unit/API/integration tests and relevant media/large-file tests.
+Normal | • Has responsive behavior for intended desktop/tablet/mobile use.
+Normal | • Does not expose secrets or private object-storage assets publicly.
+Normal | • Has acceptance-test evidence before feature flag is enabled for customers.
+Normal | 67. Immediate Master Developer Handoff Checklist
+Normal | • Freeze canonical IDs and shared schemas for Project, Scene, Shot, Take, MediaAsset, Version, Approval and DeliveryProfile.
+Normal | • Implement ckb-IQ/RTL platform infrastructure globally before module-specific UI expansion.
+Normal | • Add feature-flag/entitlement controls for every new module.
+Normal | • Finalize domain-event contracts and stale-dependency behavior across the full lifecycle.
+Normal | • Complete the pre-production modules already specified in Sections 7–12 on the shared architecture.
+Normal | • Build AC Production dashboard plus Shot/Take and Continuity as the first production wave.
+Normal | • Implement verified media ingest/checksum/derivative lineage before production-scale dailies.
+Normal | • Connect Dailies and production selects directly into AC Edit.
+Normal | • Implement immutable AC Review/version approval framework before VFX/color/sound workflows.
+Normal | • Add localization/timed-text data model with Sorani RTL tests before subtitle automation.
+Normal | • Implement Master + QC as separate but connected services.
+Normal | • Implement delivery profiles/packages/readiness as versioned configuration, not hard-coded one-platform logic.
+Normal | • Add rights/releases as readiness dependencies and secure document records.
+Normal | • Expand Production Copilot only after structured services and permissions are reliable.
+Normal | • Run the complete bilingual regression production from idea through delivery before public launch.
+Normal | 68. Final Product Vision — Art City AI: From Idea to Delivery
+Normal | The target product is a unified film and media Production Operating System in which AI assists creative and operational decisions while structured production data remains authoritative. Cinema and Studio provide generative creation capabilities; AC Script and the pre-production modules plan the work; AC Production records what actually happened; AC Edit and post modules transform the captured media; Mastering/QC validate the result; Delivery packages and tracks the approved outputs.
+Normal | Appendix E — Production Status Enums
+Normal | Appendix F — Example Production Event Payload
+Normal | Appendix G — Sorani / RTL Production QA Samples
+Normal | Use these as regression concepts; the QA team should expand them into real fixtures and screenshots.
+Normal | Appendix H — Delivery Profile Contract (Conceptual)
+Normal | Appendix I — Non-Scope Boundary
+Normal | This master specification is intentionally focused on the Art City AI filmmaking and media-production lifecycle. General corporate administration, enterprise HR/payroll, company-wide accounting, unrelated procurement, and unrelated CRM/ERP functions are outside this Production Hub specification. Production-specific budgets, actual-cost references, crew participation, equipment usage, releases and delivery records remain in scope where they directly support a film/media project.
+Normal | END OF COMPLETE PRODUCTION HUB MASTER SPECIFICATION
+Normal | Art City AI — From Idea to Delivery.
+TABLE | === TABLE 0 ===
+TABLE | Core product decision / Build one connected production operating system. Script, scene breakdown, storyboard/découpage, budget, shooting schedule and call sheet must use the same project data. Any approved change should propagate as a dependency event rather than forcing users to re-enter data.
+TABLE | === TABLE 1 ===
+TABLE | IDEA / CONCEPT /       ↓ / AC SCRIPT → SCENE BREAKDOWN → AC STORYBOARD / DÉCOUPAGE /       ↓                         ↓ / AC BUDGET ← PRODUCTION SCHEDULE → AC CALL /       ↓                         ↓ / ART CITY AI STUDIO / CINEMA → PRODUCTION → ART CITY AI EDIT /       ↓ / MASTERING / DELIVERY / DISTRIBUTION
+TABLE | === TABLE 2 ===
+TABLE | Product | Role in ecosystem | Required Pre-Production connection
+TABLE | Art City AI Platform | Account, projects, subscriptions, permissions, assets and AI orchestration | Pre-Production becomes a new workspace/module inside the same authenticated product.
+TABLE | Art City AI Cinema | Campaign/cinematic generation and larger AI-film workflows | Receives approved scripts, character/location references, shot plans, storyboards and production metadata.
+TABLE | Art City AI Studio | Single-asset and creative generation workflows | Receives character, prop, wardrobe, location and visual-reference objects created during pre-production.
+TABLE | Art City AI Edit | AI-assisted editing and repurposing | Receives script, scene/shot IDs, continuity metadata, slate/take metadata, intended shot order and delivery targets.
+TABLE | === TABLE 3 ===
+TABLE | project_id = AC-PROD-YYYY-NNNN / workspace_id = tenant/workspace UUID / owner_user_id = UUID / locale = ckb-IQ | en | ar-IQ | ... / default_currency = USD | IQD | ...
+TABLE | === TABLE 4 ===
+TABLE | Locale requirement / Use BCP 47 locale ckb-IQ for Sorani/Central Kurdish in Iraq. Do not model Sorani merely as generic “ku” and do not treat RTL as a visual afterthought.
+TABLE | === TABLE 5 ===
+TABLE | Requirement | Implementation rule | Acceptance test
+TABLE | Locale | Use ckb-IQ in user profile, project locale and localization files. | A user can switch English and Sorani without losing project data.
+TABLE | Direction | Set document/root direction to RTL for Sorani surfaces; allow local LTR islands for codes, emails, lens values and filenames. | Mixed “INT. / EXT.”, scene numbers and Kurdish text display in correct order.
+TABLE | Unicode | Store Unicode UTF-8 end-to-end; normalize canonical text for indexing without destructively changing display strings. | Kurdish names retain exact user spelling after save/export/reload.
+TABLE | Fonts | Ship/web-load a Kurdish-capable font family and define robust Arabic-script fallback. | No missing glyphs in UI, PDF, DOCX or generated boards.
+TABLE | Numbers | Allow project preference for Latin 0-9 or Arabic-Indic/Persian-style display while storing numeric values as numbers. | Budget calculations are unaffected by display digit style.
+TABLE | Dates/time | Store ISO timestamps in UTC; render dates/times in project/user locale and timezone. | Call sheet date and call times display correctly for Erbil timezone.
+TABLE | Search | Implement normalized search aliases for common Arabic/Kurdish letter variants, but never overwrite original names. | Search finds expected Kurdish names even with common ي/ی or ك/ک variant input.
+TABLE | Exports | PDF/DOCX/print layouts must preserve RTL, table alignment and Kurdish glyph shaping. | No reversed text, detached letters or left-aligned Kurdish paragraphs.
+TABLE | === TABLE 6 ===
+TABLE | Element | Stored type | Sorani behavior
+TABLE | Scene Heading | scene_heading | Can contain Kurdish location text plus LTR production tokens such as INT./EXT.
+TABLE | Action | action | RTL paragraph for Sorani; normal prose wrapping.
+TABLE | Character | character | RTL or centered/positioned according to screenplay template; preserve exact name.
+TABLE | Dialogue | dialogue | RTL text with punctuation and mixed numbers preserved.
+TABLE | Parenthetical | parenthetical | RTL content within screenplay element constraints.
+TABLE | Transition | transition | May be localized or use conventional English token; user/project setting controls output.
+TABLE | Shot | shot | Supports Kurdish description plus LTR technical values (35mm, T2.8, 24fps).
+TABLE | === TABLE 7 ===
+TABLE | display_text:      "کوردستان" / search_normalized: derived searchable representation /  / Rule: normalization is for search/indexing, NOT destructive editing.
+TABLE | === TABLE 8 ===
+TABLE | locales/ /   en/common.json /   ckb-IQ/common.json /   ar-IQ/common.json /  / Example keys: /   project.title /   script.newDraft /   scene.sceneNumber /   storyboard.generate /   budget.total /   callsheet.crewCall /   action.approve /   action.lock
+TABLE | === TABLE 9 ===
+TABLE | English key | Suggested Sorani display | Note
+TABLE | Project | پڕۆژە | Terminology should be editable by localization administrators.
+TABLE | Script / Screenplay | سیناریۆ / سکرین‌پلەی | Use product-approved terminology consistently.
+TABLE | Scene | دیمەن | 
+TABLE | Characters | کارەکتەرەکان | 
+TABLE | Locations | شوێنەکان | 
+TABLE | Storyboard | ستۆریبۆرد | 
+TABLE | Découpage | دیکوپاژ | Retain industry term if preferred by Art City.
+TABLE | Budget | بودجە | 
+TABLE | Shooting Schedule | خشتەی وێنەگرتن | 
+TABLE | Call Sheet | خشتەی بانگهێشت / Call Sheet | Allow bilingual label if production teams prefer it.
+TABLE | Approve | پەسەندکردن | 
+TABLE | Lock | قفڵکردن | 
+TABLE | Export | هەناردەکردن | 
+TABLE | === TABLE 10 ===
+TABLE | ART CITY AI /                                 │ /                    ┌────────────▼────────────┐ /                    │   PROJECT / WORKSPACE    │ /                    │ Auth • Plan • Credits    │ /                    └────────────┬────────────┘ /                                 │ /        ┌────────────────────────┼────────────────────────┐ /        │                        │                        │ /   PRE-PRODUCTION             CINEMA                   STUDIO /        │                        │                        │ /        ├─ AC Script             │                        │ /        ├─ Breakdown Core ◄──────┼──── shared assets ─────┤ /        ├─ AC Storyboard         │                        │ /        ├─ Schedule Core         │                        │ /        ├─ AC Budget             │                        │ /        └─ AC Call               │                        │ /        │                        │                        │ /        └────────────────────────┼────────────────────────┘ /                                 ▼ /                            ART CITY AI EDIT /                        Edit • Repurpose • Deliver
+TABLE | === TABLE 11 ===
+TABLE | Layer | Recommended responsibility
+TABLE | Next.js | App Router pages, localized UI, screenplay editor shell, storyboard grid, budget sheet, call sheet preview, project navigation.
+TABLE | FastAPI | Domain APIs, permission checks, business rules, deterministic calculations, AI orchestration and exports.
+TABLE | PostgreSQL | Canonical structured production data, versions, permissions, approvals, schedule, budgets and audit metadata.
+TABLE | Redis | Background job state, queues, rate limiting, locks, cached derived data and AI-generation status.
+TABLE | MinIO/Object Storage | Storyboard frames, uploaded scripts, reference images, documents, generated PDFs/DOCX/XLSX and production attachments.
+TABLE | AI Provider Layer | Provider-agnostic text/image inference adapters with structured output validation and cost logging.
+TABLE | === TABLE 12 ===
+TABLE | Database first / AI output becomes production data only after schema validation and, where required, human approval. Never let a raw model response directly overwrite an approved screenplay, budget, shooting schedule or call sheet.
+TABLE | === TABLE 13 ===
+TABLE | Project / ├── Project Metadata / ├── Script(s) / │   └── Script Versions / │       └── Scenes / │           ├── Breakdown Items / │           ├── Characters / Cast / │           ├── Locations / │           └── Shots / Storyboard Frames / ├── Production Schedule / │   └── Shooting Days / ├── Budget / │   └── Budget Versions / Lines / ├── Call Sheets / ├── Assets / References / ├── Documents / ├── Approvals / Comments / ├── Audit Log / └── AI Generation Log
+TABLE | === TABLE 14 ===
+TABLE | { /   "project_id": "AC-PROD-2026-0001", /   "title": "Project Title", /   "project_type": "feature_film", /   "primary_locale": "ckb-IQ", /   "content_languages": ["ckb-IQ", "en"], /   "production_country": "IQ", /   "timezone": "Asia/Baghdad", /   "currency": "USD", /   "status": "pre_production", /   "owner_user_id": "uuid", /   "workspace_id": "uuid" / }
+TABLE | === TABLE 15 ===
+TABLE | IDEA → LOGLINE → PREMISE → CHARACTER BIBLE → WORLD/LOCATION BIBLE /      → SYNOPSIS → TREATMENT → BEAT SHEET → ACT STRUCTURE /      → SCENE OUTLINE → SCREENPLAY → STRUCTURED BREAKDOWN
+TABLE | === TABLE 16 ===
+TABLE | Type | Required behavior
+TABLE | scene_heading | INT/EXT, location, time-of-day; generates/links Scene object.
+TABLE | action | Normal action description.
+TABLE | character | Links to Character object when matched/selected.
+TABLE | dialogue | Dialogue body; locale-aware RTL/LTR.
+TABLE | parenthetical | Actor/performance note.
+TABLE | transition | CUT TO, DISSOLVE, localized equivalent or custom.
+TABLE | shot | Technical shot cue.
+TABLE | general | Non-standard text/comment when needed.
+TABLE | === TABLE 17 ===
+TABLE | { /   "character_id": "CHAR-001", /   "name": "ئارا", /   "name_latin": "Ara", /   "age": 32, /   "role": "protagonist", /   "description": "...", /   "background": "...", /   "motivation": "...", /   "conflict": "...", /   "relationships": [], /   "visual_description": "...", /   "wardrobe_refs": [], /   "voice_description": "...", /   "character_arc": "..." / }
+TABLE | === TABLE 18 ===
+TABLE | { /   "scene_number": 21, /   "slugline": "EXT. قەڵای هەولێر - NIGHT", /   "int_ext": "EXT", /   "location_id": "LOC-004", /   "time_of_day": "night", /   "characters": ["CHAR-001", "CHAR-003"], /   "extras": 20, /   "props": [], /   "vehicles": [], /   "special_effects": [], /   "vfx": [], /   "wardrobe": [], /   "script_pages_eighths": 10, /   "estimated_screen_time_seconds": 94 / }
+TABLE | === TABLE 19 ===
+TABLE | Format | Direction | Requirement
+TABLE | PDF | Import/Export | Import may require parser review; export must preserve RTL.
+TABLE | DOCX | Import/Export | Preserve Unicode and bilingual text.
+TABLE | TXT | Import/Export | UTF-8.
+TABLE | Fountain | Import/Export | Map screenplay semantics; test RTL carefully.
+TABLE | FDX | Import/Export | Implement where compatible; document any third-party RTL limitations.
+TABLE | JSON / AC Project | Import/Export | Lossless internal exchange format.
+TABLE | === TABLE 20 ===
+TABLE | Department | Elements
+TABLE | Cast | Principal, supporting, day players, children, extras, stunt performers.
+TABLE | Locations | Location, set, interior/exterior, permits, parking, unit base.
+TABLE | Art | Set construction, dressing, props, graphics, practical elements.
+TABLE | Costume | Wardrobe, changes, duplicates, special costume.
+TABLE | Hair/Makeup | Hair, beauty makeup, prosthetics, blood/dirt/continuity.
+TABLE | Vehicles/Animals | Picture vehicles, transport vehicles, animals, handlers.
+TABLE | Camera/Grip/Lighting | Special camera, lenses, motion, rigging, lighting, generators.
+TABLE | Sound | Playback, special microphones, music playback, noisy conditions.
+TABLE | SFX/VFX/Stunts | Practical effects, VFX, green/blue screen, stunt needs.
+TABLE | Logistics | Transport, accommodation, catering, security, medics, permits.
+TABLE | Safety/Special | Weapons/replicas, minors, water, heights, fire, traffic, etc.; always human-reviewed.
+TABLE | === TABLE 21 ===
+TABLE | { /   "id": "uuid", /   "project_id": "uuid", /   "scene_id": "uuid", /   "category": "prop", /   "name": "دەمانچەی ساختە", /   "quantity": 1, /   "department": "art", /   "source": "ai_suggested", /   "approved": false, /   "notes": "Human safety review required", /   "linked_asset_ids": [] / }
+TABLE | === TABLE 22 ===
+TABLE | { /   "shot_id": "21A", /   "scene_id": "uuid", /   "shot_number": 1, /   "shot_size": "EWS", /   "lens_mm": 24, /   "camera_angle": "eye_level", /   "movement": "crane_down", /   "duration_seconds": 6, /   "characters": ["CHAR-001"], /   "action": "...", /   "dialogue_reference": "...", /   "lighting_notes": "...", /   "sound_notes": "...", /   "equipment": [], /   "continuity_notes": "...", /   "storyboard_prompt": "..." / }
+TABLE | === TABLE 23 ===
+TABLE | Code | Meaning
+TABLE | ECU | Extreme Close-Up
+TABLE | CU | Close-Up
+TABLE | MCU | Medium Close-Up
+TABLE | MS | Medium Shot
+TABLE | MLS | Medium Long Shot
+TABLE | FS | Full Shot
+TABLE | WS | Wide Shot
+TABLE | EWS | Extreme Wide Shot
+TABLE | OTS | Over-the-Shoulder
+TABLE | POV | Point of View
+TABLE | INSERT | Insert
+TABLE | CUTAWAY | Cutaway
+TABLE | 2S | Two Shot
+TABLE | EST | Establishing Shot
+TABLE | DRONE | Drone/Aerial
+TABLE | === TABLE 24 ===
+TABLE | Critical requirement / Generated storyboard frames must reference persistent Character Lock and Location Lock data. Do not regenerate each frame from unstructured prose; this causes identity, costume and spatial continuity drift.
+TABLE | === TABLE 25 ===
+TABLE | Lock | Fields/examples
+TABLE | Character Lock | Face/reference IDs, hair, apparent age, body proportions, height, wardrobe, accessories, palette, voice reference.
+TABLE | Location Lock | Architecture, doors/windows, furniture, axis/orientation, lighting sources, palette, reference images.
+TABLE | Wardrobe Lock | Character, costume ID, scene range, continuity state, damage/dirt/blood state.
+TABLE | Prop Lock | Object appearance, scale, ownership, scene continuity.
+TABLE | === TABLE 26 ===
+TABLE | SCENE 21 — EXT. قەڵای هەولێر — NIGHT /  / 21A             21B             21C             21D / [FRAME]         [FRAME]         [FRAME]         [FRAME] / EWS • 24mm      MS • 50mm       CU • 85mm       OTS • 50mm / 6 sec • Crane   8 sec • Dolly   4 sec • Static  7 sec • Handheld
+TABLE | === TABLE 27 ===
+TABLE | SCRIPT → BREAKDOWN → SCENES / CAST / LOCATIONS / EQUIPMENT / CREW /       → SHOOTING SCHEDULE → RATE CARDS → BUDGET ENGINE → VERSIONED BUDGET
+TABLE | === TABLE 28 ===
+TABLE | Group | Examples
+TABLE | 1000 Development | Rights, writer, research, script editing, legal, development office.
+TABLE | 2000 Above the Line | Producer, executive producer, director, writer, lead cast, rights.
+TABLE | 3000 Production Crew | Production, AD, camera, lighting, grip, sound, art, costume, HMU, locations, transport, DIT.
+TABLE | 4000 Equipment | Camera, lenses, lighting, grip, sound, DIT, generators, drone, specialty equipment.
+TABLE | 5000 Locations & Art | Rental, permits, construction, dressing, props, security, cleaning.
+TABLE | 6000 Cast & Extras | Cast fees, extras, stunt performers, rehearsals, fittings.
+TABLE | 7000 Travel & Logistics | Flights, hotel, ground transport, per diem, catering.
+TABLE | 8000 Post Production | Edit, VFX, grade, sound, ADR, Foley, music, subtitles, mastering, QC, deliverables.
+TABLE | 9000 Other | Insurance, legal, contingency, administration, taxes/fees as configured.
+TABLE | === TABLE 29 ===
+TABLE | { /   "account_code": "3210", /   "department": "camera", /   "item": "Director of Photography", /   "quantity": 20, /   "unit": "shooting_day", /   "rate": "500.00", /   "currency": "USD", /   "tax_rate": "0.00", /   "fringe_rate": "0.00", /   "source": "rate_card", /   "notes": "" / }
+TABLE | === TABLE 30 ===
+TABLE | subtotal = quantity × rate / tax      = subtotal × tax_rate / fringe   = subtotal × fringe_rate / total    = subtotal + tax + fringe /  / Budget totals are calculated on the backend and persisted/recomputed from canonical lines.
+TABLE | === TABLE 31 ===
+TABLE | Field | Example
+TABLE | territory | Kurdistan Region / Iraq
+TABLE | currency | USD
+TABLE | department | camera
+TABLE | role_or_item | 1st AC
+TABLE | unit | day
+TABLE | rate | 150.00
+TABLE | effective_from | 2026-01-01
+TABLE | source | Art City approved card
+TABLE | approved_by | user UUID
+TABLE | === TABLE 32 ===
+TABLE | { /   "shooting_day": 7, /   "date": "2026-10-21", /   "scene_ids": ["21", "22", "24"], /   "primary_location_id": "LOC-004", /   "crew_call": "06:00", /   "camera_call": "07:00", /   "first_shot": "07:30", /   "estimated_wrap": "18:00", /   "status": "approved" / }
+TABLE | === TABLE 33 ===
+TABLE | Section | Required data
+TABLE | Header | Company, production title, call sheet number, date, production day X of Y, revision/version.
+TABLE | Production Contacts | Producer, director, 1st AD, production manager, production office/emergency contact.
+TABLE | Day Schedule | Crew call, breakfast if used, first shot, lunch, estimated wrap.
+TABLE | Locations | Set/location name, address, map/GPS link, parking, basecamp, HMU, wardrobe.
+TABLE | Weather | Weather API data, sunrise/sunset, temperature, precipitation/wind; source/time shown.
+TABLE | Emergency | Medic, security, emergency procedure/contacts and nearest hospital when production provides/validates it.
+TABLE | Scene Schedule | Scene, synopsis, cast IDs, pages, D/N, INT/EXT, estimated time.
+TABLE | Cast Calls | Actor, character, pickup, HMU, wardrobe, rehearsal, on-set time.
+TABLE | Crew Calls | Department and individual call times/notes.
+TABLE | Equipment/Special | Equipment, props, vehicles, SFX/VFX, stunts, extras, special notes.
+TABLE | Distribution | Sent/delivered/opened/confirmed/declined/updated status.
+TABLE | === TABLE 34 ===
+TABLE | SENT → DELIVERED → OPENED → CONFIRMED / OR: DECLINED / NEEDS RESPONSE /  / Any material revision → UPDATED / RECONFIRM REQUIRED
+TABLE | === TABLE 35 ===
+TABLE | No AI weather / Weather must come from a real weather API/provider and include the data timestamp. Generative AI may summarize the forecast, but must not invent forecast values.
+TABLE | === TABLE 36 ===
+TABLE | Change | Potential impact
+TABLE | Scene INT → EXT | Storyboard, lighting, equipment, location, schedule, budget, call sheet.
+TABLE | DAY → NIGHT | Lighting, crew hours, schedule, permits, budget, call sheet.
+TABLE | Cast added/removed | Casting, schedule, budget, call sheet, storyboard.
+TABLE | Location changed | Storyboard/background, transport, permits, schedule, budget, call sheet.
+TABLE | Shot adds crane/drone | Equipment, permits/safety review, budget, schedule, call sheet.
+TABLE | Shoot days 25 → 20 | Crew/equipment/logistics costs, pages/day, schedule risk, call sheets.
+TABLE | === TABLE 37 ===
+TABLE | script.scene.updated / script.version.locked / breakdown.item.approved / storyboard.shot.updated / budget.version.locked / schedule.day.approved / callsheet.published / asset.reference.updated
+TABLE | === TABLE 38 ===
+TABLE | PROJECT / ├── Overview / ├── DEVELOPMENT / │   ├── AC Script / │   ├── Characters / │   └── Locations / ├── PRE-PRODUCTION / │   ├── Script Breakdown / │   ├── AC Storyboard / │   ├── Découpage / Shot List / │   ├── Shooting Schedule / │   ├── AC Budget / │   └── AC Call / ├── CREATE / │   ├── Art City AI Studio / │   └── Art City AI Cinema / ├── POST / │   └── Art City AI Edit / └── PROJECT CONTROL /     ├── Assets /     ├── Documents /     ├── Team / Permissions /     ├── Activity / Approvals /     └── Settings
+TABLE | === TABLE 39 ===
+TABLE | Role | Typical scope
+TABLE | Owner / Executive Producer | Full project, billing/plan where allowed, approvals, locks and exports.
+TABLE | Producer | Script/storyboard/budget/schedule/call-sheet control.
+TABLE | Director | Script, découpage, storyboard, shot list and schedule collaboration.
+TABLE | 1st AD | Breakdown, schedule, call sheets and production-day operations.
+TABLE | Production Manager | Budget/logistics/schedule/call sheet.
+TABLE | Writer | Script creation/edit only unless additional permissions granted.
+TABLE | Cinematographer | Découpage, shot list, camera/lighting notes.
+TABLE | Art / Costume / HMU | Department breakdown items and references.
+TABLE | Accountant | Budget/rate cards/actuals according to permission.
+TABLE | Casting Manager | Cast/character/call availability according to permission.
+TABLE | Crew | Read assigned call sheet/project data only.
+TABLE | Viewer | Read-only.
+TABLE | Art City Administrator | Tenant/module permissions, policy, support and configured admin access.
+TABLE | === TABLE 40 ===
+TABLE | Capability | Creator | Pro | Production
+TABLE | AC Script | Included | Included | Included
+TABLE | Script versions | Limited | Full | Full
+TABLE | AI Découpage | Credits | Included/credits | Higher allowance
+TABLE | AI Storyboards | Credits | Credits | Higher allowance
+TABLE | AC Budget | Basic | Full | Full + rate cards
+TABLE | Shooting Schedule | View/basic | Full | Full
+TABLE | AC Call | —/limited | Full | Full
+TABLE | Collaboration | Limited | Full | Full
+TABLE | Approval workflow | — | Limited | Full
+TABLE | Admin rate cards | — | — | Included/configurable
+TABLE | === TABLE 41 ===
+TABLE | projects / project_members / project_settings /  / scripts / script_versions / script_elements / scenes / scene_revisions /  / characters / cast_members / character_cast_assignments / locations / breakdown_items /  / shots / storyboard_frames / visual_locks /  / production_schedules / shooting_days / shooting_day_scenes / availability_constraints /  / budgets / budget_versions / budget_lines / rate_cards / rate_card_items /  / call_sheets / call_sheet_versions / call_sheet_cast_calls / call_sheet_crew_calls / call_sheet_recipients /  / assets / asset_versions / asset_links /  / approvals / comments / audit_logs / ai_generations / domain_events
+TABLE | === TABLE 42 ===
+TABLE | POST   /api/v1/projects / GET    /api/v1/projects/{project_id} / PATCH  /api/v1/projects/{project_id} /  / POST   /api/v1/projects/{id}/scripts / POST   /api/v1/scripts/{id}/generate / POST   /api/v1/scripts/{id}/rewrite / POST   /api/v1/scripts/{id}/translate / POST   /api/v1/scripts/{id}/versions / POST   /api/v1/script-versions/{id}/lock / POST   /api/v1/script-versions/{id}/breakdown / GET    /api/v1/script-versions/{id}/scenes / PATCH  /api/v1/scenes/{id} /  / POST   /api/v1/scenes/{id}/decoupage / POST   /api/v1/shots/{id}/storyboard / POST   /api/v1/storyboard-frames/{id}/regenerate / POST   /api/v1/storyboard-frames/{id}/approve /  / POST   /api/v1/projects/{id}/budgets / POST   /api/v1/budgets/{id}/generate-from-breakdown / POST   /api/v1/budgets/{id}/recalculate / POST   /api/v1/budgets/{id}/duplicate / POST   /api/v1/budget-versions/{id}/lock /  / POST   /api/v1/projects/{id}/schedules / POST   /api/v1/schedules/{id}/optimize / POST   /api/v1/shooting-days/{id}/approve /  / POST   /api/v1/shooting-days/{id}/call-sheet / POST   /api/v1/call-sheets/{id}/publish / POST   /api/v1/call-sheets/{id}/revise / POST   /api/v1/call-sheets/{id}/confirm /  / GET    /api/v1/projects/{id}/assets / GET    /api/v1/projects/{id}/audit-log / GET    /api/v1/projects/{id}/ai-usage
+TABLE | === TABLE 43 ===
+TABLE | backend/app/ / ├── api/ / │   ├── projects.py / │   ├── scripts.py / │   ├── scenes.py / │   ├── breakdowns.py / │   ├── shots.py / │   ├── storyboards.py / │   ├── budgets.py / │   ├── schedules.py / │   ├── callsheets.py / │   └── assets.py / ├── models/ / ├── schemas/ / ├── repositories/ / ├── services/ / │   ├── ai/ / │   ├── script_service.py / │   ├── breakdown_service.py / │   ├── decoupage_service.py / │   ├── storyboard_service.py / │   ├── budget_service.py / │   ├── scheduler_service.py / │   ├── callsheet_service.py / │   ├── localization_service.py / │   └── export_service.py / ├── workers/ / │   ├── ai_worker.py / │   ├── storyboard_worker.py / │   └── document_worker.py / └── domain/ /     ├── events.py /     └── permissions.py
+TABLE | === TABLE 44 ===
+TABLE | class AIProvider: /     async def generate_text(self, request): ... /     async def generate_structured(self, request, schema): ... /     async def generate_image(self, request): ... /  / # adapters can be changed without rewriting product logic / class ProviderA(AIProvider): ... / class ProviderB(AIProvider): ... / class LocalProvider(AIProvider): ...
+TABLE | === TABLE 45 ===
+TABLE | { /   "scene_id": "uuid", /   "cast": [], /   "extras": [], /   "props": [], /   "wardrobe": [], /   "makeup": [], /   "vehicles": [], /   "locations": [], /   "camera_requirements": [], /   "lighting_requirements": [], /   "sound_requirements": [], /   "sfx": [], /   "vfx": [], /   "stunts": [], /   "special_notes": [] / }
+TABLE | === TABLE 46 ===
+TABLE | frontend/app/[locale]/projects/[projectId]/ / ├── overview/ / ├── script/ / ├── characters/ / ├── locations/ / ├── breakdown/ / ├── storyboard/ / ├── shots/ / ├── schedule/ / ├── budget/ / ├── callsheets/ / ├── studio/ / ├── cinema/ / ├── edit/ / ├── assets/ / ├── activity/ / └── settings/
+TABLE | === TABLE 47 ===
+TABLE | Field | Reason
+TABLE | workspace_id / project_id | Tenant and project cost attribution.
+TABLE | user_id | Who initiated generation.
+TABLE | module / action | Script, breakdown, storyboard, etc.
+TABLE | provider / model | Operational traceability.
+TABLE | prompt_template_version | Reproducibility.
+TABLE | input hash / reference IDs | Trace source without duplicating sensitive text unnecessarily.
+TABLE | output object IDs | Link model result to persisted artifacts.
+TABLE | token/image usage | Cost calculation.
+TABLE | provider_cost | Internal economics.
+TABLE | latency_ms | Performance.
+TABLE | status / error | Reliability.
+TABLE | approved/rejected | Human-quality signal.
+TABLE | === TABLE 48 ===
+TABLE | Phase | Deliverables | Why this order
+TABLE | 1 — Shared Core | Project model extension, localization/RTL framework, permissions, asset links, versions, audit, AI job framework. | Everything else depends on this.
+TABLE | 2 — AC Script | Screenplay editor, imports, AI assist, scene parser, script versions. | Creates canonical scenes/content.
+TABLE | 3 — Breakdown Core | Breakdown extraction/editor, character/location registries. | Feeds all production modules.
+TABLE | 4 — AC Storyboard | Découpage, shot DB, locks, storyboard generation and exports. | Uses scenes and references.
+TABLE | 5 — AC Budget | Rate cards, budget grid, formulas, scenarios, exports. | Uses breakdown; improves once schedule exists.
+TABLE | 6 — Schedule Core | Shooting days, constraints, scene assignment, approvals. | Required for reliable call sheets.
+TABLE | 7 — AC Call | Call sheet template, weather, distribution, confirmation, revisions. | Depends on approved schedule.
+TABLE | 8 — Deep Ecosystem Integration | Cinema/Studio/Edit handoff, production media tagging, advanced cross-module actions. | Turns suite into one operating system.
+TABLE | === TABLE 49 ===
+TABLE | Architecture warning / The fastest-looking implementation — four pages, four prompts, four result boxes — will create a weak product. It duplicates data, prevents reliable budgeting/scheduling, breaks version control and makes Cinema/Studio/Edit integration expensive later.
+TABLE | === TABLE 50 ===
+TABLE | IDEA /   ↓ / AC SCRIPT /   ↓ / SCENE BREAKDOWN /   ↓ / AC STORYBOARD + DÉCOUPAGE /   ↓ / AC BUDGET + SHOOTING SCHEDULE /   ↓ / AC CALL /   ↓ / ART CITY AI STUDIO / CINEMA /   ↓ / PRODUCTION /   ↓ / ART CITY AI EDIT /   ↓ / MASTER / DELIVER
+TABLE | === TABLE 51 ===
+TABLE | from decimal import Decimal /  / def calculate_budget_line(quantity: Decimal, /                           rate: Decimal, /                           tax_rate: Decimal = Decimal("0"), /                           fringe_rate: Decimal = Decimal("0")): /     subtotal = quantity * rate /     tax = subtotal * tax_rate /     fringe = subtotal * fringe_rate /     return { /         "subtotal": subtotal, /         "tax": tax, /         "fringe": fringe, /         "total": subtotal + tax + fringe, /     }
+TABLE | === TABLE 52 ===
+TABLE | @router.post("/scenes/{scene_id}/decoupage") / async def generate_decoupage(scene_id: UUID, request: DecoupageRequest, user=Depends(require_permission("storyboard.generate"))): /     scene = await scene_service.get(scene_id) /     result = await decoupage_service.generate(scene=scene, request=request) /     validated = DecoupageResult.model_validate(result) /     shots = await shot_service.create_versioned_shots(scene_id, validated.shots, user.id) /     return {"scene_id": str(scene_id), "shots": shots}
+TABLE | === TABLE 53 ===
+TABLE | Service | Responsibility
+TABLE | ac-script-engine | Script generation, semantic editor support, versions, parser.
+TABLE | ac-breakdown-engine | Scene breakdown, production elements, dependency extraction.
+TABLE | ac-decoupage-engine | Shot planning and storyboard orchestration.
+TABLE | ac-budget-engine | Rate cards, deterministic calculations, scenarios and exports.
+TABLE | ac-production-engine | Schedule, shooting days and call sheets.
+TABLE | ac-asset-service | Shared asset/version/lineage links across Cinema, Studio, Edit and Pre-Production.
+TABLE | === TABLE 54 ===
+TABLE | ARCHITECTURE RULE  Commission and architect the complete hub in one go, but implement and activate it as modular services behind feature flags. The platform must never require users to re-enter project data when they move from Script to Production, from Production to Edit, or from Edit to QC and Delivery.
+TABLE | === TABLE 55 ===
+TABLE | Phase | Primary Art City AI modules | Canonical outputs
+TABLE | Development | Project Hub, AC Script, Character/World Bible, concept development | Approved development package, ScriptVersion, characters, locations
+TABLE | Pre-Production | Breakdown, Storyboard, Découpage, Shot List, Budget, Schedule, AC Call | Approved shooting plan, budget, schedule, call sheet
+TABLE | Production | Command Centre, Digital Slate, Shot/Take, Continuity, Camera/Sound Reports, Dailies, DPR | Captured production records and linked media
+TABLE | Post-Production | AC Edit, Review, VFX, Color, Sound, Music, ADR/Foley, Localization | Approved picture/sound versions and localized assets
+TABLE | Mastering & QC | Master Builder, technical QC, subtitle/audio QC, approval gates | Validated masters, QC reports
+TABLE | Delivery | Delivery Matrix, package builder, metadata/artwork, readiness control | Platform/broadcast/cinema/social delivery packages
+TABLE | === TABLE 56 ===
+TABLE | Project /   ├── ScriptVersion → Scene → BreakdownItem /   ├── Character / Cast / Location / ProductionElement /   ├── Shot → StoryboardFrame → PlannedShot /   ├── ShootingDay → CallSheet /   ├── Take → CameraClip / AudioClip / ContinuityRecord /   ├── EditVersion → ReviewComment → Approval /   ├── VFXShot / ColorVersion / AudioMix / SubtitleTrack /   ├── Master → QCReport /   └── DeliveryPackage → DeliveryAttempt / Receipt
+TABLE | === TABLE 57 ===
+TABLE | Widget | Required information | Source
+TABLE | Production day | Day X of Y, date, location, crew call, first shot, estimated wrap | Approved ShootingDay + CallSheet
+TABLE | Scene progress | Planned / in progress / completed / moved / dropped | Live production status
+TABLE | Page progress | Pages planned, pages completed, eighths remaining | Script + scene completion
+TABLE | Shot progress | Shots planned/completed/missing, pickups | Shot/Take tracker
+TABLE | Schedule variance | Ahead/behind in minutes and projected wrap | Actual timestamps vs schedule
+TABLE | Cost risk | Overtime exposure, unplanned resource use, forecast variance | Budget + actual production events
+TABLE | Cast status | Not called / travelling / HMU / wardrobe / on set / wrapped | Call + live status
+TABLE | Operational alerts | Weather, missing confirmations, media backup risk, safety/incident notices | Verified services + user records
+TABLE | === TABLE 58 ===
+TABLE | PLANNED → CALLED → READY → SHOOTING → COMPLETE /                  ↘ HOLD / MOVED / PARTIAL / PICKUP REQUIRED
+TABLE | === TABLE 59 ===
+TABLE | { /   "take_id": "uuid", /   "project_id": "uuid", /   "shooting_day_id": "uuid", /   "scene_id": "uuid", /   "shot_id": "uuid", /   "take_number": 4, /   "slate": "21A-4", /   "camera": "A", /   "lens_mm": 50, /   "fps": 24, /   "timecode_in": "10:42:15:08", /   "timecode_out": "10:43:01:11", /   "status": "director_select", /   "sound_status": "good", /   "notes": "Best performance; slight focus drift at tail", /   "recorded_at": "timestamp" / }
+TABLE | === TABLE 60 ===
+TABLE | DO NOT  Do not identify takes only from filenames. Filenames are useful, but the authoritative relationship must be a database link between Take and MediaAsset records.
+TABLE | === TABLE 61 ===
+TABLE | Example alert | Evidence | Required user action
+TABLE | Wardrobe mismatch | Scene 43A reference: blue scarf; current take reference: no scarf | Confirm intentional change or mark continuity issue
+TABLE | Prop position mismatch | Glass was 30% full in previous matching angle | Confirm/reset/override
+TABLE | Dialogue deviation | Take 5 differs from locked line text | Accept as script change or keep as take note
+TABLE | === TABLE 62 ===
+TABLE | CAMERA / SOUND MEDIA /     ↓ / REGISTER SOURCE MEDIA /     ↓ / CHECKSUM VERIFIED COPY /     ↓ / PRIMARY STORAGE + SECOND COPY STATUS /     ↓ / PROXY / TRANSCODE /     ↓ / SYNC SOUND /     ↓ / APPLY VIEWING LUT / BURN-IN /     ↓ / LINK SCENE / SHOT / TAKE METADATA /     ↓ / DAILIES REVIEW /     ↓ / AC EDIT
+TABLE | === TABLE 63 ===
+TABLE | Group | Examples
+TABLE | Development | References, treatments, research, concept art
+TABLE | Pre-Production | Scripts, breakdown exports, boards, location/casting references, call sheets
+TABLE | Production | Camera originals, sound originals, proxies, stills, continuity photos, reports
+TABLE | Post | Edit exports, VFX plates/renders, color files, audio stems, subtitles, graphics
+TABLE | Mastering | Picture masters, audio masters, M&E, caption/subtitle masters
+TABLE | Delivery | DCP/IMF/ProRes/broadcast/OTT packages, metadata, artwork, receipts
+TABLE | === TABLE 64 ===
+TABLE | MediaAsset / - asset_id / project_id / workspace_id / - asset_type / role / status / - original_filename / canonical_name / - object_key / storage_tier / - mime_type / size_bytes / checksum_sha256 / - language / locale / timecode / duration / technical_metadata / - scene_id / shot_id / take_id (nullable relationships) / - parent_asset_id / derivative_type / version / - rights_status / retention_state / - uploaded_by / created_at / verified_at
+TABLE | === TABLE 65 ===
+TABLE | SORANI FILES  Unicode Kurdish filenames must be accepted, displayed and searched correctly. Object-storage keys may use internal UUIDs even when the user-facing filename is Kurdish.
+TABLE | === TABLE 66 ===
+TABLE | Metric | Planned | Actual | Variance / status
+TABLE | Pages | 5 1/8 | 4 6/8 | -3/8
+TABLE | Scenes | 7 | 6 | 1 moved
+TABLE | Wrap | 19:00 | 19:47 | +47 min
+TABLE | Shots | 42 | 36 | 6 remaining/pickup
+TABLE | === TABLE 67 ===
+TABLE | Status | Meaning
+TABLE | AVAILABLE | Ready to reserve
+TABLE | RESERVED | Allocated to a project/shooting day
+TABLE | CHECKED_OUT | Released to responsible user/unit
+TABLE | ON_SET | Confirmed active on shooting day
+TABLE | RETURNED | Checked back in
+TABLE | DAMAGED | Damage reported; use restricted
+TABLE | MAINTENANCE | Unavailable pending maintenance
+TABLE | === TABLE 68 ===
+TABLE | DRAFT → IN_REVIEW → CHANGES_REQUESTED → IN_REVIEW → APPROVED → LOCKED /                     ↘ REJECTED | DRAFT → IN_REVIEW → CHANGES_REQUESTED → IN_REVIEW → APPROVED → LOCKED /                     ↘ REJECTED
+TABLE | IMMUTABILITY  A new uploaded/rendered version must never overwrite an approved review version. Approval is tied to the exact asset/version checksum or immutable asset version ID.
+TABLE | === TABLE 69 ===
+TABLE | EditVersion / - edit_version_id / - project_id / - sequence_name / - version_number / - source_timeline_reference / - duration / frame_rate / aspect_ratio / - status: draft|review|approved|picture_locked / - parent_version_id / - exported_asset_id / - created_by / created_at / - approval_id
+TABLE | === TABLE 70 ===
+TABLE | IDENTIFIED → BRIEFED → ASSIGNED → WIP → INTERNAL_REVIEW → CLIENT/DIRECTOR_REVIEW → APPROVED → FINAL_DELIVERED
+TABLE | === TABLE 71 ===
+TABLE | PRINCIPLE  Art City AI should orchestrate and validate the color workflow; it should not claim color-science correctness from generative AI outputs alone.
+TABLE | === TABLE 72 ===
+TABLE | Workstream | Tracked outputs
+TABLE | Dialogue | Production dialogue edit, cleanup, conform notes
+TABLE | ADR | Cue list, actor, language, recording status, selected takes
+TABLE | Foley | Cue list, categories, recording/edit status
+TABLE | SFX/Design | Cue/task, source, version, rights/usage notes
+TABLE | Music | Cue sheet, source/composer, versions, approval, rights status
+TABLE | Mix | Premix/final mix versions, channel layout, loudness target, approval
+TABLE | M&E | Music & Effects master versions and technical validation
+TABLE | === TABLE 73 ===
+TABLE | AudioMaster / - layout: stereo | 5.1 | 7.1 | other supported layout / - channel_order: explicit ordered array / - sample_rate / bit_depth / codec / - integrated_loudness / true_peak when measured / - language / role: full_mix | m_and_e | dialogue | music | effects / - source_version / approved_by / qc_status
+TABLE | === TABLE 74 ===
+TABLE | TRANSCRIPT → TRANSLATION → TIMED TEXT → LINGUISTIC REVIEW → TECHNICAL QC → APPROVED → MASTER/DELIVERY
+TABLE | === TABLE 75 ===
+TABLE | ASSEMBLING → READY_FOR_QC → QC_FAILED / QC_PASSED → APPROVED_MASTER → ARCHIVED/SUPERSEDED
+TABLE | === TABLE 76 ===
+TABLE | Severity | Meaning | Effect
+TABLE | BLOCKER | Objective rule failure that prevents package approval | QC_FAILED
+TABLE | ERROR | Material issue requiring correction/authorized override | QC_FAILED unless profile permits override
+TABLE | WARNING | Potential issue or heuristic finding | Human review required
+TABLE | INFO | Measured value / informational note | No automatic failure
+TABLE | === TABLE 77 ===
+TABLE | QC SAFETY  Do not display a single “AI quality score” as a substitute for concrete checks. A summary score may be shown, but the pass/fail decision must expose the actual rules, measurements, overrides and reviewer.
+TABLE | === TABLE 78 ===
+TABLE | Deliverable category | Examples | Readiness inputs
+TABLE | Picture | ProRes master, IMF component/package, DCP essence/package, broadcast file | Approved master + technical profile + QC
+TABLE | Audio | Stereo, 5.1, M&E, language dubs | Approved AudioMaster + QC
+TABLE | Timed text | SRT/VTT/TTML/other required subtitle/caption | Approved LocalizationTrack + QC
+TABLE | Artwork | Poster, thumbnail, hero, logo/title treatment | Approved Asset + dimensions/profile checks
+TABLE | Metadata | Title, synopsis, cast/crew, languages, ratings fields, credits | Validated MetadataSet
+TABLE | Documentation | Cue sheet, rights/release evidence where required, QC report | Approved document/status records
+TABLE | === TABLE 79 ===
+TABLE | RightsRecord / - subject_type / subject_id / - right_type / - status: missing|pending|verified|restricted|expired / - territories[] / platforms[] / languages[] / - start_at / end_at / perpetual flag / - exclusivity / - document_asset_id / - verified_by / verified_at / - notes / restrictions
+TABLE | === TABLE 80 ===
+TABLE | Category | Example readiness inputs
+TABLE | Script | Locked shooting script / unresolved revisions
+TABLE | Breakdown | Scenes parsed and production elements approved
+TABLE | Casting | Required roles confirmed and releases/status
+TABLE | Locations | Confirmed locations and permission status
+TABLE | Storyboard/Shot List | Coverage approved or intentionally waived
+TABLE | Budget | Approved budget/version
+TABLE | Schedule | Approved shooting days and conflicts resolved
+TABLE | Crew/Equipment | Critical departments/resources confirmed
+TABLE | Call Sheet | Latest shooting day published and confirmations tracked
+TABLE | Rights/Safety docs | Required production documents/status complete
+TABLE | === TABLE 81 ===
+TABLE | Category | Example status
+TABLE | Picture | Picture lock approved
+TABLE | VFX | All required shots final/approved
+TABLE | Color | Final grade approved
+TABLE | Sound | Required mixes/M&E approved
+TABLE | Music/Rights | Cue sheet and rights statuses complete
+TABLE | Localization | Required language tracks approved
+TABLE | Mastering | Master candidate assembled
+TABLE | QC | Required profile checks passed/overrides approved
+TABLE | Artwork/Metadata | Required assets and fields approved
+TABLE | Delivery | Package/profile requirements complete
+TABLE | === TABLE 82 ===
+TABLE | BLOCKERS FIRST  Always show BLOCKERS and unresolved mandatory requirements above the percentage. Example: “85% ready — BLOCKED: location permission missing for Scene 53.”
+TABLE | === TABLE 83 ===
+TABLE | Action class | Examples | Policy
+TABLE | Read-only | Summarize status, find missing items, compare versions | May execute with normal read permission
+TABLE | Draft | Generate draft call sheet, draft budget scenario, suggested schedule | Creates DRAFT only; user reviews
+TABLE | State-changing | Publish call sheet, lock script, approve master, delete asset | Requires explicit user action and permission; no silent AI execution
+TABLE | High-impact/irreversible | Finalize delivery, revoke access, destructive deletion | Use explicit confirmation and full audit trail
+TABLE | === TABLE 84 ===
+TABLE | Approval / - approval_id / project_id / - subject_type / subject_id / subject_version / - requested_by / requested_at / - required_role or required_user / - status: pending|approved|changes_requested|rejected|cancelled / - comment / decided_by / decided_at / - immutable subject checksum/version reference
+TABLE | === TABLE 85 ===
+TABLE | Tier | Example | Typical access
+TABLE | Original camera/sound | High-resolution source | DIT, post supervisors, authorized editor/admin
+TABLE | Production proxy | Watermarked or clean proxy | Director, producer, editor, selected crew
+TABLE | Review proxy | Streaming derivative | Reviewers/clients based on share policy
+TABLE | Approved master | Final master asset | Restricted production/delivery roles
+TABLE | Delivery package | Client/platform package | Delivery-authorized users only
+TABLE | === TABLE 86 ===
+TABLE | project_service / script_service / breakdown_service / storyboard_service / budget_service / scheduler_service / callsheet_service / production_service / slate_take_service / continuity_service / report_service / ingest_service / media_asset_service / review_service / edit_metadata_service / vfx_service / color_workflow_service / audio_post_service / localization_service / mastering_service / qc_service / delivery_service / rights_service / approval_service / notification_service / search_service / copilot_service / audit_service
+TABLE | === TABLE 87 ===
+TABLE | Event | Example consumers
+TABLE | script.version_locked | breakdown, storyboard, schedule, dependency/stale service
+TABLE | shooting_day.updated | call sheet, production dashboard, notifications
+TABLE | take.recorded | dailies, edit metadata, production progress
+TABLE | media.ingest_verified | dailies, edit, backup/readiness
+TABLE | edit.picture_locked | VFX/color/sound/localization/mastering readiness
+TABLE | review.approved | workflow/status owners
+TABLE | qc.failed | mastering, delivery, notifications
+TABLE | delivery.rejected | delivery workflow, notifications, readiness
+TABLE | === TABLE 88 ===
+TABLE | POST /api/v1/shooting-days/{id}/start / PATCH /api/v1/shooting-days/{id}/status / POST /api/v1/shots/{id}/takes / PATCH /api/v1/takes/{id} / POST /api/v1/takes/{id}/select / POST /api/v1/continuity/records / POST /api/v1/media/ingest-sessions / POST /api/v1/media/{id}/verify / POST /api/v1/dailies/{id}/publish / POST /api/v1/dpr/generate / POST /api/v1/reviews / POST /api/v1/reviews/{id}/comments / POST /api/v1/reviews/{id}/approve / POST /api/v1/vfx/shots / POST /api/v1/localization/tracks / POST /api/v1/masters / POST /api/v1/masters/{id}/qc / POST /api/v1/delivery-packages / POST /api/v1/delivery-packages/{id}/validate / POST /api/v1/delivery-packages/{id}/submit / GET  /api/v1/projects/{id}/readiness / POST /api/v1/projects/{id}/copilot/query
+TABLE | === TABLE 89 ===
+TABLE | Area | Core entities/tables
+TABLE | Production | production_days, production_events, shot_takes, take_ratings, slate_records
+TABLE | Continuity | continuity_records, continuity_assets, script_deviations
+TABLE | Reports | camera_reports, sound_reports, department_reports, daily_production_reports
+TABLE | Media | media_assets, media_versions, media_derivatives, ingest_sessions, checksum_verifications, backup_statuses
+TABLE | Review | review_sessions, review_versions, review_comments, annotations, approvals
+TABLE | Post | edit_versions, vfx_shots, vfx_versions, color_versions, audio_assets, adr_cues, foley_cues, music_cues
+TABLE | Localization | transcripts, translations, timed_text_tracks, timed_text_cues, dub_cues
+TABLE | Master/QC | masters, master_components, qc_profiles, qc_runs, qc_findings, qc_overrides
+TABLE | Delivery | delivery_profiles, delivery_packages, delivery_components, delivery_attempts, delivery_receipts
+TABLE | Rights/Docs | rights_records, release_records, signed_documents
+TABLE | System | notifications, approval_requests, activity_events, domain_events
+TABLE | === TABLE 90 ===
+TABLE | PROJECT OVERVIEW /  / DEVELOPMENT /   Script • Characters • Locations • References /  / PRE-PRODUCTION /   Breakdown • Storyboard • Découpage • Shot List • Budget • Schedule • Call Sheets • Readiness /  / PRODUCTION /   Live Dashboard • Slate/Takes • Continuity • Camera • Sound • Dailies • Media • DPR • Equipment /  / POST-PRODUCTION /   AC Edit • Review • VFX • Color • Sound • ADR/Foley • Music • Localization /  / MASTER & DELIVERY /   Mastering • QC • Artwork/Metadata • Delivery Matrix • Packages • Delivery History /  / CREATIVE AI /   Cinema • Studio /  / PROJECT CONTROL /   Assets • Rights • Documents • Team • Approvals • Activity • Settings
+TABLE | === TABLE 91 ===
+TABLE | Role example | Typical scope
+TABLE | Executive Producer / Producer | Project-wide read; configured approval/lock/budget/delivery authority
+TABLE | Director | Script/storyboard/shot/take/review approvals; production visibility
+TABLE | 1st AD | Schedule, call sheet, live production progress
+TABLE | Script Supervisor | Continuity, script deviations, take notes
+TABLE | DP / Camera | Shot metadata, camera reports, selected production visibility
+TABLE | Sound | Sound reports and sound media metadata
+TABLE | DIT / Data Manager | Ingest, verification, backup/media status
+TABLE | Editor | AC Edit, dailies/media, edit versions, review
+TABLE | VFX Supervisor/Artist | Scoped VFX tasks/versions/review
+TABLE | Colorist | Scoped color workflow/assets/review
+TABLE | Sound Post | Audio-post assets/tasks/mixes
+TABLE | Localization | Language-specific transcript/subtitle/dub tasks
+TABLE | QC Operator | QC profiles/runs/findings/overrides as authorized
+TABLE | Delivery Manager | Master/package validation and delivery actions
+TABLE | External Reviewer | Specific review session/assets only
+TABLE | Art City Administrator | Workspace/platform administration per policy
+TABLE | === TABLE 92 ===
+TABLE | Source change | Potentially stale/affected
+TABLE | Script scene text/slugline changed | Breakdown, storyboard, shot list, schedule, budget, call sheet, continuity reference
+TABLE | Shot plan changed | Equipment requirements, storyboard, production progress expectations
+TABLE | Shooting day changed | Call sheet, cast/crew calls, location/equipment reservations, notifications
+TABLE | Take select changed | Dailies favourites, edit handoff metadata
+TABLE | Picture lock changed | VFX turnovers, color, sound conform, subtitles, mastering
+TABLE | Approved audio mix changed | Master, QC, delivery package
+TABLE | Subtitle track changed | Master/package QC and delivery readiness
+TABLE | Master changed | Prior QC invalid for new master; delivery package stale
+TABLE | Delivery profile updated | Existing unsubmitted package requires revalidation against new/selected version
+TABLE | === TABLE 93 ===
+TABLE | Wave | Build scope | Release mode
+TABLE | 0 — Foundation | Canonical Project/Asset IDs, ckb-IQ/RTL, permissions, audit, events, jobs, storage, feature flags | Required foundation
+TABLE | 1 — Development/Pre | AC Script, Breakdown, Storyboard/Découpage, Budget, Schedule, AC Call | Production-ready beta
+TABLE | 2 — Physical Production | Production Dashboard, Slate/Takes, Continuity, Camera/Sound, DPR, equipment status | Internal/beta
+TABLE | 3 — Media/Dailies | Ingest, checksums, proxies, Dailies, AC Edit metadata handoff | Internal/beta
+TABLE | 4 — Review/Post | AC Review, edit versions, VFX, Color orchestration, Sound Post, Localization | Feature-flag rollout
+TABLE | 5 — Master/QC/Delivery | Master builder, QC engine, delivery profiles/packages/readiness/history | Controlled rollout
+TABLE | 6 — Intelligence | Full Production Copilot, optimization, advanced analytics | After data quality stabilizes
+TABLE | === TABLE 94 ===
+TABLE | ONE SCOPE, MODULAR RELEASE  Do not treat later waves as undefined future requirements. Their schemas, IDs, events and integration contracts must be part of the architecture now, even if feature flags keep the UI hidden until testing is complete.
+TABLE | === TABLE 95 ===
+TABLE | IDEA /  ↓ / DEVELOPMENT / AC SCRIPT /  ↓ / BREAKDOWN → STORYBOARD / DÉCOUPAGE → BUDGET → SCHEDULE → AC CALL /  ↓ / PRODUCTION DASHBOARD → SLATE / TAKES → CONTINUITY → DAILIES / MEDIA /  ↓ / AC EDIT → REVIEW → VFX / COLOR / SOUND / MUSIC / LOCALIZATION /  ↓ / PICTURE & SOUND APPROVAL /  ↓ / MASTERING → AC QC /  ↓ / DELIVERY MATRIX → PACKAGE → SUBMISSION → ACCEPTANCE /  / Cinema + Studio remain integrated creative engines throughout the project where appropriate. | IDEA /  ↓ / DEVELOPMENT / AC SCRIPT /  ↓ / BREAKDOWN → STORYBOARD / DÉCOUPAGE → BUDGET → SCHEDULE → AC CALL /  ↓ / PRODUCTION DASHBOARD → SLATE / TAKES → CONTINUITY → DAILIES / MEDIA /  ↓ / AC EDIT → REVIEW → VFX / COLOR / SOUND / MUSIC / LOCALIZATION /  ↓ / PICTURE & SOUND APPROVAL /  ↓ / MASTERING → AC QC /  ↓ / DELIVERY MATRIX → PACKAGE → SUBMISSION → ACCEPTANCE /  / Cinema + Studio remain integrated creative engines throughout the project where appropriate.
+TABLE | MASTER PRINCIPLE  One project. One production graph. One multilingual/RTL framework. One permission and audit model. Versioned artifacts from first script draft to final accepted delivery.
+TABLE | === TABLE 96 ===
+TABLE | shooting_day: planned | approved | active | wrapped | cancelled / scene_on_day: planned | ready | shooting | partial | complete | moved | pickup_required / take: ng | technical_issue | hold | good | circle | director_select | editor_select / media: registered | uploading | copied | checksum_verified | proxy_ready | archived | failed / review: draft | in_review | changes_requested | approved | rejected | locked / post_task: not_started | assigned | wip | review | approved | final / master: assembling | ready_for_qc | qc_failed | qc_passed | approved_master | superseded / delivery: draft | validating | ready | submitted | received | rejected | accepted | superseded
+TABLE | === TABLE 97 ===
+TABLE | { /   "event_type": "take.recorded", /   "event_version": 1, /   "workspace_id": "uuid", /   "project_id": "uuid", /   "shooting_day_id": "uuid", /   "scene_id": "uuid", /   "shot_id": "uuid", /   "take_id": "uuid", /   "occurred_at": "2026-10-21T10:43:03+03:00", /   "actor_user_id": "uuid", /   "payload": {"take_number": 4, "rating": "director_select"} / }
+TABLE | === TABLE 98 ===
+TABLE | Test | Expected result
+TABLE | Scene heading: EXT. قەڵای هەولێر - NIGHT | EXT. and NIGHT remain visually LTR; Kurdish location remains RTL; token order is intentional.
+TABLE | Cast name: ئارام / Adam Smith | Both names display without bidi corruption in one row.
+TABLE | Shot code: 21A — نزیکەوێنە — 50mm | Shot code/lens remain readable LTR while Kurdish descriptor is RTL.
+TABLE | Subtitle: “ئێمە ئامادەین؟” + number 24 | Correct RTL shaping and punctuation; number not visually displaced.
+TABLE | Filename with Kurdish title | Uploads, downloads and UI display preserve the user-facing Unicode filename.
+TABLE | Review comment with timecode 01:02:03:12 | Timecode remains LTR and comment text remains RTL.
+TABLE | === TABLE 99 ===
+TABLE | DeliveryProfile / - profile_id / version / name / client_or_type / - picture_requirements[] / - audio_requirements[] / - timed_text_requirements[] / - artwork_requirements[] / - metadata_schema / - naming_rules / - qc_profile_id / - package_manifest_rules / - effective_from / retired_at / - status: draft | active | retired

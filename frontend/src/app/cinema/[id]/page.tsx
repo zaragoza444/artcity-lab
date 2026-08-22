@@ -231,6 +231,9 @@ export default function CinemaProjectPage() {
                 <Link href={`/studio/${projectId}`} className="ac-btn ac-btn-secondary">
                   Art City Studio
                 </Link>
+                <Link href={`/hub/${projectId}/script`} className="ac-btn ac-btn-secondary">
+                  Production Hub
+                </Link>
                 <Link href="/edit" className="ac-btn ac-btn-secondary">
                   Art City Edit
                 </Link>

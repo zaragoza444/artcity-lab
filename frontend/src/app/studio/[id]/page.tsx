@@ -168,6 +168,9 @@ export default function ProjectStudioPage() {
                 <Link href={`/cinema/${projectId}`} className="ac-btn ac-btn-secondary">
                   Cinema
                 </Link>
+                <Link href={`/hub/${projectId}/script`} className="ac-btn ac-btn-secondary">
+                  Hub Script
+                </Link>
                 <Link href="/edit" className="ac-btn ac-btn-secondary">
                   Edit
                 </Link>

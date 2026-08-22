@@ -1290,3 +1290,141 @@ export type EditBrandProfile = {
   status: string;
   created_at: string;
 };
+
+export type HubFeatures = {
+  script: boolean;
+  storyboard: boolean;
+  budget: boolean;
+  call: boolean;
+};
+
+export type HubScript = {
+  id: string;
+  project_id: string;
+  title: string;
+  entry_mode: string;
+  primary_locale: string;
+  content_languages: string[] | null;
+  current_version_id: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type HubScriptVersion = {
+  id: string;
+  script_id: string;
+  project_id: string;
+  version_label: string;
+  status: string;
+  page_eighths: number;
+  locked_at: string | null;
+  parent_version_id: string | null;
+  created_at: string;
+};
+
+export type HubElement = {
+  id: string;
+  script_version_id: string;
+  position: number;
+  element_type: string;
+  display_text: string;
+  scene_id: string | null;
+  character_id: string | null;
+  locale: string | null;
+  metadata_json: Record<string, unknown> | null;
+};
+
+export type HubScene = {
+  id: string;
+  script_version_id: string;
+  scene_number: string;
+  int_ext: string | null;
+  location_name: string | null;
+  time_of_day: string | null;
+  heading_display: string | null;
+  page_eighths: number;
+  sort_order: number;
+};
+
+export type HubBreakdownItem = {
+  id: string;
+  scene_id: string;
+  category: string;
+  display_text: string;
+  quantity: number | null;
+  approval_status: string;
+  source: string;
+};
+
+export const hubApi = {
+  features: () => request<HubFeatures>("/api/v1/hub/features"),
+  listScripts: (projectId: string) =>
+    request<HubScript[]>(`/api/v1/hub/projects/${projectId}/scripts`),
+  createScript: (
+    projectId: string,
+    body: {
+      title: string;
+      entry_mode?: string;
+      primary_locale?: string;
+      content_languages?: string[];
+      seed_text?: string;
+    },
+  ) =>
+    request<HubScript>(`/api/v1/hub/projects/${projectId}/scripts`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getScript: (scriptId: string) => request<HubScript>(`/api/v1/hub/scripts/${scriptId}`),
+  listVersions: (scriptId: string) =>
+    request<HubScriptVersion[]>(`/api/v1/hub/scripts/${scriptId}/versions`),
+  newRevision: (scriptId: string) =>
+    request<HubScriptVersion>(`/api/v1/hub/scripts/${scriptId}/versions`, { method: "POST" }),
+  lockVersion: (versionId: string) =>
+    request<HubScriptVersion>(`/api/v1/hub/versions/${versionId}/lock`, { method: "POST" }),
+  listElements: (versionId: string) =>
+    request<HubElement[]>(`/api/v1/hub/versions/${versionId}/elements`),
+  saveElements: (versionId: string, elements: Partial<HubElement>[]) =>
+    request<HubElement[]>(`/api/v1/hub/versions/${versionId}/elements`, {
+      method: "PUT",
+      body: JSON.stringify({ elements }),
+    }),
+  parseScenes: (versionId: string) =>
+    request<HubScene[]>(`/api/v1/hub/versions/${versionId}/parse-scenes`, { method: "POST" }),
+  listScenes: (versionId: string) =>
+    request<HubScene[]>(`/api/v1/hub/versions/${versionId}/scenes`),
+  proposeBreakdown: (versionId: string) =>
+    request<HubBreakdownItem[]>(`/api/v1/hub/versions/${versionId}/breakdown/propose`, {
+      method: "POST",
+    }),
+  listBreakdown: (versionId: string) =>
+    request<HubBreakdownItem[]>(`/api/v1/hub/versions/${versionId}/breakdown`),
+  decideBreakdown: (itemId: string, approval_status: "approved" | "rejected" | "proposed") =>
+    request<HubBreakdownItem>(`/api/v1/hub/breakdown/${itemId}/decision`, {
+      method: "POST",
+      body: JSON.stringify({ approval_status }),
+    }),
+  compareVersions: (a: string, b: string) =>
+    request<{ left: string[]; right: string[]; added: number; removed: number }>(
+      `/api/v1/hub/versions/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`,
+    ),
+  aiCommand: (
+    versionId: string,
+    body: { command: string; target_locale?: string; element_ids?: string[]; apply?: boolean },
+  ) =>
+    request<{ provider: string; elements: Partial<HubElement>[]; apply: boolean }>(
+      `/api/v1/hub/versions/${versionId}/ai`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  exportUrl: (versionId: string, fmt: "pdf" | "docx") =>
+    `${API_URL}/api/v1/hub/versions/${versionId}/export/${fmt}`,
+  handoff: (projectId: string, target: "cinema" | "studio" | "edit", body?: object) =>
+    request<{ ok: boolean; redirect: string; asset_id: string }>(
+      `/api/v1/hub/projects/${projectId}/handoff/${target}`,
+      { method: "POST", body: JSON.stringify(body || {}) },
+    ),
+  listStale: (projectId: string) =>
+    request<{ id: string; resource_type: string; resource_id: string; reason: string }[]>(
+      `/api/v1/hub/projects/${projectId}/stale`,
+    ),
+};

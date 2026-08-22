@@ -27,6 +27,11 @@ class Project(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(50), default="active")
     budget_limit: Mapped[Optional[float]] = mapped_column(Float)
+    primary_locale: Mapped[str] = mapped_column(String(16), default="en")
+    content_languages: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    timezone: Mapped[str] = mapped_column(String(64), default="Asia/Baghdad")
+    currency: Mapped[str] = mapped_column(String(8), default="USD")
+    production_status: Mapped[str] = mapped_column(String(50), default="pre_production")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

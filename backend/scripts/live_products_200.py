@@ -31,7 +31,18 @@ def main() -> int:
     client = httpx.Client(base_url=BASE, timeout=300.0)
     app = httpx.Client(base_url=APP, timeout=60.0, follow_redirects=True)
 
-    for path in ("/", "/login", "/signup", "/cinema", "/studio", "/studio/bank-building", "/data-bank", "/edit", "/dashboard"):
+    for path in (
+        "/",
+        "/login",
+        "/signup",
+        "/cinema",
+        "/studio",
+        "/studio/bank-building",
+        "/data-bank",
+        "/edit",
+        "/dashboard",
+        "/hub",
+    ):
         ok(f"UI GET {path}", app.get(path).status_code)
 
     # Customer signup with email + phone
@@ -242,6 +253,102 @@ def main() -> int:
                 "Bank building provider is external or artcity",
                 pid.startswith("ext-") or pid.startswith("ac-"),
                 pid,
+            )
+
+    # Production Hub — AC Script
+    ok("Hub features", client.get("/api/v1/hub/features", headers=admin_headers).status_code)
+    hub_script = client.post(
+        f"/api/v1/hub/projects/{project_id}/scripts",
+        headers=admin_headers,
+        json={
+            "title": f"Live Hub Script {suffix}",
+            "entry_mode": "synopsis",
+            "primary_locale": "ckb-IQ",
+            "content_languages": ["ckb-IQ", "en"],
+            "seed_text": (
+                "INT. قاوەخانە - ڕۆژ\n"
+                "دایک دەچێتە ژوورەوە.\n\n"
+                "دایک\n"
+                "سڵاو، کوڕم.\n\n"
+                "EXT. شەقام - شەو\n"
+                "باسیش دەڕوات."
+            ),
+        },
+    )
+    ok("Hub create script", hub_script.status_code, hub_script.text[:120])
+    if hub_script.status_code in {200, 201}:
+        script = hub_script.json()
+        script_id = script["id"]
+        version_id = script.get("current_version_id")
+        assert_true("Hub script has version", bool(version_id), str(script))
+        if version_id:
+            els = client.get(f"/api/v1/hub/versions/{version_id}/elements", headers=admin_headers)
+            ok("Hub list elements", els.status_code)
+            save = client.put(
+                f"/api/v1/hub/versions/{version_id}/elements",
+                headers=admin_headers,
+                json={
+                    "elements": [
+                        {"element_type": "scene_heading", "display_text": "INT. CAFE - DAY", "locale": "en"},
+                        {"element_type": "action", "display_text": "Mother enters.", "locale": "en"},
+                        {"element_type": "character", "display_text": "MOTHER", "locale": "en"},
+                        {"element_type": "dialogue", "display_text": "سڵاو، کوڕم.", "locale": "ckb-IQ"},
+                        {"element_type": "scene_heading", "display_text": "EXT. STREET - NIGHT", "locale": "en"},
+                        {"element_type": "action", "display_text": "Rain falls.", "locale": "en"},
+                    ]
+                },
+            )
+            ok("Hub save elements", save.status_code)
+            scenes = client.post(
+                f"/api/v1/hub/versions/{version_id}/parse-scenes",
+                headers=admin_headers,
+            )
+            ok("Hub parse scenes", scenes.status_code, scenes.text[:100])
+            if scenes.status_code == 200:
+                assert_true("Hub parsed scenes", len(scenes.json()) >= 1, str(len(scenes.json())))
+            breakdown = client.post(
+                f"/api/v1/hub/versions/{version_id}/breakdown/propose",
+                headers=admin_headers,
+            )
+            ok("Hub propose breakdown", breakdown.status_code)
+            if breakdown.status_code == 200 and breakdown.json():
+                item = breakdown.json()[0]
+                dec = client.post(
+                    f"/api/v1/hub/breakdown/{item['id']}/decision",
+                    headers=admin_headers,
+                    json={"approval_status": "approved"},
+                )
+                ok("Hub approve breakdown", dec.status_code)
+            lock = client.post(f"/api/v1/hub/versions/{version_id}/lock", headers=admin_headers)
+            ok("Hub lock version", lock.status_code)
+            blocked = client.put(
+                f"/api/v1/hub/versions/{version_id}/elements",
+                headers=admin_headers,
+                json={"elements": [{"element_type": "action", "display_text": "should fail"}]},
+            )
+            assert_true(
+                "Hub lock blocks edit",
+                blocked.status_code == 400,
+                f"expected 400 got {blocked.status_code} {blocked.text[:80]}",
+            )
+            # revise after lock
+            rev = client.post(f"/api/v1/hub/scripts/{script_id}/versions", headers=admin_headers)
+            ok("Hub new revision", rev.status_code)
+            export = client.get(
+                f"/api/v1/hub/versions/{version_id}/export/docx",
+                headers=admin_headers,
+            )
+            ok("Hub export docx", export.status_code)
+            for target in ("cinema", "studio", "edit"):
+                ho = client.post(
+                    f"/api/v1/hub/projects/{project_id}/handoff/{target}",
+                    headers=admin_headers,
+                    json={"script_version_id": version_id},
+                )
+                ok(f"Hub handoff {target}", ho.status_code, ho.text[:80])
+            ok(
+                "Hub UI script",
+                app.get(f"/hub/{project_id}/script").status_code,
             )
 
     return _finish(rows)
