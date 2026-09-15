@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://artcity.ai/contracts/ac-graphic-motion/motion-scene-graph.schema.json",
+  "title": "Art City Motion Scene Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scene_id", "project_id", "name", "locale", "direction", "canvas", "nodes"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "scene_id": { "type": "string", "format": "uuid" },
+    "project_id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "locale": { "type": "string", "minLength": 2, "maxLength": 32, "default": "ckb-IQ" },
+    "direction": { "type": "string", "enum": ["rtl", "ltr", "auto"] },
+    "canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "fps", "duration_ms"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1, "maximum": 16384 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 16384 },
+        "fps": { "type": "number", "enum": [23.976, 24, 25, 29.97, 30, 50, 59.94, 60] },
+        "duration_ms": { "type": "integer", "minimum": 1, "maximum": 3600000 },
+        "background": { "type": "string" },
+        "color_space": { "type": "string", "enum": ["rec709", "srgb", "display-p3", "rec2020"] },
+        "pixel_aspect_ratio": { "type": "number", "minimum": 0.1, "maximum": 4 },
+        "title_safe_pct": { "type": "number", "minimum": 0, "maximum": 50 },
+        "action_safe_pct": { "type": "number", "minimum": 0, "maximum": 50 }
+      }
+    },
+    "timeline": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "timebase": { "type": "string" },
+        "play_start_ms": { "type": "integer", "minimum": 0 },
+        "play_end_ms": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "brand_context": { "type": ["object", "null"], "additionalProperties": true },
+    "variables": { "type": "object", "additionalProperties": true },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" }
+    },
+    "markers": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "audio": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "metadata": { "type": "object", "additionalProperties": true }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["id", "type"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "string",
+          "enum": ["text", "image", "video", "logo", "shape", "svg", "group", "camera", "particle", "chart", "map", "precomp"]
+        },
+        "parent_id": { "type": ["string", "null"] },
+        "z_index": { "type": "integer" },
+        "start_ms": { "type": "integer", "minimum": 0 },
+        "end_ms": { "type": "integer", "minimum": 0 },
+        "visible": { "type": "boolean" },
+        "locked": { "type": "boolean" },
+        "transform": { "type": "object", "additionalProperties": true },
+        "payload": { "type": "object", "additionalProperties": true },
+        "animations": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "effects": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "bindings": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

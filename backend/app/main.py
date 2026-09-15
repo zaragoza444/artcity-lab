@@ -10,6 +10,7 @@ from app.api.edit import router as edit_router
 from app.api.evaluations import router as evaluations_router
 from app.api.gateway import router as gateway_router
 from app.api.health import router as health_router
+from app.api.graphic_motion import router as graphic_motion_router
 from app.api.hub import router as hub_router
 from app.api.vertical_drama import router as vertical_drama_router
 from app.api.knowledge import router as knowledge_router
@@ -53,6 +54,10 @@ tags_metadata = [
         "name": "vertical-drama",
         "description": "AC Vertical Drama IP Factory — governed IP, bible, episodes, shots, QC, delivery",
     },
+    {
+        "name": "graphic-motion",
+        "description": "AC Graphic Motion — MSG scenes, immutable revisions, preview/render, Art City ACX",
+    },
     {"name": "publishing", "description": "Masters packaging and channel release"},
     {"name": "data-lab", "description": "Dataset ingest and annotation workspace"},
     {"name": "registries", "description": "Datasets, rights, model registry, training"},
@@ -93,6 +98,7 @@ app.include_router(cinema_router)
 app.include_router(edit_router)
 app.include_router(hub_router)
 app.include_router(vertical_drama_router)
+app.include_router(graphic_motion_router)
 app.include_router(publishing_router)
 
 
@@ -108,6 +114,7 @@ def root() -> dict[str, str]:
         "gateway": "/api/v1/ai",
         "hub": "/api/v1/hub",
         "vertical_drama": "/api/v1/vertical-drama",
+        "graphic_motion": "/api/v1/graphic-motion",
         "api_guide": "docs/API.md",
     }
 

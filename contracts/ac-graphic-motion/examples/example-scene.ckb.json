@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "scene_id": "00000000-0000-4000-8000-000000000001",
+  "project_id": "00000000-0000-4000-8000-000000000002",
+  "name": "Sorani headline reveal",
+  "locale": "ckb-IQ",
+  "direction": "rtl",
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 25,
+    "duration_ms": 8000,
+    "background": "#00000000",
+    "color_space": "rec709"
+  },
+  "timeline": {
+    "timebase": "ms",
+    "play_start_ms": 0,
+    "play_end_ms": 8000
+  },
+  "brand_context": null,
+  "variables": {},
+  "nodes": [
+    {
+      "id": "headline",
+      "type": "text",
+      "start_ms": 250,
+      "end_ms": 8000,
+      "z_index": 10,
+      "visible": true,
+      "transform": { "x": 960, "y": 540, "opacity": 1 },
+      "payload": {
+        "text": "هەواڵی گرنگ",
+        "language": "ckb",
+        "direction": "rtl",
+        "unicode_bidi": "plaintext",
+        "font": { "asset_id": "00000000-0000-4000-8000-0000000000aa", "weight": 700 },
+        "font_size": 72,
+        "fill": "#FFFFFFFF",
+        "shaping_engine": "harfbuzz",
+        "normalization": "NFC",
+        "animation_unit": "word",
+        "align": "center",
+        "wrap": "word",
+        "overflow": "clip"
+      },
+      "animations": [
+        {
+          "property": "transform.opacity",
+          "keyframes": [
+            { "time_ms": 250, "value": 0, "easing": "ease-out" },
+            { "time_ms": 900, "value": 1, "easing": "linear" }
+          ]
+        }
+      ],
+      "effects": [],
+      "bindings": [],
+      "tags": ["headline", "sorani"]
+    }
+  ],
+  "markers": [],
+  "audio": [],
+  "metadata": { "demo": "ckb-reference" }
+}

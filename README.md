@@ -62,7 +62,7 @@ Open **http://localhost:3000/publish**
 
 Outputs: `MASTER_MANIFEST.json`, `DELIVERY_REPORT.md`, published masters in MinIO.
 
-## Art City Cinema · Studio · Edit · Publish
+## Art City Cinema · Studio · Edit · Publish · Hub · Vertical Drama · Graphic Motion
 
 | Product | Purpose | Outputs |
 |---------|---------|---------|
@@ -70,6 +70,9 @@ Outputs: `MASTER_MANIFEST.json`, `DELIVERY_REPORT.md`, published masters in MinI
 | **Art City Studio** | Individual production assets | Single image / video / voice / music / scene takes |
 | **Art City Edit** | Long-form editing & social repurposing | Upload → analyse → candidate clips → timeline → multi-ratio export + QC (Art City approval + entitlements) |
 | **Art City Publish** | Delivery packaging | Masters, checklist, checksums, channel release |
+| **Production Hub** | AC Script + breakdown + handoff | Structured scripts, scenes, Cinema/Studio/Edit handoff |
+| **Vertical Drama** | Serial IP Factory | Bible, episodes, 9:16 shots, QC, delivery |
+| **Graphic Motion** | MSG motion graphics | Immutable scene revisions, Sorani/RTL, preview/render, Art City ACX |
 
 ### Art City Edit (local)
 

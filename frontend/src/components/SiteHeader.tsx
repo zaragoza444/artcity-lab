@@ -15,6 +15,7 @@ const primary = [
   { href: "/cinema", label: "Cinema" },
   { href: "/studio", label: "Studio" },
   { href: "/vertical-drama", label: "Vertical Drama" },
+  { href: "/graphic-motion", label: "Graphic Motion" },
   { href: "/hub", label: "Hub" },
   { href: "/data-bank", label: "Data Bank" },
   { href: "/edit", label: "Edit" },
@@ -48,9 +49,11 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
           ? "edit"
           : pathname.startsWith("/vertical-drama")
             ? "vertical"
-          : pathname.startsWith("/hub")
-            ? "hub"
-            : "platform";
+            : pathname.startsWith("/graphic-motion")
+              ? "motion"
+              : pathname.startsWith("/hub")
+                ? "hub"
+                : "platform";
 
   return (
     <header

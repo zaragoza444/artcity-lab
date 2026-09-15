@@ -5,10 +5,11 @@ from __future__ import annotations
 import time
 
 from app.core.db import SessionLocal
+from app.services.agm_render import process_agm_job
 from app.services.edit_media import process_analysis_job
 from app.services.edit_render import process_render_job
 from app.services.gateway import process_generation_job
-from app.services.queue import dequeue_edit_job, dequeue_job
+from app.services.queue import dequeue_agm_job, dequeue_edit_job, dequeue_job
 
 
 def _process_edit_item(item: dict[str, str]) -> None:
@@ -36,7 +37,7 @@ def _process_edit_item(item: dict[str, str]) -> None:
 
 
 def run_worker() -> None:
-    print("Art City worker listening on Redis generation + edit queues…")
+    print("Art City worker listening on Redis generation + edit + AGM queues…")
     while True:
         job_id = dequeue_job(timeout=5)
         if job_id:
@@ -54,6 +55,21 @@ def run_worker() -> None:
         edit_item = dequeue_edit_job(timeout=1)
         if edit_item:
             _process_edit_item(edit_item)
+            time.sleep(0.05)
+            continue
+
+        agm_id = dequeue_agm_job(timeout=1)
+        if agm_id:
+            db = SessionLocal()
+            try:
+                job = process_agm_job(db, agm_id)
+                db.commit()
+                print(f"agm {agm_id} → {job.status}")
+            except Exception as exc:  # noqa: BLE001
+                db.rollback()
+                print(f"agm job failed {agm_id}: {exc}")
+            finally:
+                db.close()
             time.sleep(0.05)
             continue
 

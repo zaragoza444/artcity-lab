@@ -1,0 +1,187 @@
+openapi: 3.0.3
+info:
+  title: Art City AC Graphic Motion API
+  version: 1.0.0
+  description: Motion Scene Graph REST contracts for AC Graphic Motion.
+servers:
+  - url: /api/v1/graphic-motion
+paths:
+  /scenes:
+    post:
+      summary: Create scene + revision 1
+      operationId: createScene
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [project_id, name]
+              properties:
+                project_id: { type: string, format: uuid }
+                name: { type: string }
+                graph: { type: object }
+      responses:
+        "201":
+          description: Created
+  /scenes/{scene_id}:
+    get:
+      summary: Get scene head
+      parameters:
+        - in: path
+          name: scene_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Scene head
+    patch:
+      summary: RFC 6902 patch creating a new revision
+      parameters:
+        - in: path
+          name: scene_id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: header
+          name: If-Match
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json-patch+json:
+            schema:
+              type: array
+              items: { type: object }
+      responses:
+        "200":
+          description: New revision
+        "409":
+          description: AGM_REVISION_CONFLICT
+    delete:
+      summary: Soft archive scene
+      parameters:
+        - in: path
+          name: scene_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Archived
+  /scenes/{scene_id}/revisions:
+    get:
+      summary: List immutable revisions
+      parameters:
+        - in: path
+          name: scene_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Revision list
+  /scenes/{scene_id}/revisions/{revision_id}:
+    get:
+      summary: Fetch exact revision
+      parameters:
+        - in: path
+          name: scene_id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: revision_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Revision
+  /validate:
+    post:
+      summary: Validate unsaved graph
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200":
+          description: Validation report
+  /scenes/{scene_id}/validate:
+    post:
+      summary: Validate stored revision/profile
+      parameters:
+        - in: path
+          name: scene_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Validation report
+  /scenes/{scene_id}/preview:
+    post:
+      summary: Queue preview from revision
+      parameters:
+        - in: path
+          name: scene_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "202":
+          description: Accepted job
+  /scenes/{scene_id}/render:
+    post:
+      summary: Queue production render from revision
+      parameters:
+        - in: path
+          name: scene_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "202":
+          description: Accepted job
+  /jobs/{job_id}:
+    get:
+      summary: Job status
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Job
+    delete:
+      summary: Request cancellation
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Cancel requested
+  /jobs/{job_id}/retry:
+    post:
+      summary: Retry same immutable input
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "202":
+          description: Retried job
+  /jobs/{job_id}/events:
+    get:
+      summary: SSE progress stream
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: text/event-stream

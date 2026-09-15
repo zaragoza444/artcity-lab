@@ -23,7 +23,7 @@ export default function DashboardPage() {
   return (
     <CoreShell
       title="Dashboard"
-      subtitle="Cinema · Studio · Vertical Drama · Edit · Hub · Publish — with Model Gateway, Data Lab, and owned inference control."
+      subtitle="Cinema · Studio · Vertical Drama · Graphic Motion · Edit · Hub · Publish — with Model Gateway, Data Lab, and owned inference control."
     >
       <div className="grid gap-6 md:grid-cols-3">
         <Stat label="Registered models" value={String(models)} />
@@ -36,6 +36,7 @@ export default function DashboardPage() {
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["/vertical-drama", "Vertical Drama", "IP Factory · bible · episodes · 9:16"],
+          ["/graphic-motion", "Graphic Motion", "MSG · Sorani/RTL · preview · broadcast"],
           ["/hub", "Production Hub", "AC Script · breakdown · handoff"],
           ["/cinema", "Cinema", "Complete advertising campaigns"],
           ["/studio", "Studio", "Individual production assets"],

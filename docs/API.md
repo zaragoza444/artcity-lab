@@ -730,6 +730,9 @@ Absolute media URL = `{BASE}{media_url}`
 | registries | Datasets, rights, models, training |
 | knowledge | Kurdish KB |
 | evaluations | Model eval lab |
+| production-hub | AC Script / breakdown |
+| vertical-drama | Vertical Drama IP Factory |
+| graphic-motion | AC Graphic Motion MSG |
 
 ---
 
@@ -761,6 +764,33 @@ Feature flags (env): `EDIT_FEATURE_PUBLISHING`, `EDIT_FEATURE_TREND_INTELLIGENCE
 
 ---
 
+## AC Graphic Motion (`/api/v1/graphic-motion`)
+
+Motion Scene Graph (MSG) scenes with immutable revisions, RFC 6902 patch + `If-Match`, Sorani/RTL validation, preview/render jobs, and Art City–owned ACX reserve/settle/reverse.
+
+Contracts: [`contracts/ac-graphic-motion/`](../contracts/ac-graphic-motion/). Spec: [`docs/AC_GRAPHIC_MOTION_MSG_SPEC.md`](AC_GRAPHIC_MOTION_MSG_SPEC.md).
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/api/v1/graphic-motion/features` | Module flags |
+| POST | `/api/v1/graphic-motion/acx/quote` | Art City ACX quote (not Nova/Alltra) |
+| GET | `/api/v1/graphic-motion/projects/{id}/scenes` | List scenes |
+| POST | `/api/v1/graphic-motion/scenes` | Create scene + rev1 (`Idempotency-Key`) |
+| GET | `/api/v1/graphic-motion/scenes/{id}` | Head revision |
+| PATCH | `/api/v1/graphic-motion/scenes/{id}` | JSON Patch → new revision (`If-Match`) |
+| DELETE | `/api/v1/graphic-motion/scenes/{id}` | Soft archive |
+| GET | `/api/v1/graphic-motion/scenes/{id}/revisions` | Immutable history |
+| POST | `/api/v1/graphic-motion/validate` | Validate unsaved graph |
+| POST | `/api/v1/graphic-motion/scenes/{id}/validate` | Validate stored |
+| POST | `/api/v1/graphic-motion/scenes/{id}/preview` | Queue preview (202) |
+| POST | `/api/v1/graphic-motion/scenes/{id}/render` | Queue production render (202) |
+| GET | `/api/v1/graphic-motion/jobs/{id}` | Job status |
+| DELETE | `/api/v1/graphic-motion/jobs/{id}` | Cancel |
+| POST | `/api/v1/graphic-motion/jobs/{id}/retry` | Retry same revision |
+| GET | `/api/v1/graphic-motion/jobs/{id}/events` | SSE progress |
+
+---
+
 ## Changelog
 
 | Version | Notes |
@@ -770,3 +800,4 @@ Feature flags (env): `EDIT_FEATURE_PUBLISHING`, `EDIT_FEATURE_TREND_INTELLIGENCE
 | 1.2.0 | Production Data Lab: file inventory, ingest UI path, export manifests, rights-gated training_ready |
 | 1.2.1 | Annotations workspace production: stats, get-by-id, payload edits, conflict, revision history |
 | 1.3.0 | Art City Edit: tenancy, access applications, entitlements, media pipeline, timelines, multi-ratio render/QC |
+| 1.4.0 | AC Graphic Motion: MSG contracts, scenes/revisions, preview/render, Art City ACX |

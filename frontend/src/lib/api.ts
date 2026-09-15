@@ -1562,3 +1562,96 @@ export const vdApi = {
   delivery: (id: string) =>
     request(`/api/v1/vertical-drama/episodes/${id}/delivery-packages`, { method: "POST" }),
 };
+
+export type AgmScene = {
+  id: string;
+  project_id: string;
+  name: string;
+  locale: string;
+  direction: string;
+  head_revision_id?: string | null;
+  etag?: string | null;
+  content_hash?: string | null;
+  soft_deleted?: boolean;
+  revision?: {
+    id: string;
+    revision_no: number;
+    content_hash: string;
+    graph: Record<string, unknown>;
+  } | null;
+};
+
+export type AgmJob = {
+  id: string;
+  scene_id: string;
+  project_id: string;
+  revision_id: string;
+  job_kind: string;
+  status: string;
+  progress: number;
+  outputs?: { asset_id?: string; checksum?: string; content_type?: string }[];
+  error_code?: string | null;
+  error_message?: string | null;
+  acx_quote_id?: string | null;
+};
+
+export const graphicMotionApi = {
+  features: () =>
+    request<{ graphic_motion: boolean; preview: boolean; render: boolean; acx: boolean }>(
+      "/api/v1/graphic-motion/features",
+    ),
+  listScenes: (projectId: string) =>
+    request<AgmScene[]>(`/api/v1/graphic-motion/projects/${projectId}/scenes`),
+  createScene: (
+    body: {
+      project_id: string;
+      name: string;
+      graph?: object;
+      locale?: string;
+      direction?: string;
+    },
+    idempotencyKey?: string,
+  ) =>
+    request<AgmScene>("/api/v1/graphic-motion/scenes", {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
+    }),
+  getScene: (sceneId: string) => request<AgmScene>(`/api/v1/graphic-motion/scenes/${sceneId}`),
+  patchScene: (sceneId: string, ops: object[], ifMatch: string) =>
+    request<AgmScene>(`/api/v1/graphic-motion/scenes/${sceneId}`, {
+      method: "PATCH",
+      body: JSON.stringify(ops),
+      headers: { "If-Match": ifMatch },
+    }),
+  validate: (body: { graph?: object; revision_id?: string; profile?: object }) =>
+    request<{ valid: boolean; errors: { code: string; message: string }[]; error_codes: string[] }>(
+      "/api/v1/graphic-motion/validate",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  validateScene: (sceneId: string, body?: object) =>
+    request<{ valid: boolean; errors: { code: string; message: string }[]; error_codes: string[] }>(
+      `/api/v1/graphic-motion/scenes/${sceneId}/validate`,
+      { method: "POST", body: JSON.stringify(body || {}) },
+    ),
+  preview: (sceneId: string, body?: object) =>
+    request<AgmJob>(`/api/v1/graphic-motion/scenes/${sceneId}/preview`, {
+      method: "POST",
+      body: JSON.stringify(body || { mode: "still", format: "png" }),
+    }),
+  render: (sceneId: string, body?: object) =>
+    request<AgmJob>(`/api/v1/graphic-motion/scenes/${sceneId}/render`, {
+      method: "POST",
+      body: JSON.stringify(body || {}),
+    }),
+  getJob: (jobId: string) => request<AgmJob>(`/api/v1/graphic-motion/jobs/${jobId}`),
+  cancelJob: (jobId: string) =>
+    request<AgmJob>(`/api/v1/graphic-motion/jobs/${jobId}`, { method: "DELETE" }),
+  retryJob: (jobId: string) =>
+    request<AgmJob>(`/api/v1/graphic-motion/jobs/${jobId}/retry`, { method: "POST" }),
+  quote: (body: { job_kind?: string; duration_ms?: number; profile?: object }) =>
+    request<{ quote_id: string; amount: number; currency: string }>("/api/v1/graphic-motion/acx/quote", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+};

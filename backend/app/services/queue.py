@@ -11,6 +11,7 @@ from app.core.config import get_settings
 
 QUEUE_KEY = "artcity:generation:queue"
 EDIT_QUEUE_KEY = "artcity:edit:queue"
+AGM_QUEUE_KEY = "artcity:agm:queue"
 
 
 def _redis() -> Redis:
@@ -45,3 +46,16 @@ def dequeue_edit_job(timeout: int = 5) -> Optional[dict[str, str]]:
     if not job_type or not job_id:
         return None
     return {"type": str(job_type), "job_id": str(job_id)}
+
+
+def enqueue_agm_job(job_id: str) -> None:
+    _redis().lpush(AGM_QUEUE_KEY, json.dumps({"job_id": job_id}))
+
+
+def dequeue_agm_job(timeout: int = 5) -> Optional[str]:
+    item = _redis().brpop(AGM_QUEUE_KEY, timeout=timeout)
+    if not item:
+        return None
+    _, raw = item
+    data = json.loads(raw)
+    return data.get("job_id")

@@ -618,6 +618,79 @@ def main() -> int:
     if bb.status_code in {200, 201} and bb.json().get("media_url"):
         check("GET", bb.json()["media_url"], auth=False, ok={200})
 
+    # AC Graphic Motion — create → validate → preview (asset via worker when online)
+    check("GET", "/api/v1/graphic-motion/features")
+    agm_scene_id = None
+    agm_create = client.post(
+        "/api/v1/graphic-motion/scenes",
+        headers={"Authorization": f"Bearer {token}", "Idempotency-Key": f"smoke-agm-{project_id[:8]}"},
+        json={
+            "project_id": project_id,
+            "name": "Smoke Sorani AGM",
+            "locale": "ckb-IQ",
+            "direction": "rtl",
+            "graph": {
+                "schema_version": "1.0.0",
+                "scene_id": "00000000-0000-4000-8000-000000000099",
+                "project_id": project_id,
+                "name": "Smoke Sorani AGM",
+                "locale": "ckb-IQ",
+                "direction": "rtl",
+                "canvas": {
+                    "width": 1920,
+                    "height": 1080,
+                    "fps": 25,
+                    "duration_ms": 4000,
+                    "background": "#00000000",
+                    "color_space": "rec709",
+                },
+                "timeline": {"timebase": "ms", "play_start_ms": 0, "play_end_ms": 4000},
+                "nodes": [
+                    {
+                        "id": "headline",
+                        "type": "text",
+                        "start_ms": 0,
+                        "end_ms": 4000,
+                        "payload": {
+                            "text": "هەواڵی گرنگ",
+                            "direction": "rtl",
+                            "shaping_engine": "harfbuzz",
+                            "normalization": "NFC",
+                            "animation_unit": "word",
+                            "font": {"asset_id": "00000000-0000-4000-8000-0000000000aa"},
+                        },
+                        "animations": [],
+                    }
+                ],
+            },
+        },
+    )
+    results.append(
+        {
+            "method": "POST",
+            "path": "/api/v1/graphic-motion/scenes",
+            "code": agm_create.status_code,
+            "pass": agm_create.status_code in {200, 201},
+            "err": "" if agm_create.status_code in {200, 201} else agm_create.text[:160],
+        }
+    )
+    if agm_create.status_code in {200, 201}:
+        agm_scene_id = agm_create.json().get("id")
+        check("GET", f"/api/v1/graphic-motion/scenes/{agm_scene_id}")
+        check("GET", f"/api/v1/graphic-motion/projects/{project_id}/scenes")
+        check("POST", f"/api/v1/graphic-motion/scenes/{agm_scene_id}/validate", json_body={})
+        check(
+            "POST",
+            "/api/v1/graphic-motion/validate",
+            json_body={"graph": agm_create.json().get("revision", {}).get("graph")},
+        )
+        check(
+            "POST",
+            f"/api/v1/graphic-motion/scenes/{agm_scene_id}/preview",
+            json_body={"mode": "still", "format": "png", "at_ms": 500},
+            ok={202, 200},
+        )
+
     # Pad with /health to reach exactly TARGET
     while len(results) < TARGET:
         check("GET", "/health", auth=False, ok={200})
