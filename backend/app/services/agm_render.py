@@ -158,6 +158,10 @@ def queue_preview(
     db.commit()
     db.refresh(job)
     _safe_enqueue(job.id)
+    # Inline like Model Gateway so production works without a dedicated AGM worker
+    process_agm_job(db, job.id)
+    db.commit()
+    db.refresh(job)
     return job
 
 
@@ -206,6 +210,9 @@ def queue_render(
     db.commit()
     db.refresh(job)
     _safe_enqueue(job.id)
+    process_agm_job(db, job.id)
+    db.commit()
+    db.refresh(job)
     return job
 
 
@@ -259,6 +266,9 @@ def retry_job(db: Session, job_id: str, user_id: Optional[str]) -> AgmJob:
     db.commit()
     db.refresh(job)
     _safe_enqueue(job.id)
+    process_agm_job(db, job.id)
+    db.commit()
+    db.refresh(job)
     return job
 
 
