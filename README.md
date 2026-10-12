@@ -159,6 +159,21 @@ python -m app.worker
 
 Default admin (after seed): set `DEFAULT_ADMIN_EMAIL` / `DEFAULT_ADMIN_PASSWORD` in the environment — do not commit credentials.
 
+## AC Communications
+
+Consented WhatsApp Business Cloud API campaigns, inbox, and delivery ledger. Official Meta API only. Live bulk send stays off until `COMM_LIVE_SEND_ENABLED=true` and the Meta secrets are set in the environment.
+
+Open **http://localhost:3000/communications**
+
+```bat
+cd backend
+venv\Scripts\activate
+alembic upgrade head
+python -m app.comm_worker
+```
+
+Runbook: [docs/AC_COMMUNICATIONS_RUNBOOK.md](docs/AC_COMMUNICATIONS_RUNBOOK.md). Contract: [contracts/ac-communications/openapi.yaml](contracts/ac-communications/openapi.yaml).
+
 ## Ownership principle
 
 Art City owns the platform, source code, data, characters, workflows, datasets, fine-tuned models, and IP. External AI models are optional replaceable providers only.

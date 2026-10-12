@@ -11,6 +11,7 @@ import app.models_edit  # noqa: F401 — Art City Edit models
 import app.models_hub  # noqa: F401 — Production Hub models
 import app.models_vd  # noqa: F401 — Vertical Drama IP Factory
 import app.models_agm  # noqa: F401 — AC Graphic Motion
+import app.models_comm  # noqa: F401 — AC Communications
 
 config = context.config
 if config.config_file_name is not None:

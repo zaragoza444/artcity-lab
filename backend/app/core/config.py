@@ -81,6 +81,38 @@ class Settings(BaseSettings):
     signup_require_email_verify: bool = True
     signup_require_phone_verify: bool = True
 
+    # AC Communications — placeholders only. Real tokens stay in the secret manager.
+    meta_app_id: str = ""
+    meta_app_secret: str = ""
+    meta_waba_id: str = ""
+    meta_phone_number_id: str = ""
+    meta_access_token: str = ""
+    meta_verify_token: str = ""
+    graph_api_version: str = "v23.0"
+    provider_kind: str = "direct_meta"
+    comm_live_send_enabled: bool = False
+    comm_default_timezone: str = "Asia/Baghdad"
+    comm_quiet_hours_start: str = "21:00"
+    comm_quiet_hours_end: str = "09:00"
+    comm_default_max_spend_usd: str = "100.00"
+    comm_send_worker_initial_mps: int = 1
+    comm_allow_unverified_consent: bool = False
+    comm_require_separate_approval: bool = True
+    comm_require_valid_webhook_signature: bool = True
+    comm_enable_unknown_outcome_auto_retry: bool = False
+    comm_marketing_cooldown_hours: int = 72
+    comm_service_allowance_per_number: int = 1000
+    comm_webhook_max_bytes: int = 1_000_000
+    comm_dispatch_batch_size: int = 25
+    comm_max_send_attempts: int = 5
+    comm_pair_min_interval_seconds: int = 1
+    comm_process_inline: bool = True
+    comm_optout_keywords: str = (
+        "STOP,STOPALL,UNSUBSCRIBE,CANCEL,END,QUIT,"
+        "إيقاف,الغاء,إلغاء,توقف,"
+        "وەستان,ڕابگرە"
+    )
+
     @field_validator("database_url", mode="before")
     @classmethod
     def normalize_database_url(cls, value: object) -> object:

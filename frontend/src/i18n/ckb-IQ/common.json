@@ -45,5 +45,17 @@
   "vd.title": "درامای ڤێرتیکاڵ",
   "vd.subtitle": "زنجیرە دروست بکە. IP بنیات بنێ. ئەڵقە بە ئەڵقە بەرهەم بهێنە.",
   "vd.newProject": "پڕۆژەی IPی نوێ",
-  "vd.goldenA": "تۆوی پڕۆژەی زێڕین A (سۆرانی)"
+  "vd.goldenA": "تۆوی پڕۆژەی زێڕین A (سۆرانی)",
+  "locale.ar": "العربية",
+  "comm.title": "پەیوەندییەکان",
+  "comm.subtitle": "کەمپەینی وەتسئەپ بە ڕەزامەندی، نامە، و تێچووی گەیاندن.",
+  "comm.overview": "پوختە",
+  "comm.contacts": "پەیوەندییەکان",
+  "comm.segments": "گرووپەکان",
+  "comm.imports": "هاوردە",
+  "comm.templates": "قاڵبەکان",
+  "comm.campaigns": "کەمپەینەکان",
+  "comm.inbox": "نامەکان",
+  "comm.billing": "تێچوو",
+  "comm.admin": "بەڕێوەبردن"
 }

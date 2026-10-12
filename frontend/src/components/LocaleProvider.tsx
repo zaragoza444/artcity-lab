@@ -11,12 +11,14 @@ import {
 } from "react";
 import en from "@/i18n/en/common.json";
 import ckb from "@/i18n/ckb-IQ/common.json";
+import ar from "@/i18n/ar/common.json";
 
-export type UiLocale = "en" | "ckb-IQ";
+export type UiLocale = "en" | "ckb-IQ" | "ar";
 
 const dictionaries: Record<UiLocale, Record<string, string>> = {
   en,
   "ckb-IQ": ckb,
+  ar,
 };
 
 type LocaleContextValue = {
@@ -33,7 +35,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = window.localStorage.getItem("artcity.uiLocale") as UiLocale | null;
-    if (saved === "en" || saved === "ckb-IQ") setLocaleState(saved);
+    if (saved === "en" || saved === "ckb-IQ" || saved === "ar") setLocaleState(saved);
   }, []);
 
   const setLocale = useCallback((next: UiLocale) => {
@@ -41,10 +43,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem("artcity.uiLocale", next);
   }, []);
 
-  const dir: "ltr" | "rtl" = locale === "ckb-IQ" ? "rtl" : "ltr";
+  const dir: "ltr" | "rtl" = locale === "en" ? "ltr" : "rtl";
 
   useEffect(() => {
-    document.documentElement.lang = locale === "ckb-IQ" ? "ckb" : "en";
+    document.documentElement.lang = locale === "ar" ? "ar" : locale === "ckb-IQ" ? "ckb" : "en";
     document.documentElement.dir = dir;
     document.body.dataset.locale = locale;
   }, [locale, dir]);

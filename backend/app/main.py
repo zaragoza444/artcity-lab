@@ -15,6 +15,7 @@ from app.api.hub import router as hub_router
 from app.api.vertical_drama import router as vertical_drama_router
 from app.api.knowledge import router as knowledge_router
 from app.api.projects import router as projects_router
+from app.api.communications import router as communications_router
 from app.api.publishing import router as publishing_router
 from app.api.registries import router as registries_router
 from app.api.speech import router as speech_router
@@ -58,6 +59,10 @@ tags_metadata = [
         "name": "graphic-motion",
         "description": "AC Graphic Motion — MSG scenes, immutable revisions, preview/render, Art City ACX",
     },
+    {
+        "name": "communications",
+        "description": "AC Communications — consented WhatsApp Cloud API campaigns, inbox, and cost ledger",
+    },
     {"name": "publishing", "description": "Masters packaging and channel release"},
     {"name": "data-lab", "description": "Dataset ingest and annotation workspace"},
     {"name": "registries", "description": "Datasets, rights, model registry, training"},
@@ -99,6 +104,7 @@ app.include_router(edit_router)
 app.include_router(hub_router)
 app.include_router(vertical_drama_router)
 app.include_router(graphic_motion_router)
+app.include_router(communications_router)
 app.include_router(publishing_router)
 
 
@@ -115,6 +121,7 @@ def root() -> dict[str, str]:
         "hub": "/api/v1/hub",
         "vertical_drama": "/api/v1/vertical-drama",
         "graphic_motion": "/api/v1/graphic-motion",
+        "communications": "/api/v1/communications",
         "api_guide": "docs/API.md",
     }
 
@@ -159,6 +166,7 @@ def custom_openapi():
         "/api/auth/login",
         "/api/auth/refresh",
         "/api/auth/token",
+        "/api/v1/communications/integrations/whatsapp/webhook",
     }
     for path, methods in schema.get("paths", {}).items():
         is_public = path in public_paths or path.startswith("/health")

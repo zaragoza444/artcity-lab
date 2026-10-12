@@ -1,0 +1,16 @@
+{
+  "locale.en": "English",
+  "locale.ckb": "کوردی سۆرانی",
+  "locale.ar": "العربية",
+  "comm.title": "الاتصالات",
+  "comm.subtitle": "حملات واتساب بموافقة موثّقة، وصندوق الوارد، وتكلفة التسليم.",
+  "comm.overview": "نظرة عامة",
+  "comm.contacts": "جهات الاتصال",
+  "comm.segments": "الشرائح",
+  "comm.imports": "الاستيراد",
+  "comm.templates": "القوالب",
+  "comm.campaigns": "الحملات",
+  "comm.inbox": "الوارد",
+  "comm.billing": "التكلفة",
+  "comm.admin": "الإدارة"
+}

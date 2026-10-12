@@ -16,6 +16,7 @@ const primary = [
   { href: "/studio", label: "Studio" },
   { href: "/vertical-drama", label: "Vertical Drama" },
   { href: "/graphic-motion", label: "Graphic Motion" },
+  { href: "/communications", label: "Communications" },
   { href: "/hub", label: "Hub" },
   { href: "/data-bank", label: "Data Bank" },
   { href: "/edit", label: "Edit" },
@@ -51,7 +52,9 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
             ? "vertical"
             : pathname.startsWith("/graphic-motion")
               ? "motion"
-              : pathname.startsWith("/hub")
+              : pathname.startsWith("/communications")
+                ? "communications"
+                : pathname.startsWith("/hub")
                 ? "hub"
                 : "platform";
 
@@ -81,7 +84,13 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
                         : "text-[var(--mist)] hover:text-[var(--paper)]"
                     }`}
                   >
-                    {link.href === "/hub" ? t("hub.title") : link.href === "/vertical-drama" ? t("vd.title") : link.label}
+                    {link.href === "/hub"
+                      ? t("hub.title")
+                      : link.href === "/vertical-drama"
+                        ? t("vd.title")
+                        : link.href === "/communications"
+                          ? t("comm.title")
+                          : link.label}
                   </Link>
                 );
               })}
@@ -96,6 +105,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
             >
               <option value="en">{t("locale.en")}</option>
               <option value="ckb-IQ">{t("locale.ckb")}</option>
+              <option value="ar">{t("locale.ar")}</option>
             </select>
             {user ? (
               <button

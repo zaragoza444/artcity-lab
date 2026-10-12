@@ -8,6 +8,7 @@ const productLabel = {
   hub: "Production Hub",
   vertical: "Vertical Drama",
   motion: "Graphic Motion",
+  communications: "Communications",
 } as const;
 
 type BrandMarkProps = {

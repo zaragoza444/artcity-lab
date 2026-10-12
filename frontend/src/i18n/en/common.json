@@ -45,5 +45,17 @@
   "vd.title": "AC Vertical Drama",
   "vd.subtitle": "Create a series. Build an IP. Produce episode by episode.",
   "vd.newProject": "New IP project",
-  "vd.goldenA": "Seed Golden Project A (Sorani)"
+  "vd.goldenA": "Seed Golden Project A (Sorani)",
+  "locale.ar": "العربية",
+  "comm.title": "Communications",
+  "comm.subtitle": "Consented WhatsApp campaigns, inbox, and delivery cost.",
+  "comm.overview": "Overview",
+  "comm.contacts": "Contacts",
+  "comm.segments": "Segments",
+  "comm.imports": "Imports",
+  "comm.templates": "Templates",
+  "comm.campaigns": "Campaigns",
+  "comm.inbox": "Inbox",
+  "comm.billing": "Billing",
+  "comm.admin": "Administration"
 }

@@ -1,0 +1,251 @@
+openapi: 3.1.0
+info:
+  title: AC Communications
+  version: "1.0.0"
+  description: Art City consented WhatsApp Cloud API. Tokens never appear in responses.
+servers:
+  - url: /api/v1/communications
+paths:
+  /system/health:
+    get:
+      operationId: systemHealth
+      responses:
+        "200":
+          description: API, database, redis, and provider configuration without secrets
+  /overview:
+    get:
+      operationId: overview
+      responses:
+        "200":
+          description: Today counts and provisional spend
+  /senders:
+    get:
+      operationId: listSenders
+      responses:
+        "200":
+          description: Senders with masked numbers
+    post:
+      operationId: createSender
+      responses:
+        "201":
+          description: Sender created
+  /senders/{sender_id}/health:
+    get:
+      operationId: senderHealth
+      parameters:
+        - name: sender_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Quality and tier snapshot
+  /contacts:
+    get:
+      operationId: listContacts
+      responses:
+        "200":
+          description: Contacts
+    post:
+      operationId: createContact
+      responses:
+        "201":
+          description: Contact stored without consent
+  /contacts/imports:
+    post:
+      operationId: importContacts
+      responses:
+        "202":
+          description: Import job
+  /contacts/imports/{job_id}:
+    get:
+      operationId: getImport
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Import counts
+  /contacts/{contact_id}/consents:
+    post:
+      operationId: addConsent
+      parameters:
+        - name: contact_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "201":
+          description: Consent evidence appended
+  /contacts/{contact_id}/opt-out:
+    post:
+      operationId: optOut
+      parameters:
+        - name: contact_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Suppression recorded
+  /segments:
+    get:
+      operationId: listSegments
+      responses:
+        "200":
+          description: Segments
+    post:
+      operationId: createSegment
+      responses:
+        "201":
+          description: Segment saved
+  /templates:
+    get:
+      operationId: listTemplates
+      responses:
+        "200":
+          description: Templates synced or registered for local demo
+  /templates/sync:
+    post:
+      operationId: syncTemplates
+      responses:
+        "200":
+          description: Meta template sync
+  /campaigns:
+    get:
+      operationId: listCampaigns
+      responses:
+        "200":
+          description: Campaigns
+    post:
+      operationId: createCampaign
+      responses:
+        "201":
+          description: Draft campaign
+  /campaigns/{campaign_id}/preview:
+    post:
+      operationId: previewCampaign
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Exclusions, samples, and quote
+  /campaigns/{campaign_id}/submit:
+    post:
+      operationId: submitCampaign
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Submitted for approval
+  /campaigns/{campaign_id}/approve:
+    post:
+      operationId: approveCampaign
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Approved snapshot
+  /campaigns/{campaign_id}/schedule:
+    post:
+      operationId: scheduleCampaign
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Queued dispatch
+  /campaigns/{campaign_id}/pause:
+    post:
+      operationId: pauseCampaign
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Unsent work withdrawn
+  /campaigns/{campaign_id}/stats:
+    get:
+      operationId: campaignStats
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Funnel and spend
+  /inbox/conversations:
+    get:
+      operationId: listConversations
+      responses:
+        "200":
+          description: Conversations and service window
+  /inbox/conversations/{conversation_id}/reply:
+    post:
+      operationId: replyConversation
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Session reply inside the service window
+        "409":
+          description: Window closed
+  /billing/rates:
+    get:
+      operationId: listRates
+      responses:
+        "200":
+          description: Effective-dated rate cards
+  /billing/reconcile:
+    post:
+      operationId: reconcileInvoice
+      responses:
+        "200":
+          description: Append-only invoice adjustment
+  /audit:
+    get:
+      operationId: listAudit
+      responses:
+        "200":
+          description: Audit history
+  /integrations/whatsapp/webhook:
+    get:
+      operationId: verifyWebhook
+      security: []
+      responses:
+        "200":
+          description: hub.challenge
+    post:
+      operationId: receiveWebhook
+      security: []
+      responses:
+        "200":
+          description: Event stored
+        "403":
+          description: Bad signature
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+security:
+  - BearerAuth: []
